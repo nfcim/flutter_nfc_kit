@@ -71,7 +71,7 @@ class _MyAppState extends State<MyApp> {
                 child: Text('poll'),
               ),
               Text(
-                  'Id: ${_tag?.id}\nStandard: ${_tag?.standard}\nATQA: ${_tag?.atqa}\nSAK: ${_tag?.sak}\nHistorical Bytes: ${_tag?.historicalBytes}\nProtocol Info: ${_tag?.protocolInfo}\nApplication Data: ${_tag?.applicationData}\nApplication ID: ${_tag?.aid}'),
+                  'Id: ${_tag?.id}\nStandard: ${_tag?.standard}\nATQA: ${_tag?.atqa}\nSAK: ${_tag?.sak}\nHistorical Bytes: ${_tag?.historicalBytes}\nProtocol Info: ${_tag?.protocolInfo}\nApplication Data: ${_tag?.applicationData}'),
             ],
           ),
         ),
