@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import CoreNFC
 
 public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
@@ -9,6 +10,14 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin {
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    result("iOS " + UIDevice.current.systemVersion)
+    if call.method == "getNFCAvailability" {
+      if NFCReaderSession.readingAvailable {
+        result("available")
+      } else {
+        result("disabled")
+      }
+    } else {
+      result("iOS " + UIDevice.current.systemVersion)
+    }
   }
 }
