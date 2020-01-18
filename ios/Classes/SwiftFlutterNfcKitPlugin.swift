@@ -61,7 +61,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 case let .iso7816(tag):
                     let apdu = NFCISO7816APDU.init(data: data)!
                     tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
-                        result("\(response.hexEncodedString()) \(sw1) \(sw2)")
+                        let sw = String(format:"%02X%02X", sw1, sw2)
+                        result("\(response.hexEncodedString())\(sw)")
                     })
                 default:
                     result(FlutterError(code: "not implemented", message: "not implemented", details: nil))
