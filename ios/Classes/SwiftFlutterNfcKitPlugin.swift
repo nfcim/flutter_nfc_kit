@@ -72,6 +72,24 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
             result["applicationData"] = tag.applicationData?.hexEncodedString()
             result["aid"] = tag.initialSelectedAID
+        case let .miFare(tag):
+            switch tag.mifareFamily {
+            case .plus:
+                result["type"] = "mifare_plus"
+            case .ultralight:
+                result["type"] = "mifare_ultralight"
+            case .desfire:
+                result["type"] = "mifare_desfire"
+            default:
+                result["type"] = "unknown"
+            }
+            result["id"] = tag.identifier.hexEncodedString()
+            result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
+        case let .feliCa(_tag):
+            result["type"] = "felica"
+        case let .iso15693(tag):
+            result["type"] = "iso15693"
+            result["id"] = tag.identifier.hexEncodedString()
         default:
             result["type"] = "unknown"
         }
