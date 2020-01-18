@@ -14,6 +14,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   NFCAvailability _availability = NFCAvailability.not_supported;
+  NFCTag _tag;
 
   @override
   void initState() {
@@ -57,7 +58,22 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\nNFC: $_availability'),
+          child: Column(
+            children: <Widget>[
+              Text('Running on: $_platformVersion\nNFC: $_availability'),
+              FlatButton(
+                onPressed: () async {
+                  NFCTag tag = await FlutterNfcKit.poll();
+                  setState(() {
+                    _tag = tag;
+                  });
+                },
+                child: Text('poll'),
+              ),
+              Text(
+                  'Id: ${_tag?.id}\nStandard: ${_tag?.standard}\nATQA: ${_tag?.atqa}\nHistorical Bytes: ${_tag?.historicalBytes}\nProtocol Info: ${_tag?.protocolInfo}\nApplication Data: ${_tag?.applicationData}\nApplication ID: ${_tag?.aid}'),
+            ],
+          ),
         ),
       ),
     );
