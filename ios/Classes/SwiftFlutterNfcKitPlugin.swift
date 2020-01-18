@@ -70,6 +70,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             } else {
                 result(FlutterError(code: "not implemented", message: "not implemented", details: nil))
             }
+        } else if call.method == "finish" {
+            session?.invalidate()
         } else {
             result("iOS " + UIDevice.current.systemVersion)
         }

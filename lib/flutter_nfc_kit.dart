@@ -57,4 +57,8 @@ class FlutterNfcKit {
   static Future<String> transceive(String capdu) async {
     return await _channel.invokeMethod('transceive', capdu);
   }
+
+  static Future<void> finish() async {
+    return await _channel.invokeMethod('finish');
+  }
 }
