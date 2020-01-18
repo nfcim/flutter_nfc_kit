@@ -19,9 +19,10 @@ class NFCTag {
   final String historicalBytes;
   final String protocolInfo;
   final String applicationData;
+  final String hiLayerResponse;
 
   NFCTag(this.type, this.id, this.standard, this.atqa, this.sak, this.historicalBytes, this.protocolInfo,
-      this.applicationData);
+      this.applicationData, this.hiLayerResponse);
 
   factory NFCTag.fromMap(Map data) {
     final typeStr = data.containsKey('type') ? data['type'] : 'unknown';
@@ -35,6 +36,7 @@ class NFCTag {
       data.containsKey('historicalBytes') ? data['historicalBytes'] : '',
       data.containsKey('protocolInfo') ? data['protocolInfo'] : '',
       data.containsKey('applicationData') ? data['applicationData'] : '',
+      data.containsKey('hiLayerResponse') ? data['hiLayerResponse'] : '',
     );
   }
 }
