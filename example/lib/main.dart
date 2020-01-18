@@ -13,6 +13,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  NFCAvailability _availability = NFCAvailability.not_supported;
 
   @override
   void initState() {
@@ -25,9 +26,16 @@ class _MyAppState extends State<MyApp> {
     String platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
-      platformVersion = await FlutterNfcKit.platformVersion;
+      //platformVersion = await FlutterNfcKit.platformVersion;
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
+    }
+
+    NFCAvailability availability;
+    try {
+      availability = await FlutterNfcKit.nfcAvailability;
+    } on PlatformException {
+      availability = NFCAvailability.not_supported;
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -37,6 +45,7 @@ class _MyAppState extends State<MyApp> {
 
     setState(() {
       _platformVersion = platformVersion;
+      _availability = availability;
     });
   }
 
@@ -48,7 +57,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Text('Running on: $_platformVersion\nNFC: $_availability'),
         ),
       ),
     );
