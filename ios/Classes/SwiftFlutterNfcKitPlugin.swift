@@ -65,15 +65,16 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         result("\(response.hexEncodedString())\(sw)")
                     })
                 default:
-                    result(FlutterError(code: "not implemented", message: "not implemented", details: nil))
+                    result(FlutterError(code: "501", message: "not implemented", details: nil))
                 }
             } else {
-                result(FlutterError(code: "not implemented", message: "not implemented", details: nil))
+                result(FlutterError(code: "501", message: "not implemented", details: nil))
             }
         } else if call.method == "finish" {
             session?.invalidate()
+            session = nil
         } else {
-            result("iOS " + UIDevice.current.systemVersion)
+            result(FlutterMethodNotImplemented)
         }
     }
 
