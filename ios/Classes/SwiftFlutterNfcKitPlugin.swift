@@ -15,9 +15,25 @@ extension Data {
     }
 }
 
+func dataWithHexString(hex: String) -> Data {
+    var hex = hex
+    var data = Data()
+    while(hex.count > 0) {
+        let subIndex = hex.index(hex.startIndex, offsetBy: 2)
+        let c = String(hex[..<subIndex])
+        hex = String(hex[subIndex...])
+        var ch: UInt32 = 0
+        Scanner(string: c).scanHexInt32(&ch)
+        var char = UInt8(ch)
+        data.append(&char, count: 1)
+    }
+    return data
+}
+
 public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDelegate {
     var session: NFCTagReaderSession?
     var result: FlutterResult?
+    var tag: NFCTag?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_nfc_kit", binaryMessenger: registrar.messenger())
@@ -38,6 +54,21 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             session?.alertMessage = "Hold your iPhone near the card"
             session?.begin()
             self.result = result
+        } else if call.method == "transceive" {
+            if let input = call.arguments as? String {
+                let data = dataWithHexString(hex: input)
+                switch self.tag {
+                case let .iso7816(tag):
+                    let apdu = NFCISO7816APDU.init(data: data)!
+                    tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
+                        result("\(response.hexEncodedString()) \(sw1) \(sw2)")
+                    })
+                default:
+                    result(FlutterError(code: "not implemented", message: "not implemented", details: nil))
+                }
+            } else {
+                result(FlutterError(code: "not implemented", message: "not implemented", details: nil))
+            }
         } else {
             result("iOS " + UIDevice.current.systemVersion)
         }
@@ -48,6 +79,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError _: Error) {
         result?([:])
         result = nil
+        tag = nil
     }
 
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
@@ -85,7 +117,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
             result["id"] = tag.identifier.hexEncodedString()
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
-        case let .feliCa(_tag):
+        case .feliCa(_):
             result["type"] = "felica"
         case let .iso15693(tag):
             result["type"] = "iso15693"
@@ -94,9 +126,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["type"] = "unknown"
         }
 
-        self.result?(result)
-        self.result = nil
-
-        session.invalidate()
+        session.connect(to: firstTag, completionHandler: { (error: Error?) in
+            self.tag = firstTag;
+            self.result?(result)
+            self.result = nil
+        })
     }
 }
