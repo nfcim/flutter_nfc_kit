@@ -2,12 +2,59 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-class FlutterNfcKit {
-  static const MethodChannel _channel =
-      const MethodChannel('flutter_nfc_kit');
+enum NFCAvailability {
+  not_supported,
+  disabled,
+  available,
+}
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
+enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, unknown }
+
+class NFCTag {
+  final NFCTagType type;
+  final String id;
+  final String standard;
+  final String atqa;
+  final String sak;
+  final String historicalBytes;
+  final String protocolInfo;
+  final String applicationData;
+  final String aid;
+
+  NFCTag(this.type, this.id, this.standard, this.atqa, this.sak, this.historicalBytes, this.protocolInfo,
+      this.applicationData, this.aid);
+
+  factory NFCTag.fromMap(Map data) {
+    final typeStr = data.containsKey('type') ? data['type'] : 'unknown';
+    final type = NFCTagType.values.firstWhere((it) => it.toString() == "NFCTagType.$typeStr");
+    return NFCTag(
+      type,
+      data.containsKey('id') ? data['id'] : '',
+      data.containsKey('standard') ? data['standard'] : '',
+      data.containsKey('atqa') ? data['atqa'] : '',
+      data.containsKey('sak') ? data['sak'] : '',
+      data.containsKey('historicalBytes') ? data['historicalBytes'] : '',
+      data.containsKey('protocolInfo') ? data['protocolInfo'] : '',
+      data.containsKey('applicationData') ? data['applicationData'] : '',
+      data.containsKey('aid') ? data['aid'] : '',
+    );
+  }
+}
+
+class FlutterNfcKit {
+  static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
+
+  static Future<NFCAvailability> get nfcAvailability async {
+    final String availability = await _channel.invokeMethod('getNFCAvailability');
+    return NFCAvailability.values.firstWhere((it) => it.toString() == "NFCAvailability.$availability");
+  }
+
+  static Future<NFCTag> poll() async {
+    final Map data = await _channel.invokeMethod('poll');
+    return NFCTag.fromMap(data);
+  }
+
+  static Future<String> transceive(String capdu) async {
+    return await _channel.invokeMethod('transceive', capdu);
   }
 }

@@ -1,45 +1,60 @@
 package im.nfc.flutter_nfc_kit
 
-import androidx.annotation.NonNull;
+import android.nfc.NfcAdapter
+import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
 
 /** FlutterNfcKitPlugin */
-public class FlutterNfcKitPlugin: FlutterPlugin, MethodCallHandler {
-  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    val channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "flutter_nfc_kit")
-    channel.setMethodCallHandler(FlutterNfcKitPlugin());
-  }
-
-  // This static function is optional and equivalent to onAttachedToEngine. It supports the old
-  // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
-  // plugin registration via this function while apps migrate to use the new Android APIs
-  // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
-  //
-  // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
-  // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
-  // depending on the user's project. onAttachedToEngine or registerWith must both be defined
-  // in the same class.
-  companion object {
-    @JvmStatic
-    fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "flutter_nfc_kit")
-      channel.setMethodCallHandler(FlutterNfcKitPlugin())
+class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+    companion object {
+        private var nfcAdapter: NfcAdapter? = null
     }
-  }
 
-  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-    if (call.method == "getPlatformVersion") {
-      result.success("Android ${android.os.Build.VERSION.RELEASE}")
-    } else {
-      result.notImplemented()
+    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        val channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_nfc_kit")
+        channel.setMethodCallHandler(FlutterNfcKitPlugin())
     }
-  }
 
-  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-  }
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        if (nfcAdapter?.isEnabled != true && call.method != "getNFCAvailability") {
+            result.error("404", "NFC not available", null)
+            return
+        }
+
+        when (call.method) {
+            "getNFCAvailability" -> {
+                when {
+                    nfcAdapter == null -> result.success("not_supported")
+                    nfcAdapter!!.isEnabled -> result.success("available")
+                    else -> result.success("disabled")
+                }
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    }
+
+    override fun onDetachedFromActivity() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        nfcAdapter = NfcAdapter.getDefaultAdapter(binding.activity)
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }
