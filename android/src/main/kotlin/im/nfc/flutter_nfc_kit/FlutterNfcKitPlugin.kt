@@ -8,6 +8,7 @@ import android.nfc.tech.*
 import androidx.annotation.NonNull
 import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
 import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
+import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -19,13 +20,14 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 
-/** FlutterNfcKitPlugin */
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     companion object {
         private var activity: Activity? = null
         private var nfcAdapter: NfcAdapter? = null
         private var pollingTimeoutTask: TimerTask? = null
         private var tag: Tag? = null
+        private var isoDep: IsoDep? = null
+        private val TAG = FlutterNfcKitPlugin::class.simpleName as String
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -50,24 +52,31 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "poll" -> pollTag(result)
 
-            "finish" -> pollingTimeoutTask?.cancel()
+            "finish" -> {
+                pollingTimeoutTask?.cancel()
+                isoDep?.close()
+            }
 
             "transceive" -> {
                 if (tag == null) {
                     result.error("406", "No tag polled", null)
                     return
                 }
-                if (!tag!!.techList.contains(IsoDep::class.java.name)) {
+                if (isoDep == null) {
                     result.error("405", "Transceive not supported", null)
                     return
                 }
-                val isoDep = IsoDep.get(tag)
+                if (!isoDep!!.isConnected) {
+                    result.error("405", "Could not connect", null)
+                    return
+                }
+                val req = call.arguments as String
                 try {
-                    isoDep.connect()
-                    val resp = isoDep.transceive((call.arguments as String).hexToBytes())
-                    result.success(resp.toHexString())
+                    val resp = isoDep!!.transceive(req.hexToBytes()).toHexString()
+                    Log.d(TAG, "Transceive: $req, $resp")
+                    result.success(resp)
                 } catch (ex: Exception) {
-                    ex.printStackTrace()
+                    Log.e(TAG, "Transceive Error: $req", ex)
                     result.error("500", "Communication error", null)
                 }
             }
@@ -104,7 +113,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         pollingTimeoutTask = Timer().schedule(20000) {
             nfcAdapter!!.disableReaderMode(activity)
             activity!!.runOnUiThread {
-                result.error("408", "Polling tag timeout.", null)
+                result.error("408", "Polling tag timeout", null)
             }
         }
 
@@ -122,6 +131,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var protocolInfo = ""
             var applicationData = ""
             var hiLayerResponse = ""
+
+            // for transceive usage
+            if (tag.techList.contains(IsoDep::class.java.name)) {
+                isoDep = IsoDep.get(tag)
+            }
 
             if (tag.techList.contains(NfcA::class.java.name)) {
                 val aTag = NfcA.get(tag)
@@ -154,9 +168,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (tag.techList.contains(IsoDep::class.java.name)) {
                     type = "iso7816"
                     standard = "ISO 14443-4 (Type B)"
-                    val isoDep = IsoDep.get(tag)
-                    hiLayerResponse = isoDep.hiLayerResponse.toHexString()
-                    isoDep.connect()
+                    hiLayerResponse = isoDep!!.hiLayerResponse.toHexString()
                 } else {
                     type = "unknown"
                     standard = "ISO 14443-3 (Type B)"
@@ -165,6 +177,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 type = "unknown"
                 standard = "unknown"
             }
+            isoDep?.connect()
             activity!!.runOnUiThread {
                 result.success(mapOf(
                         "type" to type,
