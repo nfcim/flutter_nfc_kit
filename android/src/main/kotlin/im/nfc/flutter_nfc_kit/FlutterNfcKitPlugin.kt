@@ -145,8 +145,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     tag.techList.contains(IsoDep::class.java.name) -> {
                         type = "iso7816"
                         standard = "ISO 14443-4 (Type A)"
-                        val isoDep = IsoDep.get(tag)
-                        historicalBytes = isoDep.historicalBytes.toHexString()
+                        historicalBytes = isoDep!!.historicalBytes.toHexString()
                     }
                     tag.techList.contains(MifareClassic::class.java.name) -> {
                         type = "mifare_classic"
