@@ -42,6 +42,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
 
         when (call.method) {
+
             "getNFCAvailability" -> {
                 when {
                     nfcAdapter == null -> result.success("not_supported")
@@ -65,7 +66,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 val isoDep = IsoDep.get(tag)
                 if (isoDep == null) {
-                    result.error("405", "Transceive not supported", null)
+                    result.error("405", "Transceive not yet supported on this type of card", null)
                     return
                 }
                 val req = call.arguments as String
@@ -77,10 +78,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.success(resp)
                 } catch (ex: IOException) {
                     Log.e(TAG, "Transceive Error: $req", ex)
-                    result.error("500", "Communication error", null)
+                    result.error("500", "Communication error", ex.localizedMessage)
                 } catch (ex: IllegalArgumentException) {
                     Log.e(TAG, "APDU Error: $req", ex)
-                    result.error("400", "APDU format error", null)
+                    result.error("400", "APDU format error", ex.localizedMessage)
                 }
             }
 
@@ -102,13 +103,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         activity = null
     }
 
-    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {}
 
-    override fun onDetachedFromActivityForConfigChanges() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun onDetachedFromActivityForConfigChanges() {}
 
     private fun pollTag(nfcAdapter: NfcAdapter, result: Result) {
         pollingTimeoutTask = Timer().schedule(20000) {
@@ -123,53 +120,67 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             FlutterNfcKitPlugin.tag = tag
 
+            // common fields
             val type: String
             val id = tag.id.toHexString()
             val standard: String
+            // ISO 14443 Type A
             var atqa = ""
             var sak = ""
-            var historicalBytes = ""
+            // ISO 14443 Type B
             var protocolInfo = ""
             var applicationData = ""
+            // ISO 7816
+            var historicalBytes = ""
             var hiLayerResponse = ""
+            // NFC-F / Felica
+            var manufacturer = ""
+            var systemCode = ""
+            // NFC-V
+            var dsfId = ""
 
             if (tag.techList.contains(NfcA::class.java.name)) {
+                standard = "ISO 14443-4 (Type A)"
                 val aTag = NfcA.get(tag)
                 atqa = aTag.atqa.toHexString()
                 sak = byteArrayOf(aTag.sak.toByte()).toHexString()
                 when {
                     tag.techList.contains(IsoDep::class.java.name) -> {
                         type = "iso7816"
-                        standard = "ISO 14443-4 (Type A)"
-                        val isoDep = IsoDep.get(tag)
-                        historicalBytes = isoDep.historicalBytes.toHexString()
+                        historicalBytes = IsoDep.get(tag).historicalBytes.toHexString()
                     }
                     tag.techList.contains(MifareClassic::class.java.name) -> {
                         type = "mifare_classic"
-                        standard = "ISO 14443-3 (Type A)"
                     }
                     tag.techList.contains(MifareUltralight::class.java.name) -> {
                         type = "mifare_ultralight"
-                        standard = "ISO 14443-3 (Type A)"
                     }
                     else -> {
                         type = "unknown"
-                        standard = "ISO 14443-3 (Type A)"
                     }
                 }
             } else if (tag.techList.contains(NfcB::class.java.name)) {
+                standard = "ISO 14443-4 (Type B)"
                 val bTag = NfcB.get(tag)
                 protocolInfo = bTag.protocolInfo.toHexString()
                 applicationData = bTag.applicationData.toHexString()
                 if (tag.techList.contains(IsoDep::class.java.name)) {
                     type = "iso7816"
-                    standard = "ISO 14443-4 (Type B)"
-                    val isoDep = IsoDep.get(tag)
-                    hiLayerResponse = isoDep.hiLayerResponse.toHexString()
+                    hiLayerResponse = IsoDep.get(tag).hiLayerResponse.toHexString()
                 } else {
                     type = "unknown"
-                    standard = "ISO 14443-3 (Type B)"
                 }
+            } else if (tag.techList.contains(NfcF::class.java.name)) {
+                standard = "ISO 18092 (Felica)"
+                type = "N/A"
+                val fTag = NfcF.get(tag)
+                manufacturer = fTag.manufacturer.toHexString()
+                systemCode = fTag.systemCode.toHexString()
+            } else if (tag.techList.contains(NfcF::class.java.name)) {
+                standard = "ISO 15693"
+                type = "N/A"
+                val vTag = NfcV.get(tag)
+                dsfId = vTag.dsfId.toHexString()
             } else {
                 type = "unknown"
                 standard = "unknown"
@@ -184,7 +195,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         "historicalBytes" to historicalBytes,
                         "protocolInfo" to protocolInfo,
                         "applicationData" to applicationData,
-                        "hiLayerResponse" to hiLayerResponse
+                        "hiLayerResponse" to hiLayerResponse,
+                        "manufacturer" to manufacturer,
+                        "systemCode" to systemCode,
+                        "dsfId" to dsfId
                 ))
             }
         }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
