@@ -8,7 +8,7 @@ enum NFCAvailability {
   available,
 }
 
-enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, vicinity_card, unknown }
+enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, unknown }
 
 class NFCTag {
   final NFCTagType type;
