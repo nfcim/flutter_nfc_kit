@@ -8,7 +8,7 @@ enum NFCAvailability {
   available,
 }
 
-enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, unknown }
+enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, vicinity_card, unknown }
 
 class NFCTag {
   final NFCTagType type;
@@ -20,9 +20,12 @@ class NFCTag {
   final String protocolInfo;
   final String applicationData;
   final String hiLayerResponse;
+  final String manufacturer;
+  final String systemCode;
+  final String dsfId;
 
   NFCTag(this.type, this.id, this.standard, this.atqa, this.sak, this.historicalBytes, this.protocolInfo,
-      this.applicationData, this.hiLayerResponse);
+      this.applicationData, this.hiLayerResponse, this.manufacturer, this.systemCode, this.dsfId);
 
   factory NFCTag.fromMap(Map data) {
     final typeStr = data.containsKey('type') ? data['type'] : 'unknown';
@@ -37,6 +40,9 @@ class NFCTag {
       data.containsKey('protocolInfo') ? data['protocolInfo'] : '',
       data.containsKey('applicationData') ? data['applicationData'] : '',
       data.containsKey('hiLayerResponse') ? data['hiLayerResponse'] : '',
+      data.containsKey('manufacturer') ? data['manufacturer'] : '',
+      data.containsKey('systemCode') ? data['systemCode'] : '',
+      data.containsKey('dsfId') ? data['dsfId'] : ''
     );
   }
 }
