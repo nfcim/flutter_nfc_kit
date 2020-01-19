@@ -1,8 +1,7 @@
 name: flutter_nfc_kit
 description: Plugin to provide NFC functionality on Android and iOS
 version: 0.0.1
-author: "NFSee Project"
-homepage: "https://nfsee.nfc.im"
+homepage: "https://github.com/nfcim/flutter_nfc_kit"
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
