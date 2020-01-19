@@ -64,6 +64,10 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('transceive', capdu);
   }
 
+  static Future<String> readChinaIDGUID() async {
+    return await _channel.invokeMethod('readChinaIDGUID');
+  }
+
   static Future<void> finish() async {
     return await _channel.invokeMethod('finish');
   }
