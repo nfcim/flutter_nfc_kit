@@ -25,14 +25,14 @@ NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'type': _$NFCTagTypeEnumMap[instance.type],
-      'id': instance.id,
       'standard': instance.standard,
+      'id': instance.id,
       'atqa': instance.atqa,
       'sak': instance.sak,
       'historicalBytes': instance.historicalBytes,
+      'hiLayerResponse': instance.hiLayerResponse,
       'protocolInfo': instance.protocolInfo,
       'applicationData': instance.applicationData,
-      'hiLayerResponse': instance.hiLayerResponse,
       'manufacturer': instance.manufacturer,
       'systemCode': instance.systemCode,
       'dsfId': instance.dsfId,
