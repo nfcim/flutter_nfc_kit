@@ -15,6 +15,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import org.json.JSONObject
 import java.io.IOException
 import java.util.*
 import kotlin.concurrent.schedule
@@ -204,7 +205,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 standard = "unknown"
             }
             activity?.runOnUiThread {
-                result.success(mapOf(
+                result.success(JSONObject(mapOf(
                         "type" to type,
                         "id" to id,
                         "standard" to standard,
@@ -217,7 +218,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         "manufacturer" to manufacturer,
                         "systemCode" to systemCode,
                         "dsfId" to dsfId
-                ))
+                )).toString())
             }
         }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
     }

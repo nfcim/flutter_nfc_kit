@@ -132,7 +132,9 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
         session.connect(to: firstTag, completionHandler: { (error: Error?) in
             self.tag = firstTag;
-            self.result?(result)
+            let jsonData = try! JSONSerialization.data(withJSONObject: result)
+            let jsonString = String(data: jsonData!, encoding: .utf8)
+            self.result?(jsonString)
             self.result = nil
         })
     }
