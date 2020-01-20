@@ -1,5 +1,7 @@
 # Flutter NFC Kit
 
+![pub version](https://img.shields.io/pub/v/flutter_nfc_kit)
+
 Yet another plugin to provide NFC functionality on Android and iOS.
 
 This plugin supports:
