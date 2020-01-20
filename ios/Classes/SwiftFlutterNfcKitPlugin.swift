@@ -18,7 +18,7 @@ extension Data {
 func dataWithHexString(hex: String) -> Data {
     var hex = hex
     var data = Data()
-    while(hex.count > 0) {
+    while hex.count > 0 {
         let subIndex = hex.index(hex.startIndex, offsetBy: 2)
         let c = String(hex[..<subIndex])
         hex = String(hex[subIndex...])
@@ -57,11 +57,11 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         } else if call.method == "transceive" {
             if let input = call.arguments as? String {
                 let data = dataWithHexString(hex: input)
-                switch self.tag {
+                switch tag {
                 case let .iso7816(tag):
-                    let apdu = NFCISO7816APDU.init(data: data)!
-                    tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
-                        let sw = String(format:"%02X%02X", sw1, sw2)
+                    let apdu = NFCISO7816APDU(data: data)!
+                    tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, _: Error?) in
+                        let sw = String(format: "%02X%02X", sw1, sw2)
                         result("\(response.hexEncodedString())\(sw)")
                     })
                 default:
@@ -81,7 +81,9 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
 
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError _: Error) {
-        result?([:])
+        let jsonData = try! JSONSerialization.data(withJSONObject: [:])
+        let jsonString = String(data: jsonData, encoding: .utf8)
+        result?(jsonString)
         result = nil
         tag = nil
     }
@@ -144,8 +146,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["standard"] = "unknown"
         }
 
-        session.connect(to: firstTag, completionHandler: { (error: Error?) in
-            self.tag = firstTag;
+        session.connect(to: firstTag, completionHandler: { (_: Error?) in
+            self.tag = firstTag
             let jsonData = try! JSONSerialization.data(withJSONObject: result)
             let jsonString = String(data: jsonData, encoding: .utf8)
             self.result?(jsonString)
