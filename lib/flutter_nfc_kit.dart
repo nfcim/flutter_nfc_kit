@@ -27,7 +27,7 @@ enum NFCTagType {
 
 /// Metadata of the polled NFC tag.
 ///
-/// All fields except `type` and `standard` are in formats of hex string.
+/// All fields except `type` and `standard` are in the format of hex string.
 /// Fields that cannot be read will be empty.
 @JsonSerializable()
 class NFCTag {
