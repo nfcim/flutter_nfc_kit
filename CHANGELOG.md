@@ -11,3 +11,7 @@
 * Support reading GUID of China ID Card (which is non-standard)
 * Add more documentation
 * Release with MIT License
+
+## 0.0.3
+
+* Fix compilation errors of iOS plugin
