@@ -106,10 +106,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["type"] = "iso7816"
             result["id"] = tag.identifier.hexEncodedString()
             if tag.historicalBytes != nil {
-                result["historicalBytes"] = tag.historicalBytes.hexEncodedString()
+                result["historicalBytes"] = tag.historicalBytes!.hexEncodedString()
                 result["standard"] = "ISO 14443-4 (Type A)"
             } else if tag.applicationData != nil {
-                result["applicationData"] = tag.applicationData.hexEncodedString()
+                result["applicationData"] = tag.applicationData!.hexEncodedString()
                 result["standard"] = "ISO 14443-4 (Type B)"
             } else {
                 result["standard"] = "ISO 14443"
@@ -129,7 +129,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
             result["id"] = tag.identifier.hexEncodedString()
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
-        case .feliCa(tag):
+        case let .feliCa(tag):
             result["type"] = "felica"
             result["standard"] = "ISO 18092"
             result["systemCode"] = tag.currentSystemCode.hexEncodedString()
@@ -138,7 +138,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["type"] = "iso15693"
             result["standard"] = "ISO 15093"
             result["id"] = tag.identifier.hexEncodedString()
-            result["manufacturer"] = tag.identifier.
+            result["manufacturer"] = String(format: "%d", tag.icManufacturerCode)
         default:
             result["type"] = "unknown"
             result["standard"] = "unknown"
@@ -147,7 +147,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         session.connect(to: firstTag, completionHandler: { (error: Error?) in
             self.tag = firstTag;
             let jsonData = try! JSONSerialization.data(withJSONObject: result)
-            let jsonString = String(data: jsonData!, encoding: .utf8)
+            let jsonString = String(data: jsonData, encoding: .utf8)
             self.result?(jsonString)
             self.result = nil
         })
