@@ -190,14 +190,14 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     type = "unknown"
                 }
             } else if (tag.techList.contains(NfcF::class.java.name)) {
-                standard = "ISO 18092 / JIS 6319-4"
-                type = "unknown"
+                standard = "ISO 18092"
+                type = "felica"
                 val fTag = NfcF.get(tag)
                 manufacturer = fTag.manufacturer.toHexString()
                 systemCode = fTag.systemCode.toHexString()
             } else if (tag.techList.contains(NfcV::class.java.name)) {
                 standard = "ISO 15693"
-                type = "unknown"
+                type = "iso15693"
                 val vTag = NfcV.get(tag)
                 dsfId = vTag.dsfId.toHexString()
             } else {

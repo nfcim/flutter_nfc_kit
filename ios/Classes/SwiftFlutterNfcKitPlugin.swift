@@ -105,10 +105,18 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         case let .iso7816(tag):
             result["type"] = "iso7816"
             result["id"] = tag.identifier.hexEncodedString()
-            result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
-            result["applicationData"] = tag.applicationData?.hexEncodedString()
+            if tag.historicalBytes != nil {
+                result["historicalBytes"] = tag.historicalBytes.hexEncodedString()
+                result["standard"] = "ISO 14443-4 (Type A)"
+            } else if tag.applicationData != nil {
+                result["applicationData"] = tag.applicationData.hexEncodedString()
+                result["standard"] = "ISO 14443-4 (Type B)"
+            } else {
+                result["standard"] = "ISO 14443"
+            }
             result["aid"] = tag.initialSelectedAID
         case let .miFare(tag):
+            result["standard"] = "ISO 14443-4 (Type A)"
             switch tag.mifareFamily {
             case .plus:
                 result["type"] = "mifare_plus"
@@ -121,13 +129,19 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
             result["id"] = tag.identifier.hexEncodedString()
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
-        case .feliCa(_):
+        case .feliCa(tag):
             result["type"] = "felica"
+            result["standard"] = "ISO 18092"
+            result["systemCode"] = tag.currentSystemCode.hexEncodedString()
+            result["manufacturer"] = tag.currentIDm.hexEncodedString()
         case let .iso15693(tag):
             result["type"] = "iso15693"
+            result["standard"] = "ISO 15093"
             result["id"] = tag.identifier.hexEncodedString()
+            result["manufacturer"] = tag.identifier.
         default:
             result["type"] = "unknown"
+            result["standard"] = "unknown"
         }
 
         session.connect(to: firstTag, completionHandler: { (error: Error?) in

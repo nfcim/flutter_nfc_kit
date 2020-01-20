@@ -6,7 +6,7 @@ This plugin supports:
 
 * read metadata of tags / cards complying with:
   * ISO 14443-4 Type A & Type B (NFC-A / NFC-B / Mifare Classic / Mifare Ultralight)
-  * ISO 18092 / JIS 6319 (NFC-F / Felica)
+  * ISO 18092 (NFC-F / Felica)
   * ISO 15963 (NFC-V)
   * China ID Card (non-standard, GUID only)
 * transceive APDU with smart cards complying with ISO 7816
@@ -53,3 +53,7 @@ await FlutterNfcKit.finish();
 A more complicated example can be seen in `example` dir.
 
 Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for more information.
+
+### Error codes
+
+We use error codes with similar meaning as HTTP status code. Brief explanation and error cause in string (if available) will also be returned when an error occurs.
