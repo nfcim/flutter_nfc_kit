@@ -31,20 +31,34 @@ class NFCTag {
     final typeStr = data.containsKey('type') ? data['type'] : 'unknown';
     final type = NFCTagType.values.firstWhere((it) => it.toString() == "NFCTagType.$typeStr");
     return NFCTag(
-      type,
-      data.containsKey('id') ? data['id'] : '',
-      data.containsKey('standard') ? data['standard'] : '',
-      data.containsKey('atqa') ? data['atqa'] : '',
-      data.containsKey('sak') ? data['sak'] : '',
-      data.containsKey('historicalBytes') ? data['historicalBytes'] : '',
-      data.containsKey('protocolInfo') ? data['protocolInfo'] : '',
-      data.containsKey('applicationData') ? data['applicationData'] : '',
-      data.containsKey('hiLayerResponse') ? data['hiLayerResponse'] : '',
-      data.containsKey('manufacturer') ? data['manufacturer'] : '',
-      data.containsKey('systemCode') ? data['systemCode'] : '',
-      data.containsKey('dsfId') ? data['dsfId'] : ''
-    );
+        type,
+        data.containsKey('id') ? data['id'] : '',
+        data.containsKey('standard') ? data['standard'] : '',
+        data.containsKey('atqa') ? data['atqa'] : '',
+        data.containsKey('sak') ? data['sak'] : '',
+        data.containsKey('historicalBytes') ? data['historicalBytes'] : '',
+        data.containsKey('protocolInfo') ? data['protocolInfo'] : '',
+        data.containsKey('applicationData') ? data['applicationData'] : '',
+        data.containsKey('hiLayerResponse') ? data['hiLayerResponse'] : '',
+        data.containsKey('manufacturer') ? data['manufacturer'] : '',
+        data.containsKey('systemCode') ? data['systemCode'] : '',
+        data.containsKey('dsfId') ? data['dsfId'] : '');
   }
+
+  Map<String, dynamic> toJson() => {
+        'type': type.toString(),
+        'id': id,
+        'standard': standard,
+        'atqa': atqa,
+        'sak': sak,
+        'historicalBytes': historicalBytes,
+        'protocolInfo': protocolInfo,
+        'applicationData': applicationData,
+        'hiLayerResponse': hiLayerResponse,
+        'manufacturer': manufacturer,
+        'systemCode': systemCode,
+        'dsfId': dsfId,
+      };
 }
 
 class FlutterNfcKit {
