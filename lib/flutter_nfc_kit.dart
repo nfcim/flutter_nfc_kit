@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+part 'flutter_nfc_kit.g.dart';
 
 enum NFCAvailability {
   not_supported,
@@ -10,6 +14,7 @@ enum NFCAvailability {
 
 enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, unknown }
 
+@JsonSerializable()
 class NFCTag {
   final NFCTagType type;
   final String id;
@@ -27,38 +32,9 @@ class NFCTag {
   NFCTag(this.type, this.id, this.standard, this.atqa, this.sak, this.historicalBytes, this.protocolInfo,
       this.applicationData, this.hiLayerResponse, this.manufacturer, this.systemCode, this.dsfId);
 
-  factory NFCTag.fromMap(Map data) {
-    final typeStr = data.containsKey('type') ? data['type'] : 'unknown';
-    final type = NFCTagType.values.firstWhere((it) => it.toString() == "NFCTagType.$typeStr");
-    return NFCTag(
-        type,
-        data.containsKey('id') ? data['id'] : '',
-        data.containsKey('standard') ? data['standard'] : '',
-        data.containsKey('atqa') ? data['atqa'] : '',
-        data.containsKey('sak') ? data['sak'] : '',
-        data.containsKey('historicalBytes') ? data['historicalBytes'] : '',
-        data.containsKey('protocolInfo') ? data['protocolInfo'] : '',
-        data.containsKey('applicationData') ? data['applicationData'] : '',
-        data.containsKey('hiLayerResponse') ? data['hiLayerResponse'] : '',
-        data.containsKey('manufacturer') ? data['manufacturer'] : '',
-        data.containsKey('systemCode') ? data['systemCode'] : '',
-        data.containsKey('dsfId') ? data['dsfId'] : '');
-  }
+  factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
+  Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 
-  Map<String, dynamic> toJson() => {
-        'type': type.toString(),
-        'id': id,
-        'standard': standard,
-        'atqa': atqa,
-        'sak': sak,
-        'historicalBytes': historicalBytes,
-        'protocolInfo': protocolInfo,
-        'applicationData': applicationData,
-        'hiLayerResponse': hiLayerResponse,
-        'manufacturer': manufacturer,
-        'systemCode': systemCode,
-        'dsfId': dsfId,
-      };
 }
 
 class FlutterNfcKit {
@@ -70,16 +46,12 @@ class FlutterNfcKit {
   }
 
   static Future<NFCTag> poll() async {
-    final Map data = await _channel.invokeMethod('poll');
-    return NFCTag.fromMap(data);
+    final String data = await _channel.invokeMethod('poll');
+    return NFCTag.fromJson(jsonDecode(data));
   }
 
   static Future<String> transceive(String capdu) async {
     return await _channel.invokeMethod('transceive', capdu);
-  }
-
-  static Future<String> readChinaIDGUID() async {
-    return await _channel.invokeMethod('readChinaIDGUID');
   }
 
   static Future<void> finish() async {
