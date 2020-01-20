@@ -12,7 +12,16 @@ enum NFCAvailability {
   available,
 }
 
-enum NFCTagType { iso7816, iso15693, mifare_classic, mifare_ultralight, mifare_desfire, mifare_plus, felica, unknown }
+enum NFCTagType {
+  iso7816,
+  iso15693,
+  mifare_classic,
+  mifare_ultralight,
+  mifare_desfire,
+  mifare_plus,
+  felica,
+  unknown
+}
 
 @JsonSerializable()
 class NFCTag {
@@ -29,20 +38,32 @@ class NFCTag {
   final String systemCode;
   final String dsfId;
 
-  NFCTag(this.type, this.id, this.standard, this.atqa, this.sak, this.historicalBytes, this.protocolInfo,
-      this.applicationData, this.hiLayerResponse, this.manufacturer, this.systemCode, this.dsfId);
+  NFCTag(
+      this.type,
+      this.id,
+      this.standard,
+      this.atqa,
+      this.sak,
+      this.historicalBytes,
+      this.protocolInfo,
+      this.applicationData,
+      this.hiLayerResponse,
+      this.manufacturer,
+      this.systemCode,
+      this.dsfId);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
-
 }
 
 class FlutterNfcKit {
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
 
   static Future<NFCAvailability> get nfcAvailability async {
-    final String availability = await _channel.invokeMethod('getNFCAvailability');
-    return NFCAvailability.values.firstWhere((it) => it.toString() == "NFCAvailability.$availability");
+    final String availability =
+        await _channel.invokeMethod('getNFCAvailability');
+    return NFCAvailability.values
+        .firstWhere((it) => it.toString() == "NFCAvailability.$availability");
   }
 
   static Future<NFCTag> poll() async {

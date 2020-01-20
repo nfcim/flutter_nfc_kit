@@ -4,7 +4,7 @@ Yet another plugin to provide NFC functionality on Android and iOS.
 
 This plugin supports:
 
-* read metadata of cards complying with:
+* read metadata of tags / cards complying with:
   * ISO 14443-4 Type A & Type B (NFC-A / NFC-B / Mifare Classic / Mifare Ultralight)
   * ISO 18092 / JIS 6319 (NFC-F / Felica)
   * ISO 15963 (NFC-V)
