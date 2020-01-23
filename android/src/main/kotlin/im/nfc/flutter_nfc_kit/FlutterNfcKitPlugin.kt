@@ -26,7 +26,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private val TAG = FlutterNfcKitPlugin::class.java.name
         private var activity: Activity? = null
         private var pollingTimeoutTask: TimerTask? = null
-        private var tag: Tag? = null
+        private var tagTechnology: TagTechnology? = null
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -56,25 +56,36 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "finish" -> {
                 pollingTimeoutTask?.cancel()
+                try {
+                    tagTechnology?.close()
+                } catch (ex: IOException) {
+                    Log.e(TAG, "Close tag error", ex)
+                }
                 nfcAdapter.disableReaderMode(activity)
             }
 
 
             "transceive" -> {
-                if (tag == null) {
+                if (tagTechnology == null) {
                     result.error("406", "No tag polled", null)
                     return
                 }
-                val isoDep = IsoDep.get(tag)
-                if (isoDep == null) {
+                if (tagTechnology !is IsoDep) {
                     result.error("405", "Transceive not yet supported on this type of card", null)
                     return
                 }
+                val isoDep = tagTechnology as IsoDep
                 val req = call.arguments as String
+                if (!isoDep.isConnected) {
+                    try {
+                        isoDep.connect()
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Transceive Error: $req", ex)
+                        result.error("500", "Communication error", ex.localizedMessage)
+                    }
+                }
                 try {
-                    isoDep.connect()
                     val resp = isoDep.transceive(req.hexToBytes()).toHexString()
-                    isoDep.close()
                     Log.d(TAG, "Transceive: $req, $resp")
                     result.success(resp)
                 } catch (ex: IOException) {
@@ -87,11 +98,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "readChinaIDGUID" -> {
-                if (tag == null) {
+                if (tagTechnology == null) {
                     result.error("406", "No tag polled", null)
                     return
                 }
-                val nfcB = NfcB.get(tag)
+                val nfcB = tagTechnology as NfcB
                 try {
                     nfcB.connect()
                     val resp = nfcB.transceive(byteArrayOf(0x00, 0x36, 0x00, 0x00, 0x08)).sliceArray(0..7).toHexString()
@@ -118,7 +129,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onDetachedFromActivity() {
         pollingTimeoutTask?.cancel()
         pollingTimeoutTask = null
-        tag = null
+        tagTechnology = null
         activity = null
     }
 
@@ -136,8 +147,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
         nfcAdapter.enableReaderMode(activity, { tag ->
             pollingTimeoutTask?.cancel()
-
-            FlutterNfcKitPlugin.tag = tag
 
             // common fields
             val type: String
@@ -159,35 +168,44 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var dsfId = ""
 
             if (tag.techList.contains(NfcA::class.java.name)) {
-                standard = "ISO 14443-4 (Type A)"
                 val aTag = NfcA.get(tag)
                 atqa = aTag.atqa.toHexString()
                 sak = byteArrayOf(aTag.sak.toByte()).toHexString()
                 when {
                     tag.techList.contains(IsoDep::class.java.name) -> {
+                        standard = "ISO 14443-4 (Type A)"
                         type = "iso7816"
-                        historicalBytes = IsoDep.get(tag).historicalBytes.toHexString()
+                        val isoDep = IsoDep.get(tag)
+                        tagTechnology = isoDep
+                        historicalBytes = isoDep.historicalBytes.toHexString()
                     }
                     tag.techList.contains(MifareClassic::class.java.name) -> {
+                        standard = "ISO 14443-3 (Type A)"
                         type = "mifare_classic"
                     }
                     tag.techList.contains(MifareUltralight::class.java.name) -> {
+                        standard = "ISO 14443-3 (Type A)"
                         type = "mifare_ultralight"
                     }
                     else -> {
+                        standard = "ISO 14443-3 (Type A)"
                         type = "unknown"
                     }
                 }
             } else if (tag.techList.contains(NfcB::class.java.name)) {
-                standard = "ISO 14443-4 (Type B)"
                 val bTag = NfcB.get(tag)
                 protocolInfo = bTag.protocolInfo.toHexString()
                 applicationData = bTag.applicationData.toHexString()
                 if (tag.techList.contains(IsoDep::class.java.name)) {
                     type = "iso7816"
-                    hiLayerResponse = IsoDep.get(tag).hiLayerResponse.toHexString()
+                    standard = "ISO 14443-4 (Type B)"
+                    val isoDep = IsoDep.get(tag)
+                    tagTechnology = isoDep
+                    hiLayerResponse = isoDep.hiLayerResponse.toHexString()
                 } else {
                     type = "unknown"
+                    standard = "ISO 14443-3 (Type B)"
+                    tagTechnology = bTag
                 }
             } else if (tag.techList.contains(NfcF::class.java.name)) {
                 standard = "ISO 18092"
