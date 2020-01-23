@@ -15,3 +15,8 @@
 ## 0.0.3
 
 * Fix compilation errors of iOS plugin
+
+## 0.0.4
+
+* Fix IsoDep unintentionally closing of the Android plugin
+* Fix incorrect standards description
