@@ -81,12 +81,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
     public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
 
-    public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError _: Error) {
-        let jsonData = try! JSONSerialization.data(withJSONObject: [:])
-        let jsonString = String(data: jsonData, encoding: .utf8)
-        result?(jsonString)
-        result = nil
-        tag = nil
+    public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        if result != nil {
+            NSLog("Got error when reading NFC: %@", error.localizedDescription)
+            result?(FlutterError(code: "500", message: "invalidate with error", details: error.localizedDescription))
+            result = nil
+            tag = nil
+        }
     }
 
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
