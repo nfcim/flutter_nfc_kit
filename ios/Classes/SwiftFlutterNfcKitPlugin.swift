@@ -73,6 +73,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         } else if call.method == "finish" {
             session?.invalidate()
             session = nil
+            result(nil)
         } else {
             result(FlutterMethodNotImplemented)
         }
