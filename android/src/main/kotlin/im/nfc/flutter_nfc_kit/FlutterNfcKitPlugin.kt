@@ -62,6 +62,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     Log.e(TAG, "Close tag error", ex)
                 }
                 nfcAdapter.disableReaderMode(activity)
+                result.success("")
             }
 
 

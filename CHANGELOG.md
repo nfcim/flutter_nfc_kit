@@ -20,3 +20,7 @@
 
 * Fix IsoDep unintentionally closing of the Android plugin
 * Fix incorrect standards description
+
+## 0.0.5
+
+* Fix finish method blocking error
