@@ -24,3 +24,7 @@
 ## 0.0.5
 
 * Fix finish method blocking error
+
+## 0.0.6
+
+* Avoid returning redundant result if user finish the read operation prematurely
