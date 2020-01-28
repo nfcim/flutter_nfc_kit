@@ -27,6 +27,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var activity: Activity? = null
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
+        private var pending = false
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -55,6 +56,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "poll" -> pollTag(nfcAdapter, result)
 
             "finish" -> {
+                pending = false
                 pollingTimeoutTask?.cancel()
                 try {
                     tagTechnology?.close()
@@ -139,10 +141,15 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onDetachedFromActivityForConfigChanges() {}
 
     private fun pollTag(nfcAdapter: NfcAdapter, result: Result) {
+        pending = true
+
         pollingTimeoutTask = Timer().schedule(20000) {
             nfcAdapter.disableReaderMode(activity)
             activity?.runOnUiThread {
-                result.error("408", "Polling tag timeout", null)
+                if (pending) {
+                    pending = false
+                    result.error("408", "Polling tag timeout", null)
+                }
             }
         }
 
@@ -224,20 +231,22 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 standard = "unknown"
             }
             activity?.runOnUiThread {
-                result.success(JSONObject(mapOf(
-                        "type" to type,
-                        "id" to id,
-                        "standard" to standard,
-                        "atqa" to atqa,
-                        "sak" to sak,
-                        "historicalBytes" to historicalBytes,
-                        "protocolInfo" to protocolInfo,
-                        "applicationData" to applicationData,
-                        "hiLayerResponse" to hiLayerResponse,
-                        "manufacturer" to manufacturer,
-                        "systemCode" to systemCode,
-                        "dsfId" to dsfId
-                )).toString())
+                if (pending) {
+                    result.success(JSONObject(mapOf(
+                            "type" to type,
+                            "id" to id,
+                            "standard" to standard,
+                            "atqa" to atqa,
+                            "sak" to sak,
+                            "historicalBytes" to historicalBytes,
+                            "protocolInfo" to protocolInfo,
+                            "applicationData" to applicationData,
+                            "hiLayerResponse" to hiLayerResponse,
+                            "manufacturer" to manufacturer,
+                            "systemCode" to systemCode,
+                            "dsfId" to dsfId
+                    )).toString())
+                }
             }
         }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
     }
