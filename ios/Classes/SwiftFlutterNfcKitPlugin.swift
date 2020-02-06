@@ -49,30 +49,38 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result("disabled")
             }
         } else if call.method == "poll" {
+            session?.invalidate()
+            self.result?(FlutterError(code: "500", message: "called too early", details: nil))
+
             session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
 
             session?.alertMessage = "Hold your iPhone near the card"
             session?.begin()
             self.result = result
         } else if call.method == "transceive" {
-            if let input = call.arguments as? String {
-                let data = dataWithHexString(hex: input)
-                switch tag {
-                case let .iso7816(tag):
-                    let apdu = NFCISO7816APDU(data: data)!
-                    tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, _: Error?) in
-                        let sw = String(format: "%02X%02X", sw1, sw2)
-                        result("\(response.hexEncodedString())\(sw)")
-                    })
-                default:
+            if tag != nil {
+                if let input = call.arguments as? String {
+                    let data = dataWithHexString(hex: input)
+                    switch tag {
+                    case let .iso7816(tag):
+                        let apdu = NFCISO7816APDU(data: data)!
+                        tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, _: Error?) in
+                            let sw = String(format: "%02X%02X", sw1, sw2)
+                            result("\(response.hexEncodedString())\(sw)")
+                        })
+                    default:
+                        result(FlutterError(code: "501", message: "not implemented", details: nil))
+                    }
+                } else {
                     result(FlutterError(code: "501", message: "not implemented", details: nil))
                 }
             } else {
-                result(FlutterError(code: "501", message: "not implemented", details: nil))
+                result(FlutterError(code: "500", message: "no tag found", details: nil))
             }
         } else if call.method == "finish" {
             session?.invalidate()
             session = nil
+            self.result = nil
             result(nil)
         } else {
             result(FlutterMethodNotImplemented)
