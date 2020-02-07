@@ -69,31 +69,32 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
 
             "transceive" -> {
-                if (tagTechnology == null) {
+                val tagTech = tagTechnology
+                val req = call.arguments as String
+                if (tagTech == null) {
                     result.error("406", "No tag polled", null)
                     return
                 }
-                if (!tagTechnology.isConnected) {
+                if (!tagTech.isConnected) {
                     try {
-                        tagTechnology.connect()
+                        tagTech.connect()
                     } catch (ex: IOException) {
                         Log.e(TAG, "Transceive Error: $req", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
                     }
                 }
-                val req = call.arguments as String
                 try {
                     val sendingBytes = req.hexToBytes()
                     val recvingBytes: ByteArray
-                    when (tagTechnology) {
-                        is IsoDep -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        is NfcA -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        is NfcB -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        is NfcF -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        is NfcV -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        is MifareClassic -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        is MifareUltralight -> recvingBytes = tagTechnology.transceive(sendingBytes)
-                        else {
+                    when (tagTech) {
+                        is IsoDep -> recvingBytes = tagTech.transceive(sendingBytes)
+                        is NfcA -> recvingBytes = tagTech.transceive(sendingBytes)
+                        is NfcB -> recvingBytes = tagTech.transceive(sendingBytes)
+                        is NfcF -> recvingBytes = tagTech.transceive(sendingBytes)
+                        is NfcV -> recvingBytes = tagTech.transceive(sendingBytes)
+                        is MifareClassic -> recvingBytes = tagTech.transceive(sendingBytes)
+                        is MifareUltralight -> recvingBytes = tagTech.transceive(sendingBytes)
+                        else -> {
                             result.error("405", "Transceive not yet supported on this type of card", null)
                             return
                         }
