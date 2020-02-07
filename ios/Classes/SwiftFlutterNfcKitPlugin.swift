@@ -49,14 +49,15 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result("disabled")
             }
         } else if call.method == "poll" {
-            session?.invalidate()
-            self.result?(FlutterError(code: "500", message: "called too early", details: nil))
+            if session != nil {
+                result(FlutterError(code: "500", message: "called too early", details: nil))
+            } else {
+                session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
 
-            session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
-
-            session?.alertMessage = "Hold your iPhone near the card"
-            session?.begin()
-            self.result = result
+                session?.alertMessage = "Hold your iPhone near the card"
+                session?.begin()
+                self.result = result
+            }
         } else if call.method == "transceive" {
             if tag != nil {
                 if let input = call.arguments as? String {
