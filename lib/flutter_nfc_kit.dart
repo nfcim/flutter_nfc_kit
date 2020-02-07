@@ -122,7 +122,7 @@ class FlutterNfcKit {
 
   /// Finish the current session.
   ///
-  /// You must invode `finish` before start a new session.
+  /// You must invoke `finish` before start a new session.
   static Future<void> finish() async {
     return await _channel.invokeMethod('finish');
   }
