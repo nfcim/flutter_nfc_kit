@@ -73,22 +73,32 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("406", "No tag polled", null)
                     return
                 }
-                if (tagTechnology !is IsoDep) {
-                    result.error("405", "Transceive not yet supported on this type of card", null)
-                    return
-                }
-                val isoDep = tagTechnology as IsoDep
-                val req = call.arguments as String
-                if (!isoDep.isConnected) {
+                if (!tagTechnology.isConnected) {
                     try {
-                        isoDep.connect()
+                        tagTechnology.connect()
                     } catch (ex: IOException) {
                         Log.e(TAG, "Transceive Error: $req", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
                     }
                 }
+                val req = call.arguments as String
                 try {
-                    val resp = isoDep.transceive(req.hexToBytes()).toHexString()
+                    val sendingBytes = req.hexToBytes()
+                    val recvingBytes: ByteArray
+                    when (tagTechnology) {
+                        is IsoDep -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        is NfcA -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        is NfcB -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        is NfcF -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        is NfcV -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        is MifareClassic -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        is MifareUltralight -> recvingBytes = tagTechnology.transceive(sendingBytes)
+                        else {
+                            result.error("405", "Transceive not yet supported on this type of card", null)
+                            return
+                        }
+                    }
+                    val resp = recvingBytes.toHexString()
                     Log.d(TAG, "Transceive: $req, $resp")
                     result.success(resp)
                 } catch (ex: IOException) {
