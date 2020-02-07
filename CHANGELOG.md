@@ -28,3 +28,8 @@
 ## 0.0.6
 
 * Avoid returning redundant result if user finish the read operation prematurely
+
+## 0.0.7
+
+* Allow data transceive on lower layer (Android only)
+
