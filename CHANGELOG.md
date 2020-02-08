@@ -33,3 +33,8 @@
 
 * Allow data transceive on lower layer (Android only)
 
+## 1.0.0
+
+* Remove China ID Card support due to support of lower layer transceiving
+* Fix some racing problem on iOS
+* We are out-of beta and releasing on time!

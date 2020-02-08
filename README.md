@@ -10,8 +10,9 @@ This plugin supports:
   * ISO 14443-4 Type A & Type B (NFC-A / NFC-B / Mifare Classic / Mifare Plus / Mifare Ultralight / Mifare Desfire)
   * ISO 18092 (NFC-F / Felica)
   * ISO 15963 (NFC-V)
-  * China ID Card (non-standard, GUID only)
-* transceive APDU with smart cards complying with ISO 7816
+* transceive commands with tags / cards complying with:
+  * ISO 7816 Smart Cards (layer 4, in APDUs)
+  * other device-supported technologies (layer 3, in raw commands, Android only)
 
 Note that due to API limitations not all operations are supported on both platforms.
 
