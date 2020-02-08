@@ -111,24 +111,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
-            "readChinaIDGUID" -> {
-                if (tagTechnology == null) {
-                    result.error("406", "No tag polled", null)
-                    return
-                }
-                val nfcB = tagTechnology as NfcB
-                try {
-                    nfcB.connect()
-                    val resp = nfcB.transceive(byteArrayOf(0x00, 0x36, 0x00, 0x00, 0x08)).sliceArray(0..7).toHexString()
-                    nfcB.close()
-                    Log.d(TAG, "GUID response: $resp")
-                    result.success(resp)
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Read GUID error", ex)
-                    result.error("500", "Communication error", ex.localizedMessage)
-                }
-            }
-
             else -> result.notImplemented()
         }
     }

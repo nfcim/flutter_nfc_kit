@@ -100,24 +100,18 @@ class FlutterNfcKit {
   /// Try to poll a NFC tag from reader.
   ///
   /// If tag is successfully polled, a session is started.
-  /// The default timeout is 20 seconds.
+  /// The default timeout for polling is 20 seconds.
   static Future<NFCTag> poll() async {
     final String data = await _channel.invokeMethod('poll');
     return NFCTag.fromJson(jsonDecode(data));
   }
 
-  /// Transceive APDU with a ISO 7816 smart card.
-  ///
+  /// Transceive with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
+  /// 
+  /// Note that iOS only supports APDU.
   /// There must be a valid session when invoking.
   static Future<String> transceive(String capdu) async {
     return await _channel.invokeMethod('transceive', capdu);
-  }
-
-  /// Read the GUID of China ID Card.
-  ///
-  /// There must be a valid session when invoking.
-  static Future<String> readChinaIDGUID() async {
-    return await _channel.invokeMethod('readChinaIDGUID');
   }
 
   /// Finish the current session.
