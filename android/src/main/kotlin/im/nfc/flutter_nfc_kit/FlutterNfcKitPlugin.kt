@@ -21,10 +21,6 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.*
 import kotlin.concurrent.schedule
-import android.os.Looper
-
-
-
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
