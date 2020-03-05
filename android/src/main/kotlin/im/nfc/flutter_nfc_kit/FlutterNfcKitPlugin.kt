@@ -1,6 +1,7 @@
 package im.nfc.flutter_nfc_kit
 
 import android.app.Activity
+import android.os.Handler
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
 import android.nfc.Tag
@@ -19,6 +20,10 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.*
 import kotlin.concurrent.schedule
+import android.os.Looper
+
+
+
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -36,6 +41,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
+        handleMethodCall(call, MethodResultWrapper(result))
+    }
+
+    private fun handleMethodCall(call: MethodCall, result: MethodResultWrapper) {
         val nfcAdapter = getDefaultAdapter(activity)
 
         if (nfcAdapter?.isEnabled != true && call.method != "getNFCAvailability") {
@@ -133,7 +142,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromActivityForConfigChanges() {}
 
-    private fun pollTag(nfcAdapter: NfcAdapter, result: Result) {
+    private fun pollTag(nfcAdapter: NfcAdapter, result: MethodResultWrapper) {
         pending = true
 
         pollingTimeoutTask = Timer().schedule(20000) {
@@ -223,24 +232,74 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 type = "unknown"
                 standard = "unknown"
             }
-            activity?.runOnUiThread {
-                if (pending) {
-                    result.success(JSONObject(mapOf(
-                            "type" to type,
-                            "id" to id,
-                            "standard" to standard,
-                            "atqa" to atqa,
-                            "sak" to sak,
-                            "historicalBytes" to historicalBytes,
-                            "protocolInfo" to protocolInfo,
-                            "applicationData" to applicationData,
-                            "hiLayerResponse" to hiLayerResponse,
-                            "manufacturer" to manufacturer,
-                            "systemCode" to systemCode,
-                            "dsfId" to dsfId
-                    )).toString())
-                }
+
+            if (pending) {
+                result.success(JSONObject(mapOf(
+                    "type" to type,
+                    "id" to id,
+                    "standard" to standard,
+                    "atqa" to atqa,
+                    "sak" to sak,
+                    "historicalBytes" to historicalBytes,
+                    "protocolInfo" to protocolInfo,
+                    "applicationData" to applicationData,
+                    "hiLayerResponse" to hiLayerResponse,
+                    "manufacturer" to manufacturer,
+                    "systemCode" to systemCode,
+                    "dsfId" to dsfId
+                )).toString())
             }
         }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
+    }
+
+    private class MethodResultWrapper internal constructor(result: MethodChannel.Result) : MethodChannel.Result {
+        private val methodResult: MethodChannel.Result
+        private val handler: Handler
+
+        init {
+            methodResult = result
+            handler = Handler(Looper.getMainLooper())
+        }
+
+        override fun success(result: Any?) {
+            handler.post(
+                object : Runnable {
+                    override fun run() {
+                        ignoreIllegalState {
+                            methodResult.success(result)
+                        }
+                    }
+                })
+        }
+
+        override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
+            handler.post(
+                object : Runnable {
+                    override fun run() {
+                        ignoreIllegalState {
+                            methodResult.error(errorCode, errorMessage, errorDetails)
+                        }
+                    }
+                })
+        }
+
+        override fun notImplemented() {
+            handler.post(
+                object : Runnable {
+                    override fun run() {
+                        ignoreIllegalState {
+                            methodResult.notImplemented()
+                        }
+                    }
+                })
+        }
+
+        private fun ignoreIllegalState(fn: () -> Unit) {
+            try {
+                fn()
+            } catch (e: IllegalStateException) {
+                Log.d(TAG, "Ignoring exception: $e")
+            }
+        }
     }
 }
