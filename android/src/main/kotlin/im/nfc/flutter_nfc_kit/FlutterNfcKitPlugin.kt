@@ -1,7 +1,6 @@
 package im.nfc.flutter_nfc_kit
 
 import android.app.Activity
-import android.os.Handler
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
 import android.nfc.Tag
