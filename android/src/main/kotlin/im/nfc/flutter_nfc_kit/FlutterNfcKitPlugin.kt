@@ -1,6 +1,7 @@
 package im.nfc.flutter_nfc_kit
 
 import android.app.Activity
+import android.os.Handler
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
 import android.nfc.Tag
@@ -21,6 +22,10 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.*
 import kotlin.concurrent.schedule
+import android.os.Looper
+
+
+
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
