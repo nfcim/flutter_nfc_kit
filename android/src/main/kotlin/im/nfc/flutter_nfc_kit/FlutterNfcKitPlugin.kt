@@ -1,5 +1,10 @@
 package im.nfc.flutter_nfc_kit
 
+import java.util.*
+import java.io.IOException
+import org.json.JSONObject
+import kotlin.concurrent.schedule
+
 import android.app.Activity
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
@@ -7,8 +12,7 @@ import android.nfc.Tag
 import android.nfc.tech.*
 import android.os.Handler
 import android.os.Looper
-import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
-import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
+
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -17,19 +21,18 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import org.json.JSONObject
-import java.io.IOException
-import java.util.*
-import kotlin.concurrent.schedule
+
+import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
+import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+
     companion object {
         private val TAG = FlutterNfcKitPlugin::class.java.name
         private var activity: Activity? = null
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
-        private var pending = false
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -41,7 +44,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         handleMethodCall(call, MethodResultWrapper(result))
     }
 
-    private fun handleMethodCall(call: MethodCall, result: MethodResultWrapper) {
+    private fun handleMethodCall(call: MethodCall, result: Result) {
+
         val nfcAdapter = getDefaultAdapter(activity)
 
         if (nfcAdapter?.isEnabled != true && call.method != "getNFCAvailability") {
@@ -62,7 +66,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "poll" -> pollTag(nfcAdapter, result)
 
             "finish" -> {
-                pending = false
                 pollingTimeoutTask?.cancel()
                 try {
                     tagTechnology?.close()
@@ -139,17 +142,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromActivityForConfigChanges() {}
 
-    private fun pollTag(nfcAdapter: NfcAdapter, result: MethodResultWrapper) {
-        pending = true
+    private fun pollTag(nfcAdapter: NfcAdapter, result: Result) {
 
         pollingTimeoutTask = Timer().schedule(20000) {
             nfcAdapter.disableReaderMode(activity)
-            activity?.runOnUiThread {
-                if (pending) {
-                    pending = false
-                    result.error("408", "Polling tag timeout", null)
-                }
-            }
+            result.error("408", "Polling tag timeout", null)
         }
 
         nfcAdapter.enableReaderMode(activity, { tag ->
@@ -230,72 +227,71 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 standard = "unknown"
             }
 
-            if (pending) {
-                result.success(JSONObject(mapOf(
-                    "type" to type,
-                    "id" to id,
-                    "standard" to standard,
-                    "atqa" to atqa,
-                    "sak" to sak,
-                    "historicalBytes" to historicalBytes,
-                    "protocolInfo" to protocolInfo,
-                    "applicationData" to applicationData,
-                    "hiLayerResponse" to hiLayerResponse,
-                    "manufacturer" to manufacturer,
-                    "systemCode" to systemCode,
-                    "dsfId" to dsfId
-                )).toString())
-            }
+            result.success(JSONObject(mapOf(
+                "type" to type,
+                "id" to id,
+                "standard" to standard,
+                "atqa" to atqa,
+                "sak" to sak,
+                "historicalBytes" to historicalBytes,
+                "protocolInfo" to protocolInfo,
+                "applicationData" to applicationData,
+                "hiLayerResponse" to hiLayerResponse,
+                "manufacturer" to manufacturer,
+                "systemCode" to systemCode,
+                "dsfId" to dsfId
+            )).toString())
+
         }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
     }
 
     private class MethodResultWrapper internal constructor(result: MethodChannel.Result) : MethodChannel.Result {
+
         private val methodResult: MethodChannel.Result
-        private val handler: Handler
+        private var hasError: Boolean = false;
 
         init {
             methodResult = result
-            handler = Handler(Looper.getMainLooper())
+        }
+
+        companion object {
+            // a Handler is always thread-safe, so use a singleton here
+            private val handler: Handler by lazy {
+                Handler(Looper.getMainLooper())
+            }
         }
 
         override fun success(result: Any?) {
-            handler.post(
-                object : Runnable {
-                    override fun run() {
-                        ignoreIllegalState {
-                            methodResult.success(result)
-                        }
-                    }
-                })
+            handler.post {
+                ignoreIllegalState {
+                    methodResult.success(result)
+                }
+            }
         }
 
         override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
-            handler.post(
-                object : Runnable {
-                    override fun run() {
-                        ignoreIllegalState {
-                            methodResult.error(errorCode, errorMessage, errorDetails)
-                        }
-                    }
-                })
+            handler.post {
+                ignoreIllegalState {
+                    methodResult.error(errorCode, errorMessage, errorDetails)
+                }
+            }
         }
 
         override fun notImplemented() {
-            handler.post(
-                object : Runnable {
-                    override fun run() {
-                        ignoreIllegalState {
-                            methodResult.notImplemented()
-                        }
-                    }
-                })
+            handler.post {
+                ignoreIllegalState {
+                    methodResult.notImplemented()
+                }
+            }
         }
 
         private fun ignoreIllegalState(fn: () -> Unit) {
             try {
-                fn()
+                if (!hasError) fn()
             } catch (e: IllegalStateException) {
-                Log.d(TAG, "Ignoring exception: $e")
+                hasError = true;
+                Log.w(TAG, "Exception occurred when using MethodChannel.Result: $e")
+                Log.w(TAG, "Will ignore all following usage of object: $methodResult")
             }
         }
     }
