@@ -38,3 +38,7 @@
 * Remove China ID Card support due to support of lower layer transceiving
 * Fix some racing problem on iOS
 * We are out-of beta and releasing on time!
+
+## 1.0.1
+
+* Fix IllegalStateException & Add MethodResultWrapper (Thanks to @smlu)
