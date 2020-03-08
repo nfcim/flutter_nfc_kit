@@ -107,7 +107,7 @@ class FlutterNfcKit {
   }
 
   /// Transceive with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
-  /// 
+  ///
   /// Note that iOS only supports APDU.
   /// There must be a valid session when invoking.
   static Future<String> transceive(String capdu) async {

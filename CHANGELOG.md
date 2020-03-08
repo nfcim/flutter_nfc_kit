@@ -42,3 +42,8 @@
 ## 1.0.1
 
 * Fix IllegalStateException & Add MethodResultWrapper (Thanks to @smlu)
+
+## 1.0.2
+
+* Remove redundant code in Android plugin
+* Format dart code
