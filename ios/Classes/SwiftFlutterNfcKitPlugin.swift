@@ -54,9 +54,9 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             } else {
                 session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
 
+                self.result = result
                 session?.alertMessage = "Hold your iPhone near the card"
                 session?.begin()
-                self.result = result
             }
         } else if call.method == "transceive" {
             if tag != nil {
@@ -79,9 +79,12 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result(FlutterError(code: "500", message: "no tag found", details: nil))
             }
         } else if call.method == "finish" {
+            self.result?(FlutterError(code: "500", message: "session finished", details: nil))
+            self.result = nil
+
             session?.invalidate()
             session = nil
-            self.result = nil
+            tag = nil
             result(nil)
         } else {
             result(FlutterMethodNotImplemented)
