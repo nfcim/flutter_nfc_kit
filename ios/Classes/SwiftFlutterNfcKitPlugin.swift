@@ -98,6 +98,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             NSLog("Got error when reading NFC: %@", error.localizedDescription)
             result?(FlutterError(code: "500", message: "invalidate with error", details: error.localizedDescription))
             result = nil
+            session = nil
             tag = nil
         }
     }
