@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, sleep;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
@@ -13,7 +13,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
+  String _platformVersion =
+      '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
   NFCAvailability _availability = NFCAvailability.not_supported;
   NFCTag _tag;
   String _result;
@@ -70,15 +71,21 @@ class _MyAppState extends State<MyApp> {
                   setState(() {
                     _tag = tag;
                   });
+                  await FlutterNfcKit.setIosAlertMessage("working on it...");
                   String result1 = await FlutterNfcKit.transceive("00B0950000");
-                  String result2 = await FlutterNfcKit.transceive("00A4040009A00000000386980701");
+                  String result2 = await FlutterNfcKit.transceive(
+                      "00A4040009A00000000386980701");
                   String result3 = await FlutterNfcKit.transceive("00B0960027");
                   String result4 = await FlutterNfcKit.transceive("805C000104");
                   String result5 = await FlutterNfcKit.transceive("00B201C400");
                   setState(() {
-                    _result = '1: $result1\n2: $result2\n3: $result3\n4: $result4\n5: $result5';
+                    _result =
+                        '1: $result1\n2: $result2\n3: $result3\n4: $result4\n5: $result5';
                   });
-                  await FlutterNfcKit.finish();
+
+                  // Pretend that we are working
+                  sleep(new Duration(seconds:1));
+                  await FlutterNfcKit.finish(iosAlertMessage: "Finished!");
                 },
                 child: Text('Start polling'),
               ),

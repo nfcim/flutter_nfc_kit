@@ -50,7 +50,16 @@ if (tag.type == NFCTagType.iso7816) {
     var result = await FlutterNfcKit.transceive("00B0950000");
     print(result);
 }
+// iOS only: set alert message on-the-fly
+// this will persist until finish()
+await FlutterNfcKit.setIosAlertMessage("hi there!");
+
+// Call finish() only once
 await FlutterNfcKit.finish();
+// iOS only: show alert/error message on finish
+await FlutterNfcKit.finish(iosAlertMessage: "Success");
+// or
+await FlutterNfcKit.finish(iosErrorMessage: "Failed");
 ```
 
 A more complicated example can be seen in `example` dir.
