@@ -52,10 +52,15 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             if session != nil {
                 result(FlutterError(code: "500", message: "called too early", details: nil))
             } else {
+                let arguments = call.arguments as! [String:Any?]
+                let alertMessage = arguments["iosAlertMessage"] as? String
+                
                 session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
-
                 self.result = result
-                session?.alertMessage = "Hold your iPhone near the card"
+                if alertMessage != nil {
+                    session?.alertMessage = alertMessage!
+                }
+                //session?.alertMessage = "Hold your iPhone near the nfc card"
                 session?.begin()
             }
         } else if call.method == "transceive" {
@@ -82,10 +87,33 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             self.result?(FlutterError(code: "500", message: "session finished", details: nil))
             self.result = nil
 
-            session?.invalidate()
-            session = nil
+            if let session = session {
+                let arguments = call.arguments as! [String:Any?]
+                let alertMessage = arguments["iosAlertMessage"] as? String
+                let errorMessage = arguments["iosErrorMessage"] as? String
+
+                if let errorMessage = errorMessage {
+                    session.invalidate(errorMessage: errorMessage)
+                } else {
+                    if let alertMessage = alertMessage {
+                        session.alertMessage = alertMessage
+                    }
+                    session.invalidate()
+                }
+                self.session = nil
+            }
+            
             tag = nil
             result(nil)
+        } else if call.method == "setIosAlertMessage" {
+            if let session = session {
+                if let alertMessage = call.arguments as? String {
+                    session.alertMessage = alertMessage
+                }
+                result(nil);
+            } else {
+                result(FlutterError(code: "500", message: "called too early", details: nil))
+            }
         } else {
             result(FlutterMethodNotImplemented)
         }

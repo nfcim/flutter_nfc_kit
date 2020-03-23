@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -101,12 +102,16 @@ class FlutterNfcKit {
   ///
   /// If tag is successfully polled, a session is started.
   /// The default timeout for polling is 20 seconds.
-  static Future<NFCTag> poll() async {
-    final String data = await _channel.invokeMethod('poll');
+  /// 
+  /// On iOS, use [iosAlertMessage] to display NFC reader session alert message.
+  static Future<NFCTag> poll({ String iosAlertMessage = "Hold your iPhone near the card" }) async {
+    final String data = await _channel.invokeMethod('poll', {
+      'iosAlertMessage': iosAlertMessage
+    });
     return NFCTag.fromJson(jsonDecode(data));
   }
 
-  /// Transceive with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
+  /// Transceive data with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
   ///
   /// Note that iOS only supports APDU.
   /// There must be a valid session when invoking.
@@ -114,10 +119,25 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('transceive', capdu);
   }
 
-  /// Finish the current session.
+  /// Finish current session.
   ///
   /// You must invoke `finish` before start a new session.
-  static Future<void> finish() async {
-    return await _channel.invokeMethod('finish');
+  /// 
+  /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
+  /// If both parameters are set, [iosErrorMessage] will be used.
+  static Future<void> finish({ String iosAlertMessage, String iosErrorMessage }) async {
+    return await _channel.invokeMethod('finish', {
+      'iosErrorMessage': iosErrorMessage,
+      'iosAlertMessage': iosAlertMessage,
+    });
+  }
+
+  /// iOS only, change currently displayed NFC reader session alert message with [message].
+  /// There must be a valid session when invoking.
+  /// On android, call to this function does nothing.
+  static Future<void> setIosAlertMessage(String message) async {
+    if(Platform.isIOS) {
+      return await _channel.invokeMethod('setIosAlertMessage', message);
+    }
   }
 }
