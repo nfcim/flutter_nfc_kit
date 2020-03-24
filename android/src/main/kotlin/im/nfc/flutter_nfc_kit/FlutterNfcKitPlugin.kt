@@ -79,7 +79,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "transceive" -> {
                 val tagTech = tagTechnology
-                val req = call.arguments as String
+                val req = call.arguments as? String
+                if (req == null) {
+                    results.error("400", "Bad argument", null)
+                    return
+                }
                 if (tagTech == null) {
                     result.error("406", "No tag polled", null)
                     return
@@ -93,7 +97,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     }
                 }
                 try {
-                    val sendingBytes = req.hexToBytes()
+                    val sendingBytes = req!!.hexToBytes()
                     val recvingBytes: ByteArray
                     when (tagTech) {
                         is IsoDep -> recvingBytes = tagTech.transceive(sendingBytes)
@@ -104,7 +108,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         is MifareClassic -> recvingBytes = tagTech.transceive(sendingBytes)
                         is MifareUltralight -> recvingBytes = tagTech.transceive(sendingBytes)
                         else -> {
-                            result.error("405", "Transceive not yet supported on this type of card", null)
+                            result.error("405", "Transceive not supported on this type of card", null)
                             return
                         }
                     }
