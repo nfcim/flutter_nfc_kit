@@ -102,12 +102,12 @@ class FlutterNfcKit {
   ///
   /// If tag is successfully polled, a session is started.
   /// The default timeout for polling is 20 seconds.
-  /// 
+  ///
   /// On iOS, use [iosAlertMessage] to display NFC reader session alert message.
-  static Future<NFCTag> poll({ String iosAlertMessage = "Hold your iPhone near the card" }) async {
-    final String data = await _channel.invokeMethod('poll', {
-      'iosAlertMessage': iosAlertMessage
-    });
+  static Future<NFCTag> poll(
+      {String iosAlertMessage = "Hold your iPhone near the card"}) async {
+    final String data = await _channel
+        .invokeMethod('poll', {'iosAlertMessage': iosAlertMessage});
     return NFCTag.fromJson(jsonDecode(data));
   }
 
@@ -122,10 +122,11 @@ class FlutterNfcKit {
   /// Finish current session.
   ///
   /// You must invoke `finish` before start a new session.
-  /// 
+  ///
   /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
   /// If both parameters are set, [iosErrorMessage] will be used.
-  static Future<void> finish({ String iosAlertMessage, String iosErrorMessage }) async {
+  static Future<void> finish(
+      {String iosAlertMessage, String iosErrorMessage}) async {
     return await _channel.invokeMethod('finish', {
       'iosErrorMessage': iosErrorMessage,
       'iosAlertMessage': iosAlertMessage,
@@ -136,7 +137,7 @@ class FlutterNfcKit {
   /// There must be a valid session when invoking.
   /// On android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
-    if(Platform.isIOS) {
+    if (Platform.isIOS) {
       return await _channel.invokeMethod('setIosAlertMessage', message);
     }
   }
