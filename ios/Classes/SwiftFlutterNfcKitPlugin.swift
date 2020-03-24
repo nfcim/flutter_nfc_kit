@@ -42,7 +42,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     }
 
     // from FlutterPlugin
-    override public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         if call.method == "getNFCAvailability" {
             if NFCReaderSession.readingAvailable {
                 result("available")
@@ -67,18 +67,19 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     let data = dataWithHexString(hex: input)
                     switch tag {
                     case let .iso7816(tag):
-                        if apdu = NFCISO7816APDU(data: data)
-                        if apdu == nil {
+                        if let apdu = NFCISO7816APDU(data: data) {
+                            tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
+                                if let error = error {
+                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                                } else {
+                                    let sw = String(format: "%02X%02X", sw1, sw2)
+                                    result("\(response.hexEncodedString())\(sw)")
+                                }
+                            })
+                        } else {
                             result(FlutterError(code: "400", message: "APDU format error", details: nil))
                         }
-                        tag.sendCommand(apdu: apdu!, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
-                            if let error = error {
-                                result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
-                            } else {
-                                let sw = String(format: "%02X%02X", sw1, sw2)
-                                result("\(response.hexEncodedString())\(sw)")
-                            }
-                        })
+                        
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
                     }
@@ -125,10 +126,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     }
 
     // from NFCTagReaderSessionDelegate
-    override public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
+    public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
 
     // from NFCTagReaderSessionDelegate
-    override public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
+    public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
         if result != nil {
             NSLog("Got error when reading NFC: %@", error.localizedDescription)
             result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
@@ -139,7 +140,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     }
 
     // from NFCTagReaderSessionDelegate
-    override public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+    public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         if tags.count > 1 {
             // Restart polling in 500ms
             let retryInterval = DispatchTimeInterval.milliseconds(500)
