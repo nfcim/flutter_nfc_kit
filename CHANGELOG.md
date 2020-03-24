@@ -47,3 +47,7 @@
 
 * Remove redundant code in Android plugin
 * Format dart code
+
+## 1.1.0
+
+* Add NFC session alert/error message on iOS (Thanks to @smlu)
