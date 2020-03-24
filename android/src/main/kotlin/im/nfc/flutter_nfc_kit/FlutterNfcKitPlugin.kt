@@ -81,7 +81,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val tagTech = tagTechnology
                 val req = call.arguments as? String
                 if (req == null) {
-                    results.error("400", "Bad argument", null)
+                    result.error("400", "Bad argument", null)
                     return
                 }
                 if (tagTech == null) {
