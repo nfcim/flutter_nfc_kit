@@ -184,6 +184,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         standard = "ISO 14443-4 (Type A)"
                         type = "iso7816"
                         val isoDep = IsoDep.get(tag)
+                        isoDep.timeout = 5000
                         tagTechnology = isoDep
                         historicalBytes = isoDep.historicalBytes.toHexString()
                     }
@@ -208,6 +209,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     type = "iso7816"
                     standard = "ISO 14443-4 (Type B)"
                     val isoDep = IsoDep.get(tag)
+                    isoDep.timeout = 5000
                     tagTechnology = isoDep
                     hiLayerResponse = isoDep.hiLayerResponse.toHexString()
                 } else {
