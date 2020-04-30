@@ -115,8 +115,14 @@ class FlutterNfcKit {
   ///
   /// Note that iOS only supports APDU.
   /// There must be a valid session when invoking.
-  static Future<String> transceive(String capdu) async {
-    return await _channel.invokeMethod('transceive', capdu);
+  ///
+  /// On Android, [timeout] parameter will set transceive execution timeout.
+  /// Timeout is reset to default value when finish() is called.
+  static Future<String> transceive(String capdu, {Duration timeout}) async {
+    return await _channel.invokeMethod('transceive', {
+      'data' : capdu,
+      'timeout' : timeout?.inMilliseconds
+    });
   }
 
   /// Finish current session.
@@ -135,7 +141,7 @@ class FlutterNfcKit {
 
   /// iOS only, change currently displayed NFC reader session alert message with [message].
   /// There must be a valid session when invoking.
-  /// On android, call to this function does nothing.
+  /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
     if (Platform.isIOS) {
       return await _channel.invokeMethod('setIosAlertMessage', message);

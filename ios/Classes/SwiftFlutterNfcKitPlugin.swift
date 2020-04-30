@@ -63,8 +63,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "transceive" {
             if tag != nil {
-                if let input = call.arguments as? String {
-                    let data = dataWithHexString(hex: input)
+                if let arguments = call.arguments as? [String:Any?] {
+                    let data = dataWithHexString(hex: arguments["data"] as! String)
                     switch tag {
                     case let .iso7816(tag):
                         if let apdu = NFCISO7816APDU(data: data) {
@@ -77,9 +77,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                 }
                             })
                         } else {
-                            result(FlutterError(code: "400", message: "APDU format error", details: nil))
+                            result(FlutterError(code: "400", message: "format error", details: nil))
                         }
-                        
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
                     }
@@ -108,7 +107,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 self.session = nil
             }
-            
+
             tag = nil
             result(nil)
         } else if call.method == "setIosAlertMessage" {

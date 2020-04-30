@@ -2,13 +2,13 @@ package im.nfc.flutter_nfc_kit
 
 import java.util.*
 import java.io.IOException
+import java.lang.reflect.InvocationTargetException
 import org.json.JSONObject
 import kotlin.concurrent.schedule
 
 import android.app.Activity
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
-import android.nfc.Tag
 import android.nfc.tech.*
 import android.os.Handler
 import android.os.Looper
@@ -33,6 +33,16 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var activity: Activity? = null
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
+        private fun TagTechnology.transcieve(data: ByteArray, timeout: Int?) : ByteArray {
+            if(timeout != null) {
+                try {
+                    val timeoutMethod = this.javaClass.getMethod("setTimeout", Int::class.java)
+                    timeoutMethod.invoke(this, timeout)
+                } catch (ex: Throwable){}
+            }
+            val timeoutMethod = this.javaClass.getMethod("transceive", ByteArray::class.java)
+            return timeoutMethod.invoke(this, data) as ByteArray
+        }
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -76,10 +86,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.success("")
             }
 
-
             "transceive" -> {
                 val tagTech = tagTechnology
-                val req = call.arguments as? String
+                val req = call.argument<String>("data")
                 if (req == null) {
                     result.error("400", "Bad argument", null)
                     return
@@ -94,33 +103,28 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (ex: IOException) {
                         Log.e(TAG, "Transceive Error: $req", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
+                        return
                     }
                 }
                 try {
                     val sendingBytes = req!!.hexToBytes()
-                    val recvingBytes: ByteArray
-                    when (tagTech) {
-                        is IsoDep -> recvingBytes = tagTech.transceive(sendingBytes)
-                        is NfcA -> recvingBytes = tagTech.transceive(sendingBytes)
-                        is NfcB -> recvingBytes = tagTech.transceive(sendingBytes)
-                        is NfcF -> recvingBytes = tagTech.transceive(sendingBytes)
-                        is NfcV -> recvingBytes = tagTech.transceive(sendingBytes)
-                        is MifareClassic -> recvingBytes = tagTech.transceive(sendingBytes)
-                        is MifareUltralight -> recvingBytes = tagTech.transceive(sendingBytes)
-                        else -> {
-                            result.error("405", "Transceive not supported on this type of card", null)
-                            return
-                        }
-                    }
+                    val timeout = call.argument<Int>("timeout")
+                    val recvingBytes = tagTech.transcieve(sendingBytes, timeout)
                     val resp = recvingBytes.toHexString()
                     Log.d(TAG, "Transceive: $req, $resp")
                     result.success(resp)
                 } catch (ex: IOException) {
                     Log.e(TAG, "Transceive Error: $req", ex)
                     result.error("500", "Communication error", ex.localizedMessage)
-                } catch (ex: IllegalArgumentException) {
+                } catch(ex: InvocationTargetException) {
+                    Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
+                    result.error("500", "Communication error", ex.cause?.localizedMessage)
+                }
+                catch (ex: IllegalArgumentException) {
                     Log.e(TAG, "APDU Error: $req", ex)
                     result.error("400", "APDU format error", ex.localizedMessage)
+                } catch(ex: NoSuchMethodException) {
+                    result.error("405", "Transceive not supported for this type of card", null)
                 }
             }
 
