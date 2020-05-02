@@ -40,8 +40,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     timeoutMethod.invoke(this, timeout)
                 } catch (ex: Throwable){}
             }
-            val timeoutMethod = this.javaClass.getMethod("transceive", ByteArray::class.java)
-            return timeoutMethod.invoke(this, data) as ByteArray
+            val transceiveMethod = this.javaClass.getMethod("transceive", ByteArray::class.java)
+            return transceiveMethod.invoke(this, data) as ByteArray
         }
     }
 
@@ -88,8 +88,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "transceive" -> {
                 val tagTech = tagTechnology
-                val req = call.argument<String>("data")
-                if (req == null) {
+                val req = call.argument<Any>("data")
+                if (req == null || (req !is String && req !is ByteArray)) {
                     result.error("400", "Bad argument", null)
                     return
                 }
@@ -107,12 +107,17 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     }
                 }
                 try {
-                    val sendingBytes = req!!.hexToBytes()
+                    val sendingBytes = when(req) {
+                        is String -> (req !!as String).hexToBytes()
+                        else -> req !!as ByteArray
+                    }
+
                     val timeout = call.argument<Int>("timeout")
-                    val recvingBytes = tagTech.transcieve(sendingBytes, timeout)
-                    val resp = recvingBytes.toHexString()
-                    Log.d(TAG, "Transceive: $req, $resp")
-                    result.success(resp)
+                    val resp = tagTech.transcieve(sendingBytes, timeout)
+                    when(req) {
+                        is String -> result.success(resp.toHexString())
+                        else -> result.success(resp)
+                    }
                 } catch (ex: IOException) {
                     Log.e(TAG, "Transceive Error: $req", ex)
                     result.error("500", "Communication error", ex.localizedMessage)
