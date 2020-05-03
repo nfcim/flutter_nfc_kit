@@ -51,8 +51,5 @@
 ## 1.1.0
 
 * Add NFC session alert/error message on iOS (Thanks to @smlu)
-
-## 1.2.0
-
 * Support execution timeout as optional parameter on Android for `poll` and `transceive` (Thanks to @smlu)
 * Accept command in the type of hex string / `UInt8List` in `transceive` and return in the same type (Thanks to @smlu)

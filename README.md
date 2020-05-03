@@ -44,10 +44,13 @@ if (availability != NFCAvailability.available) {
     // oh-no
 }
 
-var tag = await FlutterNfcKit.poll();
+// timeout only works on Android, while the latter two messages are only for iOS
+var tag = await FlutterNfcKit.poll(timeout: Duration(seconds: 10),\
+  iosMultipleTagMessage: "Multiple tags found!", iosAlertMessage: "Scan your tag");
+
 print(jsonEncode(tag));
 if (tag.type == NFCTagType.iso7816) {
-    var result = await FlutterNfcKit.transceive("00B0950000");
+    var result = await FlutterNfcKit.transceive("00B0950000", Duration(seconds: 5)); // timeout is still Android-only, persist until next change
     print(result);
 }
 // iOS only: set alert message on-the-fly
