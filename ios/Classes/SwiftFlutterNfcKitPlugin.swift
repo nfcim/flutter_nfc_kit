@@ -162,7 +162,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             // Restart polling in 500ms
             let retryInterval = DispatchTimeInterval.milliseconds(500)
             if multipleTagMessage != nil {
-                session.alertMessage = multipleTagMessage ?? "multiple tags detected"
+                session.alertMessage = multipleTagMessage!
             }
             DispatchQueue.global().asyncAfter(deadline: .now() + retryInterval) {
                 session.restartPolling()
