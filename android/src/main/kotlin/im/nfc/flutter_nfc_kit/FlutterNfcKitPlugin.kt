@@ -74,7 +74,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "poll" -> {
-                val timeout = call.argument<Int>("timeout")
+                val timeout = call.argument<Int>("timeout") !!as Int
                 pollTag(nfcAdapter, result, timeout)
             }
 
@@ -154,7 +154,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int) {
 
-        pollingTimeoutTask = Timer().schedule(timeout) {
+        pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
             nfcAdapter.disableReaderMode(activity)
             result.error("408", "Polling tag timeout", null)
         }
