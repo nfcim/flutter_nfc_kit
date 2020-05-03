@@ -102,7 +102,7 @@ class FlutterNfcKit {
   /// Try to poll a NFC tag from reader.
   ///
   /// If tag is successfully polled, a session is started.
-  /// 
+  ///
   /// The [timeout] parameter only works on Android (default to be 20 seconds). On iOS it is ignored and decided by the OS.
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
@@ -110,15 +110,15 @@ class FlutterNfcKit {
   static Future<NFCTag> poll({
     Duration timeout,
     String iosAlertMessage = "Hold your iPhone near the card",
-    String iosMultipleTagMessage = "More than one tags are detected, please leave only one tag and try again.",
-    }) async {
-      final String data = await _channel
-        .invokeMethod('poll', {
-          'timeout': timeout?.inMilliseconds ?? 20 * 1000,
-          'iosAlertMessage': iosAlertMessage,
-          'iosMultipleTagMessage': iosMultipleTagMessage
-          });
-      return NFCTag.fromJson(jsonDecode(data));
+    String iosMultipleTagMessage =
+        "More than one tags are detected, please leave only one tag and try again.",
+  }) async {
+    final String data = await _channel.invokeMethod('poll', {
+      'timeout': timeout?.inMilliseconds ?? 20 * 1000,
+      'iosAlertMessage': iosAlertMessage,
+      'iosMultipleTagMessage': iosMultipleTagMessage
+    });
+    return NFCTag.fromJson(jsonDecode(data));
   }
 
   /// Transceive data with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
@@ -133,10 +133,8 @@ class FlutterNfcKit {
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration timeout}) async {
     assert(capdu is String || capdu is Uint8List);
-    return await _channel.invokeMethod('transceive', {
-      'data' : capdu,
-      'timeout' : timeout?.inMilliseconds
-    });
+    return await _channel.invokeMethod(
+        'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds});
   }
 
   /// Finish current session.
