@@ -29,7 +29,7 @@ enum NFCTagType {
 
 /// Metadata of the polled NFC tag.
 ///
-/// All fields except `type` and `standard` are in the format of hex string.
+/// All fields except [type] and [standard] are in the format of hex string.
 /// Fields that cannot be read will be empty.
 @JsonSerializable()
 class NFCTag {
@@ -102,24 +102,35 @@ class FlutterNfcKit {
   /// Try to poll a NFC tag from reader.
   ///
   /// If tag is successfully polled, a session is started.
-  /// The default timeout for polling is 20 seconds.
+  /// 
+  /// The [timeout] parameter only works on Android (default to be 20 seconds). On iOS it is ignored and decided by the OS.
   ///
-  /// On iOS, use [iosAlertMessage] to display NFC reader session alert message.
-  static Future<NFCTag> poll(
-      {String iosAlertMessage = "Hold your iPhone near the card"}) async {
-    final String data = await _channel
-        .invokeMethod('poll', {'iosAlertMessage': iosAlertMessage});
-    return NFCTag.fromJson(jsonDecode(data));
+  /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
+  /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
+  static Future<NFCTag> poll({
+    Duration timeout,
+    String iosAlertMessage = "Hold your iPhone near the card",
+    String iosMultipleTagMessage = "More than one tags are detected, please leave only one tag and try again.",
+    }) async {
+      final String data = await _channel
+        .invokeMethod('poll', {
+          'timeout': timeout?.inMilliseconds ?? 20 * 1000,
+          'iosAlertMessage': iosAlertMessage,
+          'iosMultipleTagMessage': iosMultipleTagMessage
+          });
+      return NFCTag.fromJson(jsonDecode(data));
   }
 
   /// Transceive data with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
   /// The [capdu] can be either of type Uint8List or hex string.
+  /// Return value will be in the same type of [capdu].
   ///
-  /// Note that iOS only supports APDU.
   /// There must be a valid session when invoking.
+  /// Note that iOS only supports APDU.
   ///
-  /// On Android, [timeout] parameter will set transceive execution timeout.
-  /// Timeout is reset to default value when finish() is called.
+  /// On Android, [timeout] parameter will set transceive execution timeout that is persistent during a active session.
+  /// On iOS, this parameter is ignored and is decided by the OS again.
+  /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration timeout}) async {
     assert(capdu is String || capdu is Uint8List);
     return await _channel.invokeMethod('transceive', {
@@ -130,7 +141,7 @@ class FlutterNfcKit {
 
   /// Finish current session.
   ///
-  /// You must invoke `finish` before start a new session.
+  /// You must invoke it before start a new session.
   ///
   /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
   /// If both parameters are set, [iosErrorMessage] will be used.

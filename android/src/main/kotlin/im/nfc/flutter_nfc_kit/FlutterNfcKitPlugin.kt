@@ -73,7 +73,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
-            "poll" -> pollTag(nfcAdapter, result)
+            "poll" -> {
+                val timeout = call.argument<Int>("timeout")
+                pollTag(nfcAdapter, result, timeout)
+            }
 
             "finish" -> {
                 pollingTimeoutTask?.cancel()
@@ -97,24 +100,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("406", "No tag polled", null)
                     return
                 }
-                if (!tagTech.isConnected) {
-                    try {
-                        tagTech.connect()
-                    } catch (ex: IOException) {
-                        Log.e(TAG, "Transceive Error: $req", ex)
-                        result.error("500", "Communication error", ex.localizedMessage)
-                        return
-                    }
-                }
+
                 try {
-                    val sendingBytes = when(req) {
+                    if (!tagTech.isConnected) {
+                        tagTech.connect()
+                    }
+                    val sendingBytes = when (req) {
                         is String -> (req !!as String).hexToBytes()
                         else -> req !!as ByteArray
                     }
-
                     val timeout = call.argument<Int>("timeout")
                     val resp = tagTech.transcieve(sendingBytes, timeout)
-                    when(req) {
+                    when (req) {
                         is String -> result.success(resp.toHexString())
                         else -> result.success(resp)
                     }
@@ -124,11 +121,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 } catch(ex: InvocationTargetException) {
                     Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
                     result.error("500", "Communication error", ex.cause?.localizedMessage)
-                }
-                catch (ex: IllegalArgumentException) {
-                    Log.e(TAG, "APDU Error: $req", ex)
-                    result.error("400", "APDU format error", ex.localizedMessage)
+                } catch (ex: IllegalArgumentException) {
+                    Log.e(TAG, "Command Error: $req", ex)
+                    result.error("400", "Command format error", ex.localizedMessage)
                 } catch(ex: NoSuchMethodException) {
+                    Log.e(TAG, "Transceive not supported: $req", ex)
                     result.error("405", "Transceive not supported for this type of card", null)
                 }
             }
@@ -155,9 +152,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromActivityForConfigChanges() {}
 
-    private fun pollTag(nfcAdapter: NfcAdapter, result: Result) {
+    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int) {
 
-        pollingTimeoutTask = Timer().schedule(20000) {
+        pollingTimeoutTask = Timer().schedule(timeout) {
             nfcAdapter.disableReaderMode(activity)
             result.error("408", "Polling tag timeout", null)
         }

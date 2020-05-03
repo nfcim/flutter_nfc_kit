@@ -34,6 +34,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     var session: NFCTagReaderSession?
     var result: FlutterResult?
     var tag: NFCTag?
+    var multipleTagMessage: String?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_nfc_kit", binaryMessenger: registrar.messenger())
@@ -51,12 +52,15 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "poll" {
             if session != nil {
-                result(FlutterError(code: "406", message: "Cannot poll in a active session", details: nil))
+                result(FlutterError(code: "406", message: "Cannot invoke poll in a active session", details: nil))
             } else {
                 session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
                 let arguments = call.arguments as! [String:Any?]
                 if let alertMessage = arguments["iosAlertMessage"] as? String {
                     session?.alertMessage = alertMessage
+                }
+                if let multipleTagMessage = arguments["iosMultipleTagMessage"] as? String {
+                    self.multipleTagMessage = multipleTagMessage
                 }
                 self.result = result
                 session?.begin()
@@ -91,7 +95,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                 }
                             })
                         } else {
-                            result(FlutterError(code: "400", message: "APDU format error", details: nil))
+                            result(FlutterError(code: "400", message: "Command format error", details: nil))
                         }
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
@@ -103,7 +107,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
         } else if call.method == "finish" {
-            self.result?(FlutterError(code: "406", message: "Session already finished", details: nil))
+            self.result?(FlutterError(code: "406", message: "Session not active", details: nil))
             self.result = nil
 
             if let session = session {
@@ -157,7 +161,9 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         if tags.count > 1 {
             // Restart polling in 500ms
             let retryInterval = DispatchTimeInterval.milliseconds(500)
-            session.alertMessage = "More than one tags are detected, please remove all tags and try again."
+            if multipleTagMessage != nil {
+                session.alertMessage = multipleTagMessage
+            }
             DispatchQueue.global().asyncAfter(deadline: .now() + retryInterval) {
                 session.restartPolling()
             }
