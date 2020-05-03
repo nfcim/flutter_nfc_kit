@@ -22,8 +22,8 @@ func dataWithHexString(hex: String) -> Data {
         let subIndex = hex.index(hex.startIndex, offsetBy: 2)
         let c = String(hex[..<subIndex])
         hex = String(hex[subIndex...])
-        var ch: UInt32 = 0
-        Scanner(string: c).scanHexInt32(&ch)
+        var ch: UInt64 = 0
+        Scanner(string: c).scanHexInt64(&ch)
         var char = UInt8(ch)
         data.append(&char, count: 1)
     }
@@ -63,23 +63,36 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "transceive" {
             if tag != nil {
-                if let input = call.arguments as? String {
-                    let data = dataWithHexString(hex: input)
+                let req = (call.arguments as? [String:Any?])?["data"]
+                if req != nil && (req is String || req is FlutterStandardTypedData) {
                     switch tag {
                     case let .iso7816(tag):
-                        if let apdu = NFCISO7816APDU(data: data) {
-                            tag.sendCommand(apdu: apdu, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
+                        let apdu: NFCISO7816APDU? = {
+                            switch req {
+                            case let hexReq as String:
+                                return NFCISO7816APDU(data: dataWithHexString(hex: hexReq))
+                            case let binReq as FlutterStandardTypedData:
+                                return NFCISO7816APDU(data: binReq.data)
+                            default: return nil
+                            }
+                        }()
+                        if apdu != nil {
+                            tag.sendCommand(apdu: apdu!, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
                                 if let error = error {
                                     result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
                                 } else {
-                                    let sw = String(format: "%02X%02X", sw1, sw2)
-                                    result("\(response.hexEncodedString())\(sw)")
+                                    var response = response
+                                    response.append(contentsOf: [sw1, sw2])
+                                    if req is String {
+                                        result(response.hexEncodedString())
+                                    } else {
+                                        result(response)
+                                    }
                                 }
                             })
                         } else {
                             result(FlutterError(code: "400", message: "APDU format error", details: nil))
                         }
-                        
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
                     }
@@ -108,7 +121,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 self.session = nil
             }
-            
+
             tag = nil
             result(nil)
         } else if call.method == "setIosAlertMessage" {

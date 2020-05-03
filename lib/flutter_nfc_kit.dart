@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -112,11 +113,19 @@ class FlutterNfcKit {
   }
 
   /// Transceive data with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
+  /// The [capdu] can be either of type Uint8List or hex string.
   ///
   /// Note that iOS only supports APDU.
   /// There must be a valid session when invoking.
-  static Future<String> transceive(String capdu) async {
-    return await _channel.invokeMethod('transceive', capdu);
+  ///
+  /// On Android, [timeout] parameter will set transceive execution timeout.
+  /// Timeout is reset to default value when finish() is called.
+  static Future<T> transceive<T>(T capdu, {Duration timeout}) async {
+    assert(capdu is String || capdu is Uint8List);
+    return await _channel.invokeMethod('transceive', {
+      'data' : capdu,
+      'timeout' : timeout?.inMilliseconds
+    });
   }
 
   /// Finish current session.
@@ -135,7 +144,7 @@ class FlutterNfcKit {
 
   /// iOS only, change currently displayed NFC reader session alert message with [message].
   /// There must be a valid session when invoking.
-  /// On android, call to this function does nothing.
+  /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
     if (Platform.isIOS) {
       return await _channel.invokeMethod('setIosAlertMessage', message);
