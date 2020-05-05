@@ -227,11 +227,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val fTag = NfcF.get(tag)
                 manufacturer = fTag.manufacturer.toHexString()
                 systemCode = fTag.systemCode.toHexString()
+                tagTechnology = fTag
             } else if (tag.techList.contains(NfcV::class.java.name)) {
                 standard = "ISO 15693"
                 type = "iso15693"
                 val vTag = NfcV.get(tag)
                 dsfId = vTag.dsfId.toHexString()
+                tagTechnology = vTag
             } else {
                 type = "unknown"
                 standard = "unknown"
