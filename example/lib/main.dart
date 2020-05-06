@@ -67,24 +67,37 @@ class _MyAppState extends State<MyApp> {
               Text('Running on: $_platformVersion\nNFC: $_availability'),
               RaisedButton(
                 onPressed: () async {
-                  NFCTag tag = await FlutterNfcKit.poll();
-                  setState(() {
-                    _tag = tag;
-                  });
-                  await FlutterNfcKit.setIosAlertMessage("working on it...");
-                  String result1 = await FlutterNfcKit.transceive("00B0950000");
-                  String result2 = await FlutterNfcKit.transceive(
-                      "00A4040009A00000000386980701");
-                  String result3 = await FlutterNfcKit.transceive("00B0960027");
-                  String result4 = await FlutterNfcKit.transceive("805C000104");
-                  String result5 = await FlutterNfcKit.transceive("00B201C400");
-                  setState(() {
-                    _result =
-                        '1: $result1\n2: $result2\n3: $result3\n4: $result4\n5: $result5';
-                  });
+                  try {
+                    NFCTag tag = await FlutterNfcKit.poll();
+                    setState(() {
+                      _tag = tag;
+                    });
+                    await FlutterNfcKit.setIosAlertMessage("working on it...");
+                    if (tag.standard == "ISO 14443-4 (Type B)") {
+                      String result1 =
+                          await FlutterNfcKit.transceive("00B0950000");
+                      String result2 = await FlutterNfcKit.transceive(
+                          "00A4040009A00000000386980701");
+                      setState(() {
+                        _result =
+                            '1: $result1\n2: $result2\n';
+                      });
+                    } else {
+                      String result1 =
+                          await FlutterNfcKit.transceive("060080080100");
+                      setState(() {
+                        _result =
+                            '1: $result1\n';
+                      });
+                    }
+                  } catch (e) {
+                    setState(() {
+                      _result = 'error: $e';
+                    });
+                  }
 
                   // Pretend that we are working
-                  sleep(new Duration(seconds:1));
+                  sleep(new Duration(seconds: 1));
                   await FlutterNfcKit.finish(iosAlertMessage: "Finished!");
                 },
                 child: Text('Start polling'),
