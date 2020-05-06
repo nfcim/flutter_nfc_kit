@@ -54,8 +54,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             if session != nil {
                 result(FlutterError(code: "406", message: "Cannot invoke poll in a active session", details: nil))
             } else {
-                session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
-                let arguments = call.arguments as! [String:Any?]
+                session = NFCTagReaderSession(pollingOption: [.iso14443, .iso15693, .iso18092], delegate: self)
+                let arguments = call.arguments as! [String: Any?]
                 if let alertMessage = arguments["iosAlertMessage"] as? String {
                     session?.alertMessage = alertMessage
                 }
@@ -67,19 +67,25 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "transceive" {
             if tag != nil {
-                let req = (call.arguments as? [String:Any?])?["data"]
-                if req != nil && (req is String || req is FlutterStandardTypedData) {
+                let req = (call.arguments as? [String: Any?])?["data"]
+                if req != nil, req is String || req is FlutterStandardTypedData {
+                    var data: Data?
+                    switch req {
+                    case let hexReq as String:
+                        data = dataWithHexString(hex: hexReq)
+                    case let binReq as FlutterStandardTypedData:
+                        data = binReq.data
+                    default:
+                        data = nil
+                    }
+
                     switch tag {
                     case let .iso7816(tag):
-                        let apdu: NFCISO7816APDU? = {
-                            switch req {
-                            case let hexReq as String:
-                                return NFCISO7816APDU(data: dataWithHexString(hex: hexReq))
-                            case let binReq as FlutterStandardTypedData:
-                                return NFCISO7816APDU(data: binReq.data)
-                            default: return nil
-                            }
-                        }()
+                        var apdu: NFCISO7816APDU?
+                        if data != nil {
+                            apdu = NFCISO7816APDU(data: data!)
+                        }
+
                         if apdu != nil {
                             tag.sendCommand(apdu: apdu!, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
                                 if let error = error {
@@ -97,6 +103,25 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         } else {
                             result(FlutterError(code: "400", message: "Command format error", details: nil))
                         }
+                    case let .feliCa(tag):
+                        if data != nil {
+                            // the first byte in data is length
+                            // and iOS will add it for us
+                            // so skip it
+                            tag.sendFeliCaCommand(commandPacket: data!.advanced(by: 1), completionHandler: { (response: Data, error: Error?) in
+                                if let error = error {
+                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                                } else {
+                                    if req is String {
+                                        result(response.hexEncodedString())
+                                    } else {
+                                        result(response)
+                                    }
+                                }
+                            })
+                        } else {
+                            result(FlutterError(code: "400", message: "No felica command specified", details: nil))
+                        }
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
                     }
@@ -111,7 +136,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             self.result = nil
 
             if let session = session {
-                let arguments = call.arguments as! [String:Any?]
+                let arguments = call.arguments as! [String: Any?]
                 let alertMessage = arguments["iosAlertMessage"] as? String
                 let errorMessage = arguments["iosErrorMessage"] as? String
 
@@ -133,7 +158,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 if let alertMessage = call.arguments as? String {
                     session.alertMessage = alertMessage
                 }
-                result(nil);
+                result(nil)
             } else {
                 result(FlutterError(code: "406", message: "Session not active", details: nil))
             }
