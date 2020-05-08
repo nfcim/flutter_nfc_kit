@@ -213,7 +213,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
         let firstTag = tags.first!
 
-        var result: [String: String] = [:]
+        var result: [String: Any] = [:]
 
         switch firstTag {
         case let .iso7816(tag):
@@ -229,6 +229,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result["standard"] = "ISO 14443"
             }
             result["aid"] = tag.initialSelectedAID
+            result["ndef"] = tag.isAvailable
         case let .miFare(tag):
             switch tag.mifareFamily {
             case .plus:
@@ -241,24 +242,28 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result["type"] = "mifare_desfire"
                 result["standard"] = "ISO 14443-4 (Type A)"
             default:
-                result["type"] = "mifare_unknown"
+                result["type"] = "unknown"
                 result["standard"] = "ISO 14443 (Type A)"
             }
             result["id"] = tag.identifier.hexEncodedString()
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
+            result["ndef"] = tag.isAvailable
         case let .feliCa(tag):
             result["type"] = "felica"
             result["standard"] = "ISO 18092"
             result["systemCode"] = tag.currentSystemCode.hexEncodedString()
             result["manufacturer"] = tag.currentIDm.hexEncodedString()
+            result["ndef"] = tag.isAvailable
         case let .iso15693(tag):
             result["type"] = "iso15693"
             result["standard"] = "ISO 15693"
             result["id"] = tag.identifier.hexEncodedString()
             result["manufacturer"] = String(format: "%d", tag.icManufacturerCode)
+            result["ndef"] = tag.isAvailable
         default:
             result["type"] = "unknown"
             result["standard"] = "unknown"
+            result["ndef"] = false
         }
 
         session.connect(to: firstTag, completionHandler: { (error: Error?) in

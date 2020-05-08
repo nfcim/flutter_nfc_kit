@@ -20,6 +20,7 @@ NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
     json['manufacturer'] as String,
     json['systemCode'] as String,
     json['dsfId'] as String,
+    json['ndef'] as bool,
   );
 }
 
@@ -36,6 +37,7 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'manufacturer': instance.manufacturer,
       'systemCode': instance.systemCode,
       'dsfId': instance.dsfId,
+      'ndef': instance.ndef
     };
 
 T _$enumDecode<T>(

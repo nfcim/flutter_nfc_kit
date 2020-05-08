@@ -69,6 +69,9 @@ class NFCTag {
   /// DSF ID (Type V only, Android only)
   final String dsfId;
 
+  /// NDEF available
+  final bool ndef;
+
   NFCTag(
       this.type,
       this.id,
@@ -81,7 +84,8 @@ class NFCTag {
       this.hiLayerResponse,
       this.manufacturer,
       this.systemCode,
-      this.dsfId);
+      this.dsfId,
+      this.ndef);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
