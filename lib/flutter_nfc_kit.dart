@@ -91,6 +91,41 @@ class NFCTag {
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 }
 
+/// Type of NFC tag.
+enum NDEFTypeNameFormat {
+  absoluteURI,
+  empty,
+  media,
+  nfcExternal,
+  nfcWellKnown,
+  unchanged,
+  unknown
+}
+
+/// Metadata of a NDEF record.
+///
+/// All fields are in the format of hex string.
+@JsonSerializable()
+class NDEFRecord {
+  /// identifier of the payload
+  final String identifier;
+
+  /// payload
+  final String payload;
+
+  /// type of the payload
+  final String type;
+
+  /// type name format
+  final NDEFTypeNameFormat typeNameFormat;
+
+  NDEFRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
+
+  factory NDEFRecord.fromJson(Map<String, dynamic> json) =>
+      _$NDEFRecordFromJson(json);
+  Map<String, dynamic> toJson() => _$NDEFRecordToJson(this);
+}
+
 /// Main class of NFC Kit
 class FlutterNfcKit {
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
@@ -139,6 +174,14 @@ class FlutterNfcKit {
     assert(capdu is String || capdu is Uint8List);
     return await _channel.invokeMethod(
         'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds});
+  }
+
+  /// Read NDEF records.
+  ///
+  /// There must be a valid session when invoking.
+  static Future<List<NDEFRecord>> readNDEF({Duration timeout}) async {
+    return await _channel
+        .invokeMethod('readNDEF', {'timeout': timeout?.inMilliseconds});
   }
 
   /// Finish current session.

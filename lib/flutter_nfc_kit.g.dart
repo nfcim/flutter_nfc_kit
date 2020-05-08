@@ -37,7 +37,7 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'manufacturer': instance.manufacturer,
       'systemCode': instance.systemCode,
       'dsfId': instance.dsfId,
-      'ndef': instance.ndef
+      'ndef': instance.ndef,
     };
 
 T _$enumDecode<T>(
@@ -81,4 +81,31 @@ const _$NFCTagTypeEnumMap = {
   NFCTagType.mifare_plus: 'mifare_plus',
   NFCTagType.felica: 'felica',
   NFCTagType.unknown: 'unknown',
+};
+
+NDEFRecord _$NDEFRecordFromJson(Map<String, dynamic> json) {
+  return NDEFRecord(
+    json['identifier'] as String,
+    json['payload'] as String,
+    json['type'] as String,
+    _$enumDecodeNullable(_$NDEFTypeNameFormatEnumMap, json['typeNameFormat']),
+  );
+}
+
+Map<String, dynamic> _$NDEFRecordToJson(NDEFRecord instance) =>
+    <String, dynamic>{
+      'identifier': instance.identifier,
+      'payload': instance.payload,
+      'type': instance.type,
+      'typeNameFormat': _$NDEFTypeNameFormatEnumMap[instance.typeNameFormat],
+    };
+
+const _$NDEFTypeNameFormatEnumMap = {
+  NDEFTypeNameFormat.absoluteURI: 'absoluteURI',
+  NDEFTypeNameFormat.empty: 'empty',
+  NDEFTypeNameFormat.media: 'media',
+  NDEFTypeNameFormat.nfcExternal: 'nfcExternal',
+  NDEFTypeNameFormat.nfcWellKnown: 'nfcWellKnown',
+  NDEFTypeNameFormat.unchanged: 'unchanged',
+  NDEFTypeNameFormat.unknown: 'unknown',
 };
