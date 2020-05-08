@@ -277,7 +277,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         var result: [String: Any] = [:]
         // default NDEF status
         result["ndefAvailable"] = false
-        result["ndefWriteable"] = false
+        result["ndefWritable"] = false
         result["ndefCapacity"] = 0
         // fake NDEF results
         result["ndefType"] = ""
@@ -358,7 +358,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             result["ndefAvailable"] = true
                         }
                         if (status == NFCNDEFStatus.readWrite) {
-                            result["ndefWriteable"] = true
+                            result["ndefWritable"] = true
                         }
                         result["ndefCapacity"] = capacity
                     }

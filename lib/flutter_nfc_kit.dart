@@ -79,7 +79,7 @@ class NFCTag {
   final int ndefCapacity;
 
   /// NDEF writebility
-  final bool ndefWriteable;
+  final bool ndefWritable;
 
   /// Indicates whether this NDEF tag can be made read-only (only works on Android, always false on iOS)
   final bool ndefCanMakeReadOnly;
@@ -100,7 +100,7 @@ class NFCTag {
       this.ndefAvailable,
       this.ndefType,
       this.ndefCapacity,
-      this.ndefWriteable,
+      this.ndefWritable,
       this.ndefCanMakeReadOnly);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);

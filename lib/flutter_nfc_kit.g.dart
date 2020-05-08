@@ -23,7 +23,7 @@ NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
     json['ndefAvailable'] as bool,
     json['ndefType'] as String,
     json['ndefCapacity'] as int,
-    json['ndefWriteable'] as bool,
+    json['ndefWritable'] as bool,
     json['ndefCanMakeReadOnly'] as bool,
   );
 }
@@ -44,7 +44,7 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'ndefAvailable': instance.ndefAvailable,
       'ndefType': instance.ndefType,
       'ndefCapacity': instance.ndefCapacity,
-      'ndefWriteable': instance.ndefWriteable,
+      'ndefWritable': instance.ndefWritable,
       'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
     };
 

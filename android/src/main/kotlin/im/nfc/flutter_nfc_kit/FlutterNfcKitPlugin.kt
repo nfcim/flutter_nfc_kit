@@ -256,7 +256,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var dsfId = ""
             // NDEF
             var ndefAvailable = false
-            var ndefWriteable = false
+            var ndefWritable = false
             var ndefCanMakeReadOnly = false
             var ndefCapacity = 0
             var ndefType = ""
@@ -325,7 +325,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 ndefTechnology = ndefTag
                 ndefAvailable = true
                 ndefType = ndefTag.type
-                ndefWriteable = ndefTag.isWritable
+                ndefWritable = ndefTag.isWritable
                 ndefCanMakeReadOnly = ndefTag.canMakeReadOnly()
                 ndefCapacity = ndefTag.maxSize
             }
@@ -345,7 +345,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 "dsfId" to dsfId,
                 "ndefAvailable" to ndefAvailable,
                 "ndefType" to ndefType,
-                "ndefWriteable" to ndefWriteable,
+                "ndefWritable" to ndefWritable,
                 "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
                 "ndefCapacity" to ndefCapacity
             )).toString())
