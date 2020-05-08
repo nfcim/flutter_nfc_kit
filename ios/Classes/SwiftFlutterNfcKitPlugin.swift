@@ -336,24 +336,44 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 return
             }
             self.tag = firstTag
-
-            firstTag.queryNDEFStatus(completionHandler: { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
-                if error == nil {
-                    if (status != NFCNDEFStatus.notSupported) {
-                        result["ndefAvailable"] = true
+            
+            var ndefTag: NFCNDEFTag?
+            switch self.tag {
+            case let .iso7816(tag):
+                ndefTag = tag
+            case let .miFare(tag):
+                ndefTag = tag
+            case let .feliCa(tag):
+                ndefTag = tag
+            case let .iso15693(tag):
+                ndefTag = tag
+            default:
+                ndefTag = nil
+            }
+            
+            if ndefTag != nil {
+                ndefTag!.queryNDEFStatus(completionHandler: { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
+                    if error == nil {
+                        if (status != NFCNDEFStatus.notSupported) {
+                            result["ndefAvailable"] = true
+                        }
+                        if (status == NFCNDEFStatus.readWrite) {
+                            result["ndefWriteable"] = true
+                        }
+                        result["ndefCapacity"] = capacity
                     }
-                    if (status == NFCNDEFStatus.readWrite) {
-                        result["ndefWriteable"] = true
-                    }
-                    result["ndefCapacity"] = capacity
-                }
-                // ignore error, just return with ndef disabled
-            })
-
-            let jsonData = try! JSONSerialization.data(withJSONObject: result)
-            let jsonString = String(data: jsonData, encoding: .utf8)
-            self.result?(jsonString)
-            self.result = nil
+                    // ignore error, just return with ndef disabled
+                    let jsonData = try! JSONSerialization.data(withJSONObject: result)
+                    let jsonString = String(data: jsonData, encoding: .utf8)
+                    self.result?(jsonString)
+                    self.result = nil
+                })
+            } else {
+                let jsonData = try! JSONSerialization.data(withJSONObject: result)
+                let jsonString = String(data: jsonData, encoding: .utf8)
+                self.result?(jsonString)
+                self.result = nil
+            }
         })
     }
 }
