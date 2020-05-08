@@ -263,7 +263,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         default:
             result["type"] = "unknown"
             result["standard"] = "unknown"
-            result["ndef"] = false
         }
 
         session.connect(to: firstTag, completionHandler: { (error: Error?) in
@@ -273,6 +272,20 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 return
             }
             self.tag = firstTag
+
+            switch firstTag {
+            case let .iso7816(tag):
+                result["ndef"] = tag.isAvailable
+            case let .miFare(tag):
+                result["ndef"] = tag.isAvailable
+            case let .feliCa(tag):
+                result["ndef"] = tag.isAvailable
+            case let .iso15693(tag):
+                result["ndef"] = tag.isAvailable
+            default:
+                result["ndef"] = false
+            }
+
             let jsonData = try! JSONSerialization.data(withJSONObject: result)
             let jsonString = String(data: jsonData, encoding: .utf8)
             self.result?(jsonString)
