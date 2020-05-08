@@ -147,6 +147,67 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             } else {
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
+        } else if call.method == "readNDEF" {
+            if tag != nil {
+                var ndefTag: NFCNDEFTag?
+                switch tag {
+                case let .iso7816(tag):
+                    ndefTag = tag
+                case let .miFare(tag):
+                    ndefTag = tag
+                case let .feliCa(tag):
+                    ndefTag = tag
+                case let .iso15693(tag):
+                    ndefTag = tag
+                default:
+                    ndefTag = nil
+                }
+                if ndefTag != nil {
+                    ndefTag!.readNDEF(completionHandler: { (msg: NFCNDEFMessage?, error: Error?) in
+                        if let error = error {
+                            result(FlutterError(code: "500", message: "Read NDEF error", details: error.localizedDescription))
+                        } else if let msg = msg {
+                            var records: [[String: Any]] = []
+
+                            for record in msg.records {
+                                var entry: [String: Any] = [:]
+
+                                entry["identifier"] = record.identifier.hexEncodedString()
+                                entry["payload"] = record.payload.hexEncodedString()
+                                entry["type"] = record.type.hexEncodedString()
+                                switch record.typeNameFormat {
+                                case NFCTypeNameFormat.absoluteURI:
+                                    entry["typeNameFormat"] = "absoluteURI"
+                                case NFCTypeNameFormat.empty:
+                                    entry["typeNameFormat"] = "empty"
+                                case NFCTypeNameFormat.media:
+                                    entry["typeNameFormat"] = "media"
+                                case NFCTypeNameFormat.nfcExternal:
+                                    entry["typeNameFormat"] = "nfcExternal"
+                                case NFCTypeNameFormat.nfcWellKnown:
+                                    entry["typeNameFormat"] = "nfcWellKnown"
+                                case NFCTypeNameFormat.unchanged:
+                                    entry["typeNameFormat"] = "unchanged"
+                                default:
+                                    entry["typeNameFormat"] = "unknown"
+                                }
+
+                                records.append(entry)
+                            }
+
+                            let jsonData = try! JSONSerialization.data(withJSONObject: records)
+                            let jsonString = String(data: jsonData, encoding: .utf8)
+                            result(jsonString)
+                        } else {
+                            result(FlutterError(code: "500", message: "Got no NDEF records", details: nil))
+                        }
+                    })
+                } else {
+                    result(FlutterError(code: "405", message: "Read NDEF not supported on this type of card", details: nil))
+                }
+            } else {
+                result(FlutterError(code: "406", message: "No tag polled", details: nil))
+            }
         } else if call.method == "finish" {
             self.result?(FlutterError(code: "406", message: "Session not active", details: nil))
             self.result = nil

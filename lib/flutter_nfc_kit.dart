@@ -180,8 +180,10 @@ class FlutterNfcKit {
   ///
   /// There must be a valid session when invoking.
   static Future<List<NDEFRecord>> readNDEF({Duration timeout}) async {
-    return await _channel
+    final String data = await _channel
         .invokeMethod('readNDEF', {'timeout': timeout?.inMilliseconds});
+    return (jsonDecode(data) as List<dynamic>)
+        .map((json) => NDEFRecord.fromJson(json)).toList();
   }
 
   /// Finish current session.

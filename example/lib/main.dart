@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io' show Platform, sleep;
@@ -79,15 +81,18 @@ class _MyAppState extends State<MyApp> {
                       String result2 = await FlutterNfcKit.transceive(
                           "00A4040009A00000000386980701");
                       setState(() {
-                        _result =
-                            '1: $result1\n2: $result2\n';
+                        _result = '1: $result1\n2: $result2\n';
                       });
-                    } else {
+                    } else if (tag.type == NFCTagType.felica) {
                       String result1 =
                           await FlutterNfcKit.transceive("060080080100");
                       setState(() {
-                        _result =
-                            '1: $result1\n';
+                        _result = '1: $result1\n';
+                      });
+                    } else if (tag.type == NFCTagType.mifare_ultralight) {
+                      List<NDEFRecord> result1 = await FlutterNfcKit.readNDEF();
+                      setState(() {
+                        _result = '1: ${jsonEncode(result1)}\n';
                       });
                     }
                   } catch (e) {
