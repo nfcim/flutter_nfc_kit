@@ -122,6 +122,22 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         } else {
                             result(FlutterError(code: "400", message: "No felica command specified", details: nil))
                         }
+                    case let .miFare(tag):
+                    if data != nil {
+                        tag.sendMiFareCommand(commandPacket: data!, completionHandler: { (response: Data, error: Error?) in
+                            if let error = error {
+                                result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                            } else {
+                                if req is String {
+                                    result(response.hexEncodedString())
+                                } else {
+                                    result(response)
+                                }
+                            }
+                        })
+                    } else {
+                        result(FlutterError(code: "400", message: "No mifare command specified", details: nil))
+                    }
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
                     }
