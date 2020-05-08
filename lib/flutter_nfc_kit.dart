@@ -69,8 +69,20 @@ class NFCTag {
   /// DSF ID (Type V only, Android only)
   final String dsfId;
 
-  /// NDEF available
-  final bool ndef;
+  /// NDEF availability
+  final bool ndefAvailable;
+
+  /// NDEF tag type (Android only)
+  final String ndefType;
+
+  /// Maximum NDEF message size in bytes (only meaningful when ndef available)
+  final int ndefCapacity;
+
+  /// NDEF writebility
+  final bool ndefWriteable;
+
+  /// Indicates whether this NDEF tag can be made read-only (only works on Android, always false on iOS)
+  final bool ndefCanMakeReadOnly;
 
   NFCTag(
       this.type,
@@ -85,7 +97,11 @@ class NFCTag {
       this.manufacturer,
       this.systemCode,
       this.dsfId,
-      this.ndef);
+      this.ndefAvailable,
+      this.ndefType,
+      this.ndefCapacity,
+      this.ndefWriteable,
+      this.ndefCanMakeReadOnly);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
@@ -165,9 +181,9 @@ class FlutterNfcKit {
   /// Return value will be in the same type of [capdu].
   ///
   /// There must be a valid session when invoking.
-  /// Note that iOS only supports APDU.
   ///
   /// On Android, [timeout] parameter will set transceive execution timeout that is persistent during a active session.
+  /// Also, Ndef TagTechnology will be closed if active.
   /// On iOS, this parameter is ignored and is decided by the OS again.
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration timeout}) async {
@@ -179,9 +195,11 @@ class FlutterNfcKit {
   /// Read NDEF records.
   ///
   /// There must be a valid session when invoking.
-  static Future<List<NDEFRecord>> readNDEF({Duration timeout}) async {
+  /// [cached] only works on Android, allowing cached read (may obtain stale data)
+  /// On Android, this would cause any other open TagTechnology to be closed
+  static Future<List<NDEFRecord>> readNDEF({bool cached}) async {
     final String data = await _channel
-        .invokeMethod('readNDEF', {'timeout': timeout?.inMilliseconds});
+        .invokeMethod('readNDEF', {'cached': cached ?? false});
     return (jsonDecode(data) as List<dynamic>)
         .map((json) => NDEFRecord.fromJson(json)).toList();
   }

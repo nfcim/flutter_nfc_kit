@@ -171,7 +171,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
                             for record in msg.records {
                                 var entry: [String: Any] = [:]
-
+                                
                                 entry["identifier"] = record.identifier.hexEncodedString()
                                 entry["payload"] = record.payload.hexEncodedString()
                                 entry["type"] = record.type.hexEncodedString()
@@ -203,7 +203,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         }
                     })
                 } else {
-                    result(FlutterError(code: "405", message: "Read NDEF not supported on this type of card", details: nil))
+                    result(FlutterError(code: "405", message: "NDEF not supported on this type of card", details: nil))
                 }
             } else {
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
@@ -275,6 +275,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         let firstTag = tags.first!
 
         var result: [String: Any] = [:]
+        // default NDEF status
+        result["ndefAvailable"] = false
+        result["ndefWriteable"] = false
+        result["ndefCapacity"] = 0
+        // fake NDEF results
+        result["ndefType"] = ""
+        result["ndefCanMakeReadOnly"] = false
 
         switch firstTag {
         case let .iso7816(tag):
@@ -290,7 +297,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result["standard"] = "ISO 14443"
             }
             result["aid"] = tag.initialSelectedAID
-            result["ndef"] = tag.isAvailable
         case let .miFare(tag):
             switch tag.mifareFamily {
             case .plus:
@@ -308,19 +314,16 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
             result["id"] = tag.identifier.hexEncodedString()
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
-            result["ndef"] = tag.isAvailable
         case let .feliCa(tag):
             result["type"] = "felica"
             result["standard"] = "ISO 18092"
             result["systemCode"] = tag.currentSystemCode.hexEncodedString()
             result["manufacturer"] = tag.currentIDm.hexEncodedString()
-            result["ndef"] = tag.isAvailable
         case let .iso15693(tag):
             result["type"] = "iso15693"
             result["standard"] = "ISO 15693"
             result["id"] = tag.identifier.hexEncodedString()
             result["manufacturer"] = String(format: "%d", tag.icManufacturerCode)
-            result["ndef"] = tag.isAvailable
         default:
             result["type"] = "unknown"
             result["standard"] = "unknown"
@@ -334,18 +337,18 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
             self.tag = firstTag
 
-            switch firstTag {
-            case let .iso7816(tag):
-                result["ndef"] = tag.isAvailable
-            case let .miFare(tag):
-                result["ndef"] = tag.isAvailable
-            case let .feliCa(tag):
-                result["ndef"] = tag.isAvailable
-            case let .iso15693(tag):
-                result["ndef"] = tag.isAvailable
-            default:
-                result["ndef"] = false
-            }
+            firstTag.queryNDEFStatus(completionHandler: { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
+                if error == nil {
+                    if (status != NFCNDEFStatus.notSupported) {
+                        result["ndefAvailable"] = true
+                    }
+                    if (status == NFCNDEFStatus.readWrite) {
+                        result["ndefWriteable"] = true
+                    }
+                    result["ndefCapacity"] = capacity
+                }
+                // ignore error, just return with ndef disabled
+            })
 
             let jsonData = try! JSONSerialization.data(withJSONObject: result)
             let jsonString = String(data: jsonData, encoding: .utf8)

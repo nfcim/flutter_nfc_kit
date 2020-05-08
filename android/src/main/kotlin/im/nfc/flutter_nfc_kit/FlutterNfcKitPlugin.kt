@@ -7,6 +7,9 @@ import org.json.JSONObject
 import kotlin.concurrent.schedule
 
 import android.app.Activity
+import android.nfc.FormatException
+import android.nfc.NdefMessage
+import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
 import android.nfc.tech.*
@@ -24,6 +27,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 
 import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
 import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
+import org.json.JSONArray
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -33,6 +37,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var activity: Activity? = null
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
+        private var ndefTechnology: Ndef? = null
+
         private fun TagTechnology.transcieve(data: ByteArray, timeout: Int?) : ByteArray {
             if(timeout != null) {
                 try {
@@ -81,7 +87,14 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "finish" -> {
                 pollingTimeoutTask?.cancel()
                 try {
-                    tagTechnology?.close()
+                    val tagTech = tagTechnology
+                    if (tagTech != null && tagTech.isConnected) {
+                        tagTech.close()
+                    }
+                    val ndefTech = ndefTechnology
+                    if (ndefTech != null && ndefTech.isConnected) {
+                        ndefTech.close()
+                    }
                 } catch (ex: IOException) {
                     Log.e(TAG, "Close tag error", ex)
                 }
@@ -103,11 +116,16 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
                 try {
                     if (!tagTech.isConnected) {
+                        val ndefTech = ndefTechnology
+                        // close previously connected technology
+                        if (ndefTech !== null && ndefTech.isConnected) {
+                            ndefTech.close()
+                        }
                         tagTech.connect()
                     }
                     val sendingBytes = when (req) {
-                        is String -> (req !!as String).hexToBytes()
-                        else -> req !!as ByteArray
+                        is String -> req.hexToBytes()
+                        else -> req as ByteArray
                     }
                     val timeout = call.argument<Int>("timeout")
                     val resp = tagTech.transcieve(sendingBytes, timeout)
@@ -130,6 +148,61 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
+            "readNDEF" -> {
+                if (ndefTechnology == null) {
+                    if (tagTechnology == null) {
+                        result.error("406", "No tag polled", null)
+                    } else {
+                        result.error("405", "NDEF not supported on current tag", null)
+                    }
+                    return
+                }
+                val ndef = ndefTechnology!!
+                try {
+                    // try to connect
+                    if (!ndef.isConnected) {
+                        val otherTech = tagTechnology
+                        // close previously connected technology
+                        if (otherTech !== null && otherTech.isConnected) {
+                            otherTech.close()
+                        }
+                        ndef.connect()
+                    }
+                    // read NDEF message
+                    val message: NdefMessage? = if (call.argument<Boolean>("cached")!!) {
+                        ndef.cachedNdefMessage
+                    } else {
+                        ndef.ndefMessage
+                    }
+                    val parsedMessages = mutableListOf<Map<String, String>>()
+                    if (message != null) {
+                        for (record in message.records) {
+                            parsedMessages.add(mapOf(
+                                    "identifier" to record.id.toHexString(),
+                                    "payload" to record.payload.toHexString(),
+                                    "type" to record.type.toHexString(),
+                                    "typeNameFormat" to when (record.tnf) {
+                                        NdefRecord.TNF_ABSOLUTE_URI -> "absoluteURI"
+                                        NdefRecord.TNF_EMPTY -> "empty"
+                                        NdefRecord.TNF_EXTERNAL_TYPE -> "nfcExternal"
+                                        NdefRecord.TNF_WELL_KNOWN -> "nfcWellKnown"
+                                        NdefRecord.TNF_MIME_MEDIA -> "media"
+                                        NdefRecord.TNF_UNCHANGED -> "unchanged"
+                                        else -> "unknown"
+                                    }
+                            ))
+                        }
+                    }
+                    result.success(JSONArray(parsedMessages))
+                } catch (ex: IOException) {
+                    Log.e(TAG, "Read NDEF Error", ex)
+                    result.error("500", "Communication error", ex.localizedMessage)
+                } catch (ex: FormatException) {
+                    Log.e(TAG, "NDEF Format Error", ex)
+                    result.error("400", "NDEF format error", ex.localizedMessage)
+                }
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -145,6 +218,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         pollingTimeoutTask?.cancel()
         pollingTimeoutTask = null
         tagTechnology = null
+        ndefTechnology = null
         activity = null
     }
 
@@ -180,6 +254,12 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var systemCode = ""
             // NFC-V
             var dsfId = ""
+            // NDEF
+            var ndefAvailable = false
+            var ndefWriteable = false
+            var ndefCanMakeReadOnly = false
+            var ndefCapacity = 0
+            var ndefType = ""
 
             if (tag.techList.contains(NfcA::class.java.name)) {
                 val aTag = NfcA.get(tag)
@@ -239,6 +319,17 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 standard = "unknown"
             }
 
+            // detect ndef
+            if (tag.techList.contains(Ndef::class.java.name)) {
+                val ndefTag = Ndef.get(tag)
+                ndefTechnology = ndefTag
+                ndefAvailable = true
+                ndefType = ndefTag.type
+                ndefWriteable = ndefTag.isWritable
+                ndefCanMakeReadOnly = ndefTag.canMakeReadOnly()
+                ndefCapacity = ndefTag.maxSize
+            }
+
             result.success(JSONObject(mapOf(
                 "type" to type,
                 "id" to id,
@@ -251,20 +342,21 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 "hiLayerResponse" to hiLayerResponse,
                 "manufacturer" to manufacturer,
                 "systemCode" to systemCode,
-                "dsfId" to dsfId
+                "dsfId" to dsfId,
+                "ndefAvailable" to ndefAvailable,
+                "ndefType" to ndefType,
+                "ndefWriteable" to ndefWriteable,
+                "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
+                "ndefCapacity" to ndefCapacity
             )).toString())
 
         }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
     }
 
-    private class MethodResultWrapper internal constructor(result: MethodChannel.Result) : MethodChannel.Result {
+    private class MethodResultWrapper internal constructor(result: Result) : Result {
 
-        private val methodResult: MethodChannel.Result
+        private val methodResult: Result = result
         private var hasError: Boolean = false;
-
-        init {
-            methodResult = result
-        }
 
         companion object {
             // a Handler is always thread-safe, so use a singleton here
