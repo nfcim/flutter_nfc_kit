@@ -265,6 +265,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val aTag = NfcA.get(tag)
                 atqa = aTag.atqa.toHexString()
                 sak = byteArrayOf(aTag.sak.toByte()).toHexString()
+                tagTechnology = aTag
                 when {
                     tag.techList.contains(IsoDep::class.java.name) -> {
                         standard = "ISO 14443-4 (Type A)"
