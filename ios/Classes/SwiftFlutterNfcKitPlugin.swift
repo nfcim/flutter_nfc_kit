@@ -315,8 +315,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["id"] = tag.identifier.hexEncodedString()
             result["historicalBytes"] = tag.historicalBytes?.hexEncodedString()
         case let .feliCa(tag):
-            result["type"] = "felica"
-            result["standard"] = "ISO 18092"
+            result["type"] = "iso18092"
+            result["standard"] = "ISO 18092 (FeliCa)"
             result["systemCode"] = tag.currentSystemCode.hexEncodedString()
             result["manufacturer"] = tag.currentIDm.hexEncodedString()
         case let .iso15693(tag):

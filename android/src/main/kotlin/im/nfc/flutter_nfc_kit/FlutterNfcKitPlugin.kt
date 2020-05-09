@@ -303,8 +303,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     tagTechnology = bTag
                 }
             } else if (tag.techList.contains(NfcF::class.java.name)) {
-                standard = "ISO 18092"
-                type = "felica"
+                standard = "ISO 18092 (FeliCa)"
+                type = "iso18092"
                 val fTag = NfcF.get(tag)
                 manufacturer = fTag.manufacturer.toHexString()
                 systemCode = fTag.systemCode.toHexString()

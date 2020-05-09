@@ -83,11 +83,11 @@ T _$enumDecodeNullable<T>(
 const _$NFCTagTypeEnumMap = {
   NFCTagType.iso7816: 'iso7816',
   NFCTagType.iso15693: 'iso15693',
+  NFCTagType.iso18092: 'iso18092',
   NFCTagType.mifare_classic: 'mifare_classic',
   NFCTagType.mifare_ultralight: 'mifare_ultralight',
   NFCTagType.mifare_desfire: 'mifare_desfire',
   NFCTagType.mifare_plus: 'mifare_plus',
-  NFCTagType.felica: 'felica',
   NFCTagType.unknown: 'unknown',
 };
 

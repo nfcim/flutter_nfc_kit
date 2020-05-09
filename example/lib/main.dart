@@ -83,7 +83,7 @@ class _MyAppState extends State<MyApp> {
                       setState(() {
                         _result = '1: $result1\n2: $result2\n';
                       });
-                    } else if (tag.type == NFCTagType.felica) {
+                    } else if (tag.type == NFCTagType.iso18092) {
                       String result1 =
                           await FlutterNfcKit.transceive("060080080100");
                       setState(() {

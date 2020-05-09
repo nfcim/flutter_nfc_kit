@@ -19,11 +19,11 @@ enum NFCAvailability {
 enum NFCTagType {
   iso7816,
   iso15693,
+  iso18092,
   mifare_classic,
   mifare_ultralight,
   mifare_desfire,
   mifare_plus,
-  felica,
   unknown
 }
 
@@ -48,10 +48,10 @@ class NFCTag {
   /// SAK (Type A only, Android only)
   final String sak;
 
-  /// Historical bytes (ISO 7816 only)
+  /// Historical bytes (ISO 14443-4A only)
   final String historicalBytes;
 
-  /// Higher layer response (ISO 7816 only, Android only)
+  /// Higher layer response (ISO 14443-4B only, Android only)
   final String hiLayerResponse;
 
   /// Protocol information (Type B only， Android only)
@@ -60,13 +60,13 @@ class NFCTag {
   /// Application data (Type B only)
   final String applicationData;
 
-  /// Manufacturer (Type F & V only)
+  /// Manufacturer (ISO 18092 only)
   final String manufacturer;
 
-  /// System code (Type F only)
+  /// System code (ISO 18092 only)
   final String systemCode;
 
-  /// DSF ID (Type V only, Android only)
+  /// DSF ID (ISO 15693 only, Android only)
   final String dsfId;
 
   /// NDEF availability
