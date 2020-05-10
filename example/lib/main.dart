@@ -29,14 +29,6 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    // String platformVersion;
-    // // Platform messages may fail, so we use a try/catch PlatformException.
-    // try {
-    //   //platformVersion = await FlutterNfcKit.platformVersion;
-    // } on PlatformException {
-    //   platformVersion = 'Failed to get platform version.';
-    // }
-
     NFCAvailability availability;
     try {
       availability = await FlutterNfcKit.nfcAvailability;
@@ -89,7 +81,8 @@ class _MyAppState extends State<MyApp> {
                       setState(() {
                         _result = '1: $result1\n';
                       });
-                    } else if (tag.type == NFCTagType.mifare_ultralight) {
+                    } else if (tag.type == NFCTagType.mifare_ultralight ||
+                        tag.type == NFCTagType.mifare_classic) {
                       List<NDEFRecord> result1 = await FlutterNfcKit.readNDEF();
                       setState(() {
                         _result = '1: ${jsonEncode(result1)}\n';

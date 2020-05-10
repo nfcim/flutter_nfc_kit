@@ -1,11 +1,5 @@
 package im.nfc.flutter_nfc_kit
 
-import java.util.*
-import java.io.IOException
-import java.lang.reflect.InvocationTargetException
-import org.json.JSONObject
-import kotlin.concurrent.schedule
-
 import android.app.Activity
 import android.nfc.FormatException
 import android.nfc.NdefMessage
@@ -15,7 +9,8 @@ import android.nfc.NfcAdapter.*
 import android.nfc.tech.*
 import android.os.Handler
 import android.os.Looper
-
+import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
+import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -24,10 +19,12 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-
-import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
-import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
 import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
+import java.lang.reflect.InvocationTargetException
+import java.util.*
+import kotlin.concurrent.schedule
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -39,12 +36,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var tagTechnology: TagTechnology? = null
         private var ndefTechnology: Ndef? = null
 
-        private fun TagTechnology.transcieve(data: ByteArray, timeout: Int?) : ByteArray {
-            if(timeout != null) {
+        private fun TagTechnology.transcieve(data: ByteArray, timeout: Int?): ByteArray {
+            if (timeout != null) {
                 try {
                     val timeoutMethod = this.javaClass.getMethod("setTimeout", Int::class.java)
                     timeoutMethod.invoke(this, timeout)
-                } catch (ex: Throwable){}
+                } catch (ex: Throwable) {
+                }
             }
             val transceiveMethod = this.javaClass.getMethod("transceive", ByteArray::class.java)
             return transceiveMethod.invoke(this, data) as ByteArray
@@ -80,7 +78,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "poll" -> {
-                val timeout = call.argument<Int>("timeout") !!as Int
+                val timeout = call.argument<Int>("timeout")!!
                 pollTag(nfcAdapter, result, timeout)
             }
 
@@ -136,13 +134,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 } catch (ex: IOException) {
                     Log.e(TAG, "Transceive Error: $req", ex)
                     result.error("500", "Communication error", ex.localizedMessage)
-                } catch(ex: InvocationTargetException) {
+                } catch (ex: InvocationTargetException) {
                     Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
                     result.error("500", "Communication error", ex.cause?.localizedMessage)
                 } catch (ex: IllegalArgumentException) {
                     Log.e(TAG, "Command Error: $req", ex)
                     result.error("400", "Command format error", ex.localizedMessage)
-                } catch(ex: NoSuchMethodException) {
+                } catch (ex: NoSuchMethodException) {
                     Log.e(TAG, "Transceive not supported: $req", ex)
                     result.error("405", "Transceive not supported for this type of card", null)
                 }
@@ -193,7 +191,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             ))
                         }
                     }
-                    result.success(JSONArray(parsedMessages))
+                    result.success(JSONArray(parsedMessages).toString())
                 } catch (ex: IOException) {
                     Log.e(TAG, "Read NDEF Error", ex)
                     result.error("500", "Communication error", ex.localizedMessage)
@@ -332,26 +330,26 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             result.success(JSONObject(mapOf(
-                "type" to type,
-                "id" to id,
-                "standard" to standard,
-                "atqa" to atqa,
-                "sak" to sak,
-                "historicalBytes" to historicalBytes,
-                "protocolInfo" to protocolInfo,
-                "applicationData" to applicationData,
-                "hiLayerResponse" to hiLayerResponse,
-                "manufacturer" to manufacturer,
-                "systemCode" to systemCode,
-                "dsfId" to dsfId,
-                "ndefAvailable" to ndefAvailable,
-                "ndefType" to ndefType,
-                "ndefWritable" to ndefWritable,
-                "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
-                "ndefCapacity" to ndefCapacity
+                    "type" to type,
+                    "id" to id,
+                    "standard" to standard,
+                    "atqa" to atqa,
+                    "sak" to sak,
+                    "historicalBytes" to historicalBytes,
+                    "protocolInfo" to protocolInfo,
+                    "applicationData" to applicationData,
+                    "hiLayerResponse" to hiLayerResponse,
+                    "manufacturer" to manufacturer,
+                    "systemCode" to systemCode,
+                    "dsfId" to dsfId,
+                    "ndefAvailable" to ndefAvailable,
+                    "ndefType" to ndefType,
+                    "ndefWritable" to ndefWritable,
+                    "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
+                    "ndefCapacity" to ndefCapacity
             )).toString())
 
-        }, FLAG_READER_SKIP_NDEF_CHECK or FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
+        }, FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F, null)
     }
 
     private class MethodResultWrapper internal constructor(result: Result) : Result {
