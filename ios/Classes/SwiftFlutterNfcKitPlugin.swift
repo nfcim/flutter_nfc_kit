@@ -9,7 +9,7 @@ extension Data {
         static let upperCase = HexEncodingOptions(rawValue: 1 << 0)
     }
 
-    func hexEncodedString(options: HexEncodingOptions = []) -> String {
+    func hexEncodedString(options: HexEncodingOptions = [.upperCase]) -> String {
         let format = options.contains(.upperCase) ? "%02hhX" : "%02hhx"
         return map { String(format: format, $0) }.joined()
     }
@@ -171,7 +171,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
                             for record in msg.records {
                                 var entry: [String: Any] = [:]
-                                
+
                                 entry["identifier"] = record.identifier.hexEncodedString()
                                 entry["payload"] = record.payload.hexEncodedString()
                                 entry["type"] = record.type.hexEncodedString()
@@ -336,7 +336,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 return
             }
             self.tag = firstTag
-            
+
             var ndefTag: NFCNDEFTag?
             switch self.tag {
             case let .iso7816(tag):
@@ -350,14 +350,14 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             default:
                 ndefTag = nil
             }
-            
+
             if ndefTag != nil {
                 ndefTag!.queryNDEFStatus(completionHandler: { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
                     if error == nil {
-                        if (status != NFCNDEFStatus.notSupported) {
+                        if status != NFCNDEFStatus.notSupported {
                             result["ndefAvailable"] = true
                         }
-                        if (status == NFCNDEFStatus.readWrite) {
+                        if status == NFCNDEFStatus.readWrite {
                             result["ndefWritable"] = true
                         }
                         result["ndefCapacity"] = capacity
