@@ -164,6 +164,7 @@ class FlutterNfcKit {
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
   static Future<NFCTag> poll({
     Duration timeout,
+    bool androidPlatformSound = true,
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
         "More than one tags are detected, please leave only one tag and try again.",
@@ -171,7 +172,8 @@ class FlutterNfcKit {
     final String data = await _channel.invokeMethod('poll', {
       'timeout': timeout?.inMilliseconds ?? 20 * 1000,
       'iosAlertMessage': iosAlertMessage,
-      'iosMultipleTagMessage': iosMultipleTagMessage
+      'iosMultipleTagMessage': iosMultipleTagMessage,
+      'androidPlatformSound': androidPlatformSound
     });
     return NFCTag.fromJson(jsonDecode(data));
   }
