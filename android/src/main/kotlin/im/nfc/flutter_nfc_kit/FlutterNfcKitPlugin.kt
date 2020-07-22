@@ -79,7 +79,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "poll" -> {
                 val timeout = call.argument<Int>("timeout")!!
-                val platformSound = call.argument<Boolean>("platformSound")!!
+                val platformSound = call.argument<Boolean>("androidPlatformSound")!!
                 pollTag(nfcAdapter, result, timeout, platformSound)
             }
 
