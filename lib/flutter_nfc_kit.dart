@@ -162,6 +162,7 @@ class FlutterNfcKit {
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
+  /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled.
   static Future<NFCTag> poll({
     Duration timeout,
     bool androidPlatformSound = true,
