@@ -54,7 +54,7 @@
 * Support execution timeout as optional parameter on Android for `poll` and `transceive` (Thanks to @smlu)
 * Accept command in the type of hex string / `UInt8List` in `transceive` and return in the same type (Thanks to @smlu)
 
-## [Unreleased]
+## 1.2.0
 
 * Add support for NFC 18902 on iOS
 * Add initial NDEF support (read only, no decoding)
