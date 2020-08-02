@@ -201,10 +201,11 @@ class FlutterNfcKit {
   /// [cached] only works on Android, allowing cached read (may obtain stale data)
   /// On Android, this would cause any other open TagTechnology to be closed
   static Future<List<NDEFRecord>> readNDEFRecords({bool cached}) async {
-    final String data = await _channel
-        .invokeMethod('readNDEF', {'cached': cached ?? false});
+    final String data =
+        await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
     return (jsonDecode(data) as List<dynamic>)
-        .map((json) => NDEFRecord.fromJson(json)).toList();
+        .map((json) => NDEFRecord.fromJson(json))
+        .toList();
   }
 
   /// Finish current session.
