@@ -19,5 +19,9 @@ dev_dependencies:
 
 flutter:
   plugin:
-    androidPackage: im.nfc.flutter_nfc_kit
-    pluginClass: FlutterNfcKitPlugin
+    platforms:
+      android:
+        package: im.nfc.flutter_nfc_kit
+        pluginClass: FlutterNfcKitPlugin
+      ios:
+        pluginClass: FlutterNfcKitPlugin
