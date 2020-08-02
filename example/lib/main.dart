@@ -83,7 +83,7 @@ class _MyAppState extends State<MyApp> {
                       });
                     } else if (tag.type == NFCTagType.mifare_ultralight ||
                         tag.type == NFCTagType.mifare_classic) {
-                      List<NDEFRecord> result1 = await FlutterNfcKit.readNDEF();
+                      List<NDEFRecord> result1 = await FlutterNfcKit.readNDEFRecords();
                       setState(() {
                         _result = '1: ${jsonEncode(result1)}\n';
                       });

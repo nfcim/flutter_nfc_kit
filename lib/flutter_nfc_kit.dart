@@ -118,9 +118,9 @@ enum NDEFTypeNameFormat {
   unknown
 }
 
-/// Metadata of a NDEF record.
+/// Data of a NDEF record.
 ///
-/// All fields are in the format of hex string.
+/// All [String] fields are in hex format.
 @JsonSerializable()
 class NDEFRecord {
   /// identifier of the payload
@@ -200,7 +200,7 @@ class FlutterNfcKit {
   /// There must be a valid session when invoking.
   /// [cached] only works on Android, allowing cached read (may obtain stale data)
   /// On Android, this would cause any other open TagTechnology to be closed
-  static Future<List<NDEFRecord>> readNDEF({bool cached}) async {
+  static Future<List<NDEFRecord>> readNDEFRecords({bool cached}) async {
     final String data = await _channel
         .invokeMethod('readNDEF', {'cached': cached ?? false});
     return (jsonDecode(data) as List<dynamic>)

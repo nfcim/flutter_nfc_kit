@@ -58,6 +58,13 @@ if (tag.type == NFCTagType.iso7816) {
 // this will persist until finish()
 await FlutterNfcKit.setIosAlertMessage("hi there!");
 
+// read NDEF records if available
+if (tag.ndefAvailable){
+  for (var record in await FlutterNfcKit.readNDEF(cached: false)) {
+    print(jsonEncode(record));
+  }
+}
+
 // Call finish() only once
 await FlutterNfcKit.finish();
 // iOS only: show alert/error message on finish

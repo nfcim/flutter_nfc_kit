@@ -53,3 +53,9 @@
 * Add NFC session alert/error message on iOS (Thanks to @smlu)
 * Support execution timeout as optional parameter on Android for `poll` and `transceive` (Thanks to @smlu)
 * Accept command in the type of hex string / `UInt8List` in `transceive` and return in the same type (Thanks to @smlu)
+
+## [Unreleased]
+
+* Add support for NFC 18902 on iOS
+* Add initial NDEF support (read only, no decoding)
+* Allow disabling platform sound on Android when polling card
