@@ -90,3 +90,30 @@ const _$NFCTagTypeEnumMap = {
   NFCTagType.mifare_plus: 'mifare_plus',
   NFCTagType.unknown: 'unknown',
 };
+
+NDEFRawRecord _$NDEFRawRecordFromJson(Map<String, dynamic> json) {
+  return NDEFRawRecord(
+    json['identifier'] as String,
+    json['payload'] as String,
+    json['type'] as String,
+    _$enumDecodeNullable(_$TypeNameFormatEnumMap, json['typeNameFormat']),
+  );
+}
+
+Map<String, dynamic> _$NDEFRawRecordToJson(NDEFRawRecord instance) =>
+    <String, dynamic>{
+      'identifier': instance.identifier,
+      'payload': instance.payload,
+      'type': instance.type,
+      'typeNameFormat': _$TypeNameFormatEnumMap[instance.typeNameFormat],
+    };
+
+const _$TypeNameFormatEnumMap = {
+  TypeNameFormat.empty: 'empty',
+  TypeNameFormat.nfcWellKnown: 'nfcWellKnown',
+  TypeNameFormat.media: 'media',
+  TypeNameFormat.absoluteURI: 'absoluteURI',
+  TypeNameFormat.nfcExternel: 'nfcExternel',
+  TypeNameFormat.unknown: 'unknown',
+  TypeNameFormat.unchanged: 'unchanged',
+};

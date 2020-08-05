@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:ndef/ndef.dart' as ndef;
+import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
 import 'package:json_annotation/json_annotation.dart';
 
 part 'flutter_nfc_kit.g.dart';
@@ -108,6 +109,30 @@ class NFCTag {
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 }
 
+/// Raw data of a NDEF record.
+///
+/// All [String] fields are in hex format.
+@JsonSerializable()
+class NDEFRawRecord {
+  /// identifier of the payload
+  final String identifier;
+
+  /// payload
+  final String payload;
+
+  /// type of the payload
+  final String type;
+
+  /// type name format (see [ndef](https://pub.dev/packages/ndef) package for detail)
+  final ndef.TypeNameFormat typeNameFormat;
+
+  NDEFRawRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
+
+  factory NDEFRawRecord.fromJson(Map<String, dynamic> json) =>
+      _$NDEFRawRecordFromJson(json);
+  Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
+}
+
 /// Main class of NFC Kit
 class FlutterNfcKit {
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
@@ -161,27 +186,38 @@ class FlutterNfcKit {
         'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds});
   }
 
-  /// Read NDEF records.
+  /// Read NDEF records (in decoded format).
   ///
   /// There must be a valid session when invoking.
   /// [cached] only works on Android, allowing cached read (may obtain stale data).
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
-    final String data =
-        await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
 
-    ndef.NDEFRecord parseNDEFRecord(Map<String, dynamic> data) {
+    ndef.NDEFRecord decodeNDEFRawRecord(NDEFRawRecord raw) {
       return ndef.decodePartialNdefMessage(
-        ndef.TypeNameFormat.values.firstWhere((t) => t.toString().split('.').last == data['typeNameFormat']),
-        ndef.ByteUtils.hexString2list(data['type']),
-        ndef.ByteUtils.hexString2list(data['payload']),
-        id: data['identifier'] == "" ? null : ndef.ByteUtils.hexString2list(data['identifier'])
+        raw.typeNameFormat,
+        ndef.ByteUtils.hexString2list(raw.type),
+        ndef.ByteUtils.hexString2list(raw.payload),
+        id: raw.identifier == "" ? null : ndef.ByteUtils.hexString2list(raw.identifier)
         );
     }
 
+    return (await readNDEFRawRecords(cached: cached)).map((r) => decodeNDEFRawRecord(r)).toList();
+  }
+
+  /// Read NDEF records (in raw data).
+  ///
+  /// There must be a valid session when invoking.
+  /// [cached] only works on Android, allowing cached read (may obtain stale data).
+  /// On Android, this would cause any other open TagTechnology to be closed.
+  /// Please use [readNDEFRecords] if you want decoded NDEF records
+  static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool cached}) async {
+    final String data =
+        await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
+
     return (jsonDecode(data) as List<dynamic>)
-        .map((object) => parseNDEFRecord(object))
+        .map((object) => NDEFRawRecord.fromJson(object))
         .toList();
   }
 
