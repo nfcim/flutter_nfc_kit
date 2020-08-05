@@ -6,6 +6,7 @@ import 'dart:io' show Platform, sleep;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
+import 'package:ndef/ndef.dart';
 
 void main() => runApp(MyApp());
 
@@ -83,9 +84,10 @@ class _MyAppState extends State<MyApp> {
                       });
                     } else if (tag.type == NFCTagType.mifare_ultralight ||
                         tag.type == NFCTagType.mifare_classic) {
-                      List<NDEFRecord> result1 = await FlutterNfcKit.readNDEFRecords();
+                      var ndefRecords = await FlutterNfcKit.readNDEFRecords();
+                      var ndefString = ndefRecords.map((r) => r.toString()).reduce((value, element) => value + "\n" + element);
                       setState(() {
-                        _result = '1: ${jsonEncode(result1)}\n';
+                        _result = '1: $ndefString\n';
                       });
                     }
                   } catch (e) {

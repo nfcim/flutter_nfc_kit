@@ -12,3 +12,6 @@ build/
 
 *.iml
 
+doc
+pubspec.lock
+

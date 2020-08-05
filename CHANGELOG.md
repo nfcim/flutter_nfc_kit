@@ -59,3 +59,7 @@
 * Add support for NFC 18902 on iOS
 * Add initial NDEF support (read only, no decoding)
 * Allow disabling platform sound on Android when polling card
+
+## 2.0.0 [Unreleased]
+
+* Switch to [ndef](https://pub.dev/packages/ndef) for NDEF record decoding (breaking API change)

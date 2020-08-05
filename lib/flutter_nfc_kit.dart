@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
+import 'package:ndef/ndef.dart' as ndef;
 import 'package:json_annotation/json_annotation.dart';
 
 part 'flutter_nfc_kit.g.dart';
@@ -107,41 +108,6 @@ class NFCTag {
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 }
 
-/// Type of NFC tag.
-enum NDEFTypeNameFormat {
-  absoluteURI,
-  empty,
-  media,
-  nfcExternal,
-  nfcWellKnown,
-  unchanged,
-  unknown
-}
-
-/// Data of a NDEF record.
-///
-/// All [String] fields are in hex format.
-@JsonSerializable()
-class NDEFRecord {
-  /// identifier of the payload
-  final String identifier;
-
-  /// payload
-  final String payload;
-
-  /// type of the payload
-  final String type;
-
-  /// type name format
-  final NDEFTypeNameFormat typeNameFormat;
-
-  NDEFRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
-
-  factory NDEFRecord.fromJson(Map<String, dynamic> json) =>
-      _$NDEFRecordFromJson(json);
-  Map<String, dynamic> toJson() => _$NDEFRecordToJson(this);
-}
-
 /// Main class of NFC Kit
 class FlutterNfcKit {
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
@@ -198,13 +164,24 @@ class FlutterNfcKit {
   /// Read NDEF records.
   ///
   /// There must be a valid session when invoking.
-  /// [cached] only works on Android, allowing cached read (may obtain stale data)
-  /// On Android, this would cause any other open TagTechnology to be closed
-  static Future<List<NDEFRecord>> readNDEFRecords({bool cached}) async {
+  /// [cached] only works on Android, allowing cached read (may obtain stale data).
+  /// On Android, this would cause any other open TagTechnology to be closed.
+  /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
+  static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
     final String data =
         await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
+
+    ndef.NDEFRecord parseNDEFRecord(Map<String, dynamic> data) {
+      return ndef.decodePartialNdefMessage(
+        ndef.TypeNameFormat.values.firstWhere((t) => t.toString().split('.').last == data['typeNameFormat']),
+        ndef.ByteUtils.hexString2list(data['type']),
+        ndef.ByteUtils.hexString2list(data['payload']),
+        id: data['identifier'] == "" ? null : ndef.ByteUtils.hexString2list(data['identifier'])
+        );
+    }
+
     return (jsonDecode(data) as List<dynamic>)
-        .map((json) => NDEFRecord.fromJson(json))
+        .map((object) => parseNDEFRecord(object))
         .toList();
   }
 

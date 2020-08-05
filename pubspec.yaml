@@ -11,6 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
   json_annotation: ^3.0.1
+  ndef:
+    git:
+      url: git://github.com/nfcim/ndef.git
 
 dev_dependencies:
   flutter_test:
