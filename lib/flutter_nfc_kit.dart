@@ -193,17 +193,20 @@ class FlutterNfcKit {
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
+    return (await readNDEFRawRecords(cached: cached))
+        .map((r) => decodeNDEFRawRecord(r))
+        .toList();
+  }
 
-    ndef.NDEFRecord decodeNDEFRawRecord(NDEFRawRecord raw) {
-      return ndef.decodePartialNdefMessage(
+  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord].
+  static ndef.NDEFRecord decodeNDEFRawRecord(NDEFRawRecord raw) {
+    return ndef.decodePartialNdefMessage(
         raw.typeNameFormat,
         ndef.ByteUtils.hexString2list(raw.type),
         ndef.ByteUtils.hexString2list(raw.payload),
-        id: raw.identifier == "" ? null : ndef.ByteUtils.hexString2list(raw.identifier)
-        );
-    }
-
-    return (await readNDEFRawRecords(cached: cached)).map((r) => decodeNDEFRawRecord(r)).toList();
+        id: raw.identifier == ""
+            ? null
+            : ndef.ByteUtils.hexString2list(raw.identifier));
   }
 
   /// Read NDEF records (in raw data).
