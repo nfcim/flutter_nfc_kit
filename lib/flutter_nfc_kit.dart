@@ -207,6 +207,15 @@ class FlutterNfcKit {
         .map((json) => NDEFRecord.fromJson(json)).toList();
   }
 
+  /// Write NDEF records.
+  /// 
+  /// There must be a valid session when invoking.
+  /// [message] is a list of NDEFRecord.
+  static Future<void> writeNDEF(List<NDEFRecord> message) async {
+    String data = jsonEncode(message);
+    return await _channel.invokeMethod('writeNDEF',{'data': data});
+  }
+
   /// Finish current session.
   ///
   /// You must invoke it before start a new session.
