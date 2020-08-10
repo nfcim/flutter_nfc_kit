@@ -232,11 +232,11 @@ class FlutterNfcKit {
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<void> writeNDEFRecords(List<ndef.NDEFRecord> message) async {
     return await writeNDEFRawRecords(
-        message.map((r) => encodeNDEFRawRecord(r)).toList());
+        message.map((r) => encodeNDEFRecord(r)).toList());
   }
 
   /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
-  static NDEFRawRecord encodeNDEFRawRecord(ndef.NDEFRecord record) {
+  static NDEFRawRecord encodeNDEFRecord(ndef.NDEFRecord record) {
     return NDEFRawRecord(
         ndef.ByteUtils.list2hexString(record.id),
         ndef.ByteUtils.list2hexString(record.payload),
