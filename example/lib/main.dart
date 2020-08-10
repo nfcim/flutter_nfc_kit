@@ -6,7 +6,7 @@ import 'dart:io' show Platform, sleep;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
-import 'package:ndef/ndef.dart';
+import 'package:ndef/ndef.dart' as ndef;
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
@@ -144,7 +144,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                               });
                               if (tag.type == NFCTagType.mifare_ultralight ||
                                   tag.type == NFCTagType.mifare_classic) {
-                                await FlutterNfcKit.writeNDEF(_message);
+                                await FlutterNfcKit.writeNDEFRawRecords(_message);
                                 setState(() {
                                   _writeResult = 'OK';
                                 });
@@ -171,7 +171,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         onPressed: () {
                           setState(() {
                             _message.add(NDEFRawRecord(
-                                "", "", "", TypeNameFormat.empty));
+                                "", "", "", ndef.TypeNameFormat.empty));
                           });
                         },
                         child: Text("Add record"),
@@ -227,7 +227,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
   TextEditingController _identifierController;
   TextEditingController _payloadController;
   TextEditingController _typeController;
-  TypeNameFormat _tnf = TypeNameFormat.empty;
+  ndef.TypeNameFormat _tnf = ndef.TypeNameFormat.empty;
   int _dropButtonValue;
 
   @override
@@ -239,7 +239,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
     _typeController = new TextEditingController.fromValue(
         TextEditingValue(text: widget.record.type));
     _tnf = widget.record.typeNameFormat;
-    _dropButtonValue = TypeNameFormat.values.indexOf(_tnf);
+    _dropButtonValue = ndef.TypeNameFormat.values.indexOf(_tnf);
   }
 
   @override
@@ -287,9 +287,9 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                           onChanged: (value) {
                             setState(() {
                               print(value);
-                              _tnf = TypeNameFormat.values[value];
+                              _tnf = ndef.TypeNameFormat.values[value];
                               _dropButtonValue =
-                                  TypeNameFormat.values.indexOf(_tnf);
+                                  ndef.TypeNameFormat.values.indexOf(_tnf);
                               print(_dropButtonValue);
                               print(_tnf);
                             });
