@@ -6,6 +6,7 @@ import 'dart:io' show Platform, sleep;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
+import 'package:ndef/ndef.dart';
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
@@ -21,7 +22,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   NFCTag _tag;
   String _result, _writeResult;
   TabController _tabController;
-  List<NDEFRecord> _message;
+  List<NDEFRawRecord> _message;
 
   @override
   void dispose() {
@@ -34,7 +35,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     super.initState();
     initPlatformState();
     _tabController = new TabController(length: 2, vsync: this);
-    _message = new List<NDEFRecord>();
+    _message = new List<NDEFRawRecord>();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -102,11 +103,11 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           _result = '1: $result1\n';
                         });
                       } else if (tag.type == NFCTagType.mifare_ultralight ||
-                          tag.type == NFCTagType.mifare_classic) {
-                        List<NDEFRecord> result1 =
-                            await FlutterNfcKit.readNDEF();
+                        tag.type == NFCTagType.mifare_classic) {
+                        var ndefRecords = await FlutterNfcKit.readNDEFRecords();
+                        var ndefString = ndefRecords.map((r) => r.toString()).reduce((value, element) => value + "\n" + element);
                         setState(() {
-                          _result = '1: ${jsonEncode(result1)}\n';
+                          _result = '1: $ndefString\n';
                         });
                       }
                     } catch (e) {
@@ -167,8 +168,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                       RaisedButton(
                         onPressed: () {
                           setState(() {
-                            _message.add(NDEFRecord(
-                                "", "", "", NDEFTypeNameFormat.empty));
+                            _message.add(NDEFRawRecord(
+                                "", "", "", TypeNameFormat.empty));
                           });
                         },
                         child: Text("Add record"),
@@ -192,7 +193,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                           record: _message[index]);
                                     }));
                                     if (result != null) {
-                                      if (result is NDEFRecord) {
+                                      if (result is NDEFRawRecord) {
                                         setState(() {
                                           _message[index] = result;
                                         });
@@ -213,7 +214,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 }
 
 class NDEFRecordSetting extends StatefulWidget {
-  NDEFRecord record;
+  NDEFRawRecord record;
   NDEFRecordSetting({Key key, this.record}) : super(key: key);
   @override
   _NDEFRecordSetting createState() => _NDEFRecordSetting();
@@ -224,7 +225,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
   TextEditingController _identifierController;
   TextEditingController _payloadController;
   TextEditingController _typeController;
-  NDEFTypeNameFormat _tnf = NDEFTypeNameFormat.empty;
+  TypeNameFormat _tnf = TypeNameFormat.empty;
   int _dropButtonValue;
 
   @override
@@ -236,7 +237,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
     _typeController = new TextEditingController.fromValue(
         TextEditingValue(text: widget.record.type));
     _tnf = widget.record.typeNameFormat;
-    _dropButtonValue = NDEFTypeNameFormat.values.indexOf(_tnf);
+    _dropButtonValue = TypeNameFormat.values.indexOf(_tnf);
   }
 
   @override
@@ -284,9 +285,9 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                           onChanged: (value) {
                             setState(() {
                               print(value);
-                              _tnf = NDEFTypeNameFormat.values[value];
+                              _tnf = TypeNameFormat.values[value];
                               _dropButtonValue =
-                                  NDEFTypeNameFormat.values.indexOf(_tnf);
+                                  TypeNameFormat.values.indexOf(_tnf);
                               print(_dropButtonValue);
                               print(_tnf);
                             });
@@ -327,7 +328,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                                 .validate()) {
                               Navigator.pop(
                                   context,
-                                  NDEFRecord(
+                                  NDEFRawRecord(
                                       (_identifierController.text == null
                                           ? ""
                                           : _identifierController.text),

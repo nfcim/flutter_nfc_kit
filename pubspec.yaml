@@ -1,15 +1,19 @@
 name: flutter_nfc_kit
 description: Plugin to provide NFC functionality on Android and iOS, including reading metadata and transceive layer 3 & 4 data with NFC tags / cards
-version: 1.1.0
+version: 1.2.0
 homepage: "https://github.com/nfcim/flutter_nfc_kit"
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
+  flutter: ">=1.12.0 <2.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   json_annotation: ^3.0.1
+  ndef:
+    git:
+      url: git://github.com/nfcim/ndef.git
 
 dev_dependencies:
   flutter_test:
@@ -19,5 +23,9 @@ dev_dependencies:
 
 flutter:
   plugin:
-    androidPackage: im.nfc.flutter_nfc_kit
-    pluginClass: FlutterNfcKitPlugin
+    platforms:
+      android:
+        package: im.nfc.flutter_nfc_kit
+        pluginClass: FlutterNfcKitPlugin
+      ios:
+        pluginClass: FlutterNfcKitPlugin

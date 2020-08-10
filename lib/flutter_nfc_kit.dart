@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
+import 'package:ndef/ndef.dart' as ndef;
+import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
 import 'package:json_annotation/json_annotation.dart';
 
 part 'flutter_nfc_kit.g.dart';
@@ -107,22 +109,11 @@ class NFCTag {
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 }
 
-/// Type of NFC tag.
-enum NDEFTypeNameFormat {
-  absoluteURI,
-  empty,
-  media,
-  nfcExternal,
-  nfcWellKnown,
-  unchanged,
-  unknown
-}
-
-/// Metadata of a NDEF record.
+/// Raw data of a NDEF record.
 ///
-/// All fields are in the format of hex string.
+/// All [String] fields are in hex format.
 @JsonSerializable()
-class NDEFRecord {
+class NDEFRawRecord {
   /// identifier of the payload
   final String identifier;
 
@@ -132,14 +123,14 @@ class NDEFRecord {
   /// type of the payload
   final String type;
 
-  /// type name format
-  final NDEFTypeNameFormat typeNameFormat;
+  /// type name format (see [ndef](https://pub.dev/packages/ndef) package for detail)
+  final ndef.TypeNameFormat typeNameFormat;
 
-  NDEFRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
+  NDEFRawRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
 
-  factory NDEFRecord.fromJson(Map<String, dynamic> json) =>
-      _$NDEFRecordFromJson(json);
-  Map<String, dynamic> toJson() => _$NDEFRecordToJson(this);
+  factory NDEFRawRecord.fromJson(Map<String, dynamic> json) =>
+      _$NDEFRawRecordFromJson(json);
+  Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
 /// Main class of NFC Kit
@@ -195,23 +186,49 @@ class FlutterNfcKit {
         'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds});
   }
 
-  /// Read NDEF records.
+  /// Read NDEF records (in decoded format).
   ///
   /// There must be a valid session when invoking.
-  /// [cached] only works on Android, allowing cached read (may obtain stale data)
-  /// On Android, this would cause any other open TagTechnology to be closed
-  static Future<List<NDEFRecord>> readNDEF({bool cached}) async {
-    final String data = await _channel
-        .invokeMethod('readNDEF', {'cached': cached ?? false});
+  /// [cached] only works on Android, allowing cached read (may obtain stale data).
+  /// On Android, this would cause any other open TagTechnology to be closed.
+  /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
+  static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
+    return (await readNDEFRawRecords(cached: cached))
+        .map((r) => decodeNDEFRawRecord(r))
+        .toList();
+  }
+
+  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord].
+  static ndef.NDEFRecord decodeNDEFRawRecord(NDEFRawRecord raw) {
+    return ndef.decodePartialNdefMessage(
+        raw.typeNameFormat,
+        ndef.ByteUtils.hexString2list(raw.type),
+        ndef.ByteUtils.hexString2list(raw.payload),
+        id: raw.identifier == ""
+            ? null
+            : ndef.ByteUtils.hexString2list(raw.identifier));
+  }
+
+  /// Read NDEF records (in raw data).
+  ///
+  /// There must be a valid session when invoking.
+  /// [cached] only works on Android, allowing cached read (may obtain stale data).
+  /// On Android, this would cause any other open TagTechnology to be closed.
+  /// Please use [readNDEFRecords] if you want decoded NDEF records
+  static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool cached}) async {
+    final String data =
+        await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
+
     return (jsonDecode(data) as List<dynamic>)
-        .map((json) => NDEFRecord.fromJson(json)).toList();
+        .map((object) => NDEFRawRecord.fromJson(object))
+        .toList();
   }
 
   /// Write NDEF records.
   /// 
   /// There must be a valid session when invoking.
   /// [message] is a list of NDEFRecord.
-  static Future<void> writeNDEF(List<NDEFRecord> message) async {
+  static Future<void> writeNDEF(List<NDEFRawRecord> message) async {
     String data = jsonEncode(message);
     return await _channel.invokeMethod('writeNDEF',{'data': data});
   }

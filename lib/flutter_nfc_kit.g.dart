@@ -91,29 +91,29 @@ const _$NFCTagTypeEnumMap = {
   NFCTagType.unknown: 'unknown',
 };
 
-NDEFRecord _$NDEFRecordFromJson(Map<String, dynamic> json) {
-  return NDEFRecord(
+NDEFRawRecord _$NDEFRawRecordFromJson(Map<String, dynamic> json) {
+  return NDEFRawRecord(
     json['identifier'] as String,
     json['payload'] as String,
     json['type'] as String,
-    _$enumDecodeNullable(_$NDEFTypeNameFormatEnumMap, json['typeNameFormat']),
+    _$enumDecodeNullable(_$TypeNameFormatEnumMap, json['typeNameFormat']),
   );
 }
 
-Map<String, dynamic> _$NDEFRecordToJson(NDEFRecord instance) =>
+Map<String, dynamic> _$NDEFRawRecordToJson(NDEFRawRecord instance) =>
     <String, dynamic>{
       'identifier': instance.identifier,
       'payload': instance.payload,
       'type': instance.type,
-      'typeNameFormat': _$NDEFTypeNameFormatEnumMap[instance.typeNameFormat],
+      'typeNameFormat': _$TypeNameFormatEnumMap[instance.typeNameFormat],
     };
 
-const _$NDEFTypeNameFormatEnumMap = {
-  NDEFTypeNameFormat.absoluteURI: 'absoluteURI',
-  NDEFTypeNameFormat.empty: 'empty',
-  NDEFTypeNameFormat.media: 'media',
-  NDEFTypeNameFormat.nfcExternal: 'nfcExternal',
-  NDEFTypeNameFormat.nfcWellKnown: 'nfcWellKnown',
-  NDEFTypeNameFormat.unchanged: 'unchanged',
-  NDEFTypeNameFormat.unknown: 'unknown',
+const _$TypeNameFormatEnumMap = {
+  TypeNameFormat.empty: 'empty',
+  TypeNameFormat.nfcWellKnown: 'nfcWellKnown',
+  TypeNameFormat.media: 'media',
+  TypeNameFormat.absoluteURI: 'absoluteURI',
+  TypeNameFormat.nfcExternel: 'nfcExternel',
+  TypeNameFormat.unknown: 'unknown',
+  TypeNameFormat.unchanged: 'unchanged',
 };
