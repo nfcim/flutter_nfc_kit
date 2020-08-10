@@ -224,7 +224,7 @@ class FlutterNfcKit {
         .toList();
   }
 
-  /// Write NDEF records.
+  /// Write NDEF records (in raw data)
   /// 
   /// There must be a valid session when invoking.
   /// [message] is a list of NDEFRecord.

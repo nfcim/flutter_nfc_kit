@@ -103,9 +103,11 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           _result = '1: $result1\n';
                         });
                       } else if (tag.type == NFCTagType.mifare_ultralight ||
-                        tag.type == NFCTagType.mifare_classic) {
+                          tag.type == NFCTagType.mifare_classic) {
                         var ndefRecords = await FlutterNfcKit.readNDEFRecords();
-                        var ndefString = ndefRecords.map((r) => r.toString()).reduce((value, element) => value + "\n" + element);
+                        var ndefString = ndefRecords
+                            .map((r) => r.toString())
+                            .reduce((value, element) => value + "\n" + element);
                         setState(() {
                           _result = '1: $ndefString\n';
                         });
