@@ -224,13 +224,33 @@ class FlutterNfcKit {
         .toList();
   }
 
-  /// Write NDEF records (in raw data)
-  /// 
+  /// Write NDEF records (in decoded format).
+  ///
   /// There must be a valid session when invoking.
-  /// [message] is a list of NDEFRecord.
-  static Future<void> writeNDEF(List<NDEFRawRecord> message) async {
+  /// [cached] only works on Android, allowing cached read (may obtain stale data).
+  /// On Android, this would cause any other open TagTechnology to be closed.
+  /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
+  static Future<void> writeNDEFRecords(List<ndef.NDEFRecord> message) async {
+    return await writeNDEFRawRecords(
+        message.map((r) => encodeNDEFRawRecord(r)).toList());
+  }
+
+  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
+  static NDEFRawRecord encodeNDEFRawRecord(ndef.NDEFRecord record) {
+    return NDEFRawRecord(
+        ndef.ByteUtils.list2hexString(record.id),
+        ndef.ByteUtils.list2hexString(record.payload),
+        ndef.ByteUtils.list2hexString(record.type),
+        record.tnf);
+  }
+
+  /// Write NDEF records (in raw data)
+  ///
+  /// There must be a valid session when invoking.
+  /// [message] is a list of NDEFRawRecord.
+  static Future<void> writeNDEFRawRecords(List<NDEFRawRecord> message) async {
     String data = jsonEncode(message);
-    return await _channel.invokeMethod('writeNDEF',{'data': data});
+    return await _channel.invokeMethod('writeNDEF', {'data': data});
   }
 
   /// Finish current session.
