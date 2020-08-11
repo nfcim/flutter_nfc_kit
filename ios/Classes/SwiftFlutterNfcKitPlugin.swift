@@ -225,13 +225,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 if ndefTag != nil {
                     let jsonString = (call.arguments as? [String: Any?])?["data"] as? String
-                    let json = try? JSONSerialization.jsonObject(with: dataWithHexString(hex: jsonString))
+                    let json = try? JSONSerialization.jsonObject(with: dataWithHexString(hex: jsonString!))
                     let recordList = json as? [[String:Any]]
-                    if recordList = nil {
-                        let records: [NFCNDEFPayload] = []
-                        for record in recordList {
+                    if recordList != nil {
+                        var records: [NFCNDEFPayload] = []
+                        for record in recordList! {
                             let format: NFCTypeNameFormat?
-                            switch record["typeNameFormat"] {
+                            switch record["typeNameFormat"] as! String {
                                 case "absoluteURI":
                                     format = NFCTypeNameFormat.absoluteURI
                                 case "empty":
@@ -247,10 +247,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                 default:
                                     format = NFCTypeNameFormat.unknown
                             }
-                            records.append(NFCNDEFPayload(format: format,type: dataWithHexString(hex: record["type"]),identifier: dataWithHexString(hex: record["identifier"]),payload: dataWithHexString(hex: record["payload"])))
+                            records.append(NFCNDEFPayload(format: format!,type: dataWithHexString(hex: record["type"] as! String), identifier: dataWithHexString(hex: record["identifier"] as! String), payload: dataWithHexString(hex: record["payload"] as! String)))
                         }
 
-                        ndefTag.writeNDEF(records: records,completionHandler: { (error: Error?) in
+                        ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
                             if let error = error {
                                 result(FlutterError(code: "500", message: "Write NDEF error", details: error.localizedDescription))
                             }
