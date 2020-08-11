@@ -144,7 +144,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                               });
                               if (tag.type == NFCTagType.mifare_ultralight ||
                                   tag.type == NFCTagType.mifare_classic) {
-                                await FlutterNfcKit.writeNDEFRawRecords(_message);
+                                await FlutterNfcKit.writeNDEFRawRecords(
+                                    _message);
                                 setState(() {
                                   _writeResult = 'OK';
                                 });
@@ -158,6 +159,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                               setState(() {
                                 _writeResult = 'error: $e';
                               });
+                            } finally {
+                              await FlutterNfcKit.finish();
                             }
                           } else {
                             setState(() {

@@ -134,7 +134,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                         result(response)
                                     }
                                 }
-                        })
+                            })
                         } else {
                             result(FlutterError(code: "400", message: "No mifare command specified", details: nil))
                         }
@@ -225,29 +225,29 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 if ndefTag != nil {
                     let jsonString = (call.arguments as? [String: Any?])?["data"] as? String
-                    let json = try? JSONSerialization.jsonObject(with: dataWithHexString(hex: jsonString!))
-                    let recordList = json as? [[String:Any]]
+                    let json = try? JSONSerialization.jsonObject(with: jsonString!.data(using: .utf8)!)
+                    let recordList = json as? [[String: Any]]
                     if recordList != nil {
                         var records: [NFCNDEFPayload] = []
                         for record in recordList! {
                             let format: NFCTypeNameFormat?
                             switch record["typeNameFormat"] as! String {
-                                case "absoluteURI":
-                                    format = NFCTypeNameFormat.absoluteURI
-                                case "empty":
-                                    format = NFCTypeNameFormat.empty
-                                case "nfcExternal":
-                                    format = NFCTypeNameFormat.nfcExternal
-                                case "nfcWellKnown":
-                                    format = NFCTypeNameFormat.nfcWellKnown
-                                case "media":
-                                    format = NFCTypeNameFormat.media
-                                case "unchanged":
-                                    format = NFCTypeNameFormat.unchanged
-                                default:
-                                    format = NFCTypeNameFormat.unknown
+                            case "absoluteURI":
+                                format = NFCTypeNameFormat.absoluteURI
+                            case "empty":
+                                format = NFCTypeNameFormat.empty
+                            case "nfcExternal":
+                                format = NFCTypeNameFormat.nfcExternal
+                            case "nfcWellKnown":
+                                format = NFCTypeNameFormat.nfcWellKnown
+                            case "media":
+                                format = NFCTypeNameFormat.media
+                            case "unchanged":
+                                format = NFCTypeNameFormat.unchanged
+                            default:
+                                format = NFCTypeNameFormat.unknown
                             }
-                            records.append(NFCNDEFPayload(format: format!,type: dataWithHexString(hex: record["type"] as! String), identifier: dataWithHexString(hex: record["identifier"] as! String), payload: dataWithHexString(hex: record["payload"] as! String)))
+                            records.append(NFCNDEFPayload(format: format!, type: dataWithHexString(hex: record["type"] as! String), identifier: dataWithHexString(hex: record["identifier"] as! String), payload: dataWithHexString(hex: record["payload"] as! String)))
                         }
 
                         ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
