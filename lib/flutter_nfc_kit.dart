@@ -133,6 +133,29 @@ class NDEFRawRecord {
   Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
+/// Extension for convert between [NDEFRawRecord] and [ndef.NDEFRecord]
+extension NDEFRecordConvert on ndef.NDEFRecord {
+  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
+  NDEFRawRecord toRaw() {
+    return NDEFRawRecord(
+        ndef.ByteUtils.list2hexString(this.id),
+        ndef.ByteUtils.list2hexString(this.payload),
+        ndef.ByteUtils.list2hexString(this.type),
+        this.tnf);
+  }
+
+  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord]
+  static ndef.NDEFRecord fromRaw(NDEFRawRecord raw) {
+    return ndef.decodePartialNdefMessage(
+        raw.typeNameFormat,
+        ndef.ByteUtils.hexString2list(raw.type),
+        ndef.ByteUtils.hexString2list(raw.payload),
+        id: raw.identifier == ""
+            ? null
+            : ndef.ByteUtils.hexString2list(raw.identifier));
+  }
+}
+
 /// Main class of NFC Kit
 class FlutterNfcKit {
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
@@ -194,7 +217,7 @@ class FlutterNfcKit {
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
     return (await readNDEFRawRecords(cached: cached))
-        .map((r) => decodeNDEFRawRecord(r))
+        .map((r) => NDEFRecordConvert.fromRaw(r))
         .toList();
   }
 
@@ -222,6 +245,35 @@ class FlutterNfcKit {
     return (jsonDecode(data) as List<dynamic>)
         .map((object) => NDEFRawRecord.fromJson(object))
         .toList();
+  }
+
+  /// Write NDEF records (in decoded format).
+  ///
+  /// There must be a valid session when invoking.
+  /// [cached] only works on Android, allowing cached read (may obtain stale data).
+  /// On Android, this would cause any other open TagTechnology to be closed.
+  /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
+  static Future<void> writeNDEFRecords(List<ndef.NDEFRecord> message) async {
+    return await writeNDEFRawRecords(
+        message.map((r) => r.toRaw()).toList());
+  }
+
+  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
+  static NDEFRawRecord encodeNDEFRecord(ndef.NDEFRecord record) {
+    return NDEFRawRecord(
+        ndef.ByteUtils.list2hexString(record.id),
+        ndef.ByteUtils.list2hexString(record.payload),
+        ndef.ByteUtils.list2hexString(record.type),
+        record.tnf);
+  }
+
+  /// Write NDEF records (in raw data)
+  ///
+  /// There must be a valid session when invoking.
+  /// [message] is a list of NDEFRawRecord.
+  static Future<void> writeNDEFRawRecords(List<NDEFRawRecord> message) async {
+    String data = jsonEncode(message);
+    return await _channel.invokeMethod('writeNDEF', {'data': data});
   }
 
   /// Finish current session.
