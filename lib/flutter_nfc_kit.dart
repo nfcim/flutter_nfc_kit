@@ -138,23 +138,14 @@ class NDEFRawRecord {
 extension NDEFRecordConvert on ndef.NDEFRecord {
   /// Convert an [ndef.NDEFRecord] to encoded [NDEFRawRecord]
   NDEFRawRecord toRaw() {
-    return NDEFRawRecord(
-        ndef.ByteUtils.list2hexString(this.id),
-        ndef.ByteUtils.list2hexString(this.payload),
-        ndef.ByteUtils.list2hexString(this.type),
-        this.tnf);
+    return NDEFRawRecord(id.toHexString(), payload.toHexString(), type.toHexString(), this.tnf);
   }
 
   /// Convert an [NDEFRawRecord] to decoded [ndef.NDEFRecord].
   /// Use `NDEFRecordConvert.fromRaw` to invoke.
   static ndef.NDEFRecord fromRaw(NDEFRawRecord raw) {
     return ndef.decodePartialNdefMessage(
-        raw.typeNameFormat,
-        ndef.ByteUtils.hexString2list(raw.type),
-        ndef.ByteUtils.hexString2list(raw.payload),
-        id: raw.identifier == ""
-            ? null
-            : ndef.ByteUtils.hexString2list(raw.identifier));
+        raw.typeNameFormat, raw.type.toBytes(), raw.payload.toBytes(), id: raw.identifier == "" ? null : raw.identifier.toBytes());
   }
 }
 
