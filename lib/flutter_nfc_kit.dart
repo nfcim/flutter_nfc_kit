@@ -133,9 +133,10 @@ class NDEFRawRecord {
   Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
-/// Extension for convert between [NDEFRawRecord] and [ndef.NDEFRecord]
+
+/// Extension for conversion between [NDEFRawRecord] and [ndef.NDEFRecord]
 extension NDEFRecordConvert on ndef.NDEFRecord {
-  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
+  /// Convert an [ndef.NDEFRecord] to encoded [NDEFRawRecord]
   NDEFRawRecord toRaw() {
     return NDEFRawRecord(
         ndef.ByteUtils.list2hexString(this.id),
@@ -144,7 +145,8 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
         this.tnf);
   }
 
-  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord]
+  /// Convert an [NDEFRawRecord] to decoded [ndef.NDEFRecord].
+  /// Use `NDEFRecordConvert.fromRaw` to invoke.
   static ndef.NDEFRecord fromRaw(NDEFRawRecord raw) {
     return ndef.decodePartialNdefMessage(
         raw.typeNameFormat,
@@ -155,6 +157,7 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
             : ndef.ByteUtils.hexString2list(raw.identifier));
   }
 }
+
 
 /// Main class of NFC Kit
 class FlutterNfcKit {
@@ -221,17 +224,6 @@ class FlutterNfcKit {
         .toList();
   }
 
-  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord].
-  static ndef.NDEFRecord decodeNDEFRawRecord(NDEFRawRecord raw) {
-    return ndef.decodePartialNdefMessage(
-        raw.typeNameFormat,
-        ndef.ByteUtils.hexString2list(raw.type),
-        ndef.ByteUtils.hexString2list(raw.payload),
-        id: raw.identifier == ""
-            ? null
-            : ndef.ByteUtils.hexString2list(raw.identifier));
-  }
-
   /// Read NDEF records (in raw data).
   ///
   /// There must be a valid session when invoking.
@@ -256,15 +248,6 @@ class FlutterNfcKit {
   static Future<void> writeNDEFRecords(List<ndef.NDEFRecord> message) async {
     return await writeNDEFRawRecords(
         message.map((r) => r.toRaw()).toList());
-  }
-
-  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
-  static NDEFRawRecord encodeNDEFRecord(ndef.NDEFRecord record) {
-    return NDEFRawRecord(
-        ndef.ByteUtils.list2hexString(record.id),
-        ndef.ByteUtils.list2hexString(record.payload),
-        ndef.ByteUtils.list2hexString(record.type),
-        record.tnf);
   }
 
   /// Write NDEF records (in raw data)
