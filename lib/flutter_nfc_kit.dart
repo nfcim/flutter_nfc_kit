@@ -133,6 +133,29 @@ class NDEFRawRecord {
   Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
+/// Extension for convert between [NDEFRawRecord] and [ndef.NDEFRecord]
+extension NDEFRecordConvert on ndef.NDEFRecord {
+  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
+  NDEFRawRecord toRaw() {
+    return NDEFRawRecord(
+        ndef.ByteUtils.list2hexString(this.id),
+        ndef.ByteUtils.list2hexString(this.payload),
+        ndef.ByteUtils.list2hexString(this.type),
+        this.tnf);
+  }
+
+  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord]
+  static ndef.NDEFRecord fromRaw(NDEFRawRecord raw) {
+    return ndef.decodePartialNdefMessage(
+        raw.typeNameFormat,
+        ndef.ByteUtils.hexString2list(raw.type),
+        ndef.ByteUtils.hexString2list(raw.payload),
+        id: raw.identifier == ""
+            ? null
+            : ndef.ByteUtils.hexString2list(raw.identifier));
+  }
+}
+
 /// Main class of NFC Kit
 class FlutterNfcKit {
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
@@ -194,7 +217,7 @@ class FlutterNfcKit {
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
     return (await readNDEFRawRecords(cached: cached))
-        .map((r) => decodeNDEFRawRecord(r))
+        .map((r) => NDEFRecordConvert.fromRaw(r))
         .toList();
   }
 
@@ -232,7 +255,7 @@ class FlutterNfcKit {
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<void> writeNDEFRecords(List<ndef.NDEFRecord> message) async {
     return await writeNDEFRawRecords(
-        message.map((r) => encodeNDEFRecord(r)).toList());
+        message.map((r) => r.toRaw()).toList());
   }
 
   /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
