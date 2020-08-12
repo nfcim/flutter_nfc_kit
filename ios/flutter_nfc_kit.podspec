@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_nfc_kit'
-  s.version          = '1.2.0'
+  s.version          = '2.0.0'
   s.summary          = 'NFC support plugin of Flutter.'
   s.description      = <<-DESC
   Flutter plugin to provide NFC functionality on Android and iOS, including reading metadata, read & write NDEF records, and transceive layer 3 & 4 data with NFC tags / cards.

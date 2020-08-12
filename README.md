@@ -41,6 +41,7 @@ Simple example:
 
 ```dart
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
+import 'package:ndef/ndef.dart' as ndef;
 
 var availability = await FlutterNfcKit.nfcAvailability;
 if (availability != NFCAvailability.available) {
@@ -72,6 +73,14 @@ if (tag.ndefAvailable){
   for (var record in await FlutterNfcKit.readNDEFRawRecords(cached: false)) {
     print(jsonEncode(record).toString());
   }
+}
+
+// write NDEF records if applicable
+if (tag.ndefWritable) {
+  // decoded NDEF records
+  await FlutterNfcKit.writeNDEFRecords([new ndef.UriRecord.fromUriString("https://github.com/nfcim/flutter_nfc_kit")]);
+  // raw NDEF records
+  await FlutterNfcKit.writeNDEFRawRecords([new NDEFRawRecord("00", "0001", "0002", "0003", ndef.TypeNameFormat.unknown)]);
 }
 
 // Call finish() only once
