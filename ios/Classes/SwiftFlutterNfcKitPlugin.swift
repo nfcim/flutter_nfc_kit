@@ -253,9 +253,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
                             if let error = error {
                                 result(FlutterError(code: "500", message: "Write NDEF error", details: error.localizedDescription))
+                            } else {
+                                result(nil)
                             }
                         })
-                        result(nil)
                     } else {
                         result(FlutterError(code: "400", message: "Bad argument", details: nil))
                     }
