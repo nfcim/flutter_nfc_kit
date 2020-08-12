@@ -62,4 +62,5 @@
 
 ## 2.0.0 [Unreleased]
 
-* Switch to [ndef](https://pub.dev/packages/ndef) for NDEF record decoding (breaking API change)
+* Switch to [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding (breaking API change)
+* Support writing NDEF records
