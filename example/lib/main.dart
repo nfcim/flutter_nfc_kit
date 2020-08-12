@@ -264,11 +264,11 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                           items: [
                             DropdownMenuItem(
                               child: Text('empty'),
-                              value: 1,
+                              value: 0,
                             ),
                             DropdownMenuItem(
                               child: Text('nfcWellKnown'),
-                              value: 4,
+                              value: 1,
                             ),
                             DropdownMenuItem(
                               child: Text('media'),
@@ -276,10 +276,10 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                             ),
                             DropdownMenuItem(
                               child: Text('absoluteURI'),
-                              value: 0,
+                              value: 3,
                             ),
                             DropdownMenuItem(
-                                child: Text('nfcExternal'), value: 3),
+                                child: Text('nfcExternal'), value: 4),
                             DropdownMenuItem(
                                 child: Text('unchanged'), value: 5),
                             DropdownMenuItem(
@@ -289,12 +289,9 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                           ],
                           onChanged: (value) {
                             setState(() {
-                              print(value);
                               _tnf = ndef.TypeNameFormat.values[value];
                               _dropButtonValue =
                                   ndef.TypeNameFormat.values.indexOf(_tnf);
-                              print(_dropButtonValue);
-                              print(_tnf);
                             });
                           },
                         ),
@@ -328,7 +325,6 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                         RaisedButton(
                           child: Text('OK'),
                           onPressed: () {
-                            print(_tnf);
                             if ((_formKey.currentState as FormState)
                                 .validate()) {
                               Navigator.pop(
