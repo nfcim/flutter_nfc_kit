@@ -247,7 +247,12 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             default:
                                 format = NFCTypeNameFormat.unknown
                             }
-                            records.append(NFCNDEFPayload(format: format!, type: dataWithHexString(hex: record["type"] as! String), identifier: dataWithHexString(hex: record["identifier"] as! String), payload: dataWithHexString(hex: record["payload"] as! String)))
+                            records.append(NFCNDEFPayload(
+                                format: format,
+                                type: dataWithHexString(hex: record["type"]),
+                                identifier: dataWithHexString(hex: record["identifier"]),
+                                payload: dataWithHexString(hex: record["payload"])
+                            ))
                         }
 
                         ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
