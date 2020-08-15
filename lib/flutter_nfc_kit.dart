@@ -170,10 +170,16 @@ class FlutterNfcKit {
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
-  /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled.
+  /// 
+  /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
+  /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
+  /// 
+  /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
+  /// If disabled, you will not be able to use any NDEF-related methods in the current session.
   static Future<NFCTag> poll({
     Duration timeout,
     bool androidPlatformSound = true,
+    bool androidCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
         "More than one tags are detected, please leave only one tag and try again.",
@@ -182,7 +188,8 @@ class FlutterNfcKit {
       'timeout': timeout?.inMilliseconds ?? 20 * 1000,
       'iosAlertMessage': iosAlertMessage,
       'iosMultipleTagMessage': iosMultipleTagMessage,
-      'androidPlatformSound': androidPlatformSound
+      'androidPlatformSound': androidPlatformSound,
+      'androidCheckNDEF': androidCheckNDEF,
     });
     return NFCTag.fromJson(jsonDecode(data));
   }
