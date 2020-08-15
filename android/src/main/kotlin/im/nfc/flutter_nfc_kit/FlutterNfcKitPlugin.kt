@@ -36,7 +36,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var tagTechnology: TagTechnology? = null
         private var ndefTechnology: Ndef? = null
 
-        private fun TagTechnology.transcieve(data: ByteArray, timeout: Int?): ByteArray {
+        private fun TagTechnology.transceive(data: ByteArray, timeout: Int?): ByteArray {
             if (timeout != null) {
                 try {
                     val timeoutMethod = this.javaClass.getMethod("setTimeout", Int::class.java)
@@ -128,7 +128,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         else -> req as ByteArray
                     }
                     val timeout = call.argument<Int>("timeout")
-                    val resp = tagTech.transcieve(sendingBytes, timeout)
+                    val resp = tagTech.transceive(sendingBytes, timeout)
                     when (req) {
                         is String -> result.success(resp.toHexString())
                         else -> result.success(resp)
