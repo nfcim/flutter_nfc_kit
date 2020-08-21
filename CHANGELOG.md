@@ -65,3 +65,8 @@
 * Switch to [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding (breaking API change)
 * Support writing NDEF records
 * Add NDEF writing in example app
+
+# 2.0.1
+
+* Fix compiling problem on iOS
+
