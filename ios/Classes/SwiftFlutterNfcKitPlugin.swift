@@ -134,7 +134,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                         result(response)
                                     }
                                 }
-                        })
+                            })
                         } else {
                             result(FlutterError(code: "400", message: "No mifare command specified", details: nil))
                         }
@@ -225,37 +225,43 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 if ndefTag != nil {
                     let jsonString = (call.arguments as? [String: Any?])?["data"] as? String
-                    let json = try? JSONSerialization.jsonObject(with: dataWithHexString(hex: jsonString))
-                    let recordList = json as? [[String:Any]]
-                    if recordList = nil {
-                        let records: [NFCNDEFPayload] = []
-                        for record in recordList {
+                    let json = try? JSONSerialization.jsonObject(with: jsonString!.data(using: .utf8)!)
+                    let recordList = json as? [[String: Any]]
+                    if recordList != nil {
+                        var records: [NFCNDEFPayload] = []
+                        for record in recordList! {
                             let format: NFCTypeNameFormat?
-                            switch record["typeNameFormat"] {
-                                case "absoluteURI":
-                                    format = NFCTypeNameFormat.absoluteURI
-                                case "empty":
-                                    format = NFCTypeNameFormat.empty
-                                case "nfcExternal":
-                                    format = NFCTypeNameFormat.nfcExternal
-                                case "nfcWellKnown":
-                                    format = NFCTypeNameFormat.nfcWellKnown
-                                case "media":
-                                    format = NFCTypeNameFormat.media
-                                case "unchanged":
-                                    format = NFCTypeNameFormat.unchanged
-                                default:
-                                    format = NFCTypeNameFormat.unknown
+                            switch record["typeNameFormat"] as! String {
+                            case "absoluteURI":
+                                format = NFCTypeNameFormat.absoluteURI
+                            case "empty":
+                                format = NFCTypeNameFormat.empty
+                            case "nfcExternal":
+                                format = NFCTypeNameFormat.nfcExternal
+                            case "nfcWellKnown":
+                                format = NFCTypeNameFormat.nfcWellKnown
+                            case "media":
+                                format = NFCTypeNameFormat.media
+                            case "unchanged":
+                                format = NFCTypeNameFormat.unchanged
+                            default:
+                                format = NFCTypeNameFormat.unknown
                             }
-                            records.append(NFCNDEFPayload(format: format,type: dataWithHexString(hex: record["type"]),identifier: dataWithHexString(hex: record["identifier"]),payload: dataWithHexString(hex: record["payload"])))
+                            records.append(NFCNDEFPayload(
+                                format: format,
+                                type: dataWithHexString(hex: record["type"]),
+                                identifier: dataWithHexString(hex: record["identifier"]),
+                                payload: dataWithHexString(hex: record["payload"])
+                            ))
                         }
 
-                        ndefTag.writeNDEF(records: records,completionHandler: { (error: Error?) in
+                        ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
                             if let error = error {
                                 result(FlutterError(code: "500", message: "Write NDEF error", details: error.localizedDescription))
+                            } else {
+                                result(nil)
                             }
                         })
-                        result(nil)
                     } else {
                         result(FlutterError(code: "400", message: "Bad argument", details: nil))
                     }

@@ -5,9 +5,9 @@
 
 Yet another plugin to provide NFC functionality on Android and iOS.
 
-This plugin supports:
+This plugin's functionalities include:
 
-* read NDEF records & metadata of tags / cards complying with:
+* read metadata and read & write NDEF records of tags / cards complying with:
   * ISO 14443 Type A & Type B (NFC-A / NFC-B / MIFARE Classic / MIFARE Plus / MIFARE Ultralight / MIFARE DESFire)
   * ISO 18092 (NFC-F / FeliCa)
   * ISO 15963 (NFC-V)
@@ -17,7 +17,7 @@ This plugin supports:
 
 Note that due to API limitations not all operations are supported on both platforms.
 
-This library uses [ndef](https://pub.dev/packages/ndef) for NDEF record decoding.
+This library uses [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding.
 
 ## Setup
 
@@ -41,6 +41,7 @@ Simple example:
 
 ```dart
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
+import 'package:ndef/ndef.dart' as ndef;
 
 var availability = await FlutterNfcKit.nfcAvailability;
 if (availability != NFCAvailability.available) {
@@ -62,9 +63,24 @@ await FlutterNfcKit.setIosAlertMessage("hi there!");
 
 // read NDEF records if available
 if (tag.ndefAvailable){
-  for (var record in await FlutterNfcKit.readNDEF(cached: false)) {
+  /// decoded NDEF records (see [ndef.NDEFRecord] for details)
+  /// `UriRecord: id=(empty) typeNameFormat=TypeNameFormat.nfcWellKnown type=U uri=https://github.com/nfcim/ndef`
+  for (var record in await FlutterNfcKit.readNDEFRecords(cached: false)) {
     print(record.toString());
   }
+  /// raw NDEF records (data in hex string)
+  /// `{identifier: "", payload: "00010203", type: "0001", typeNameFormat: "nfcWellKnown"}`
+  for (var record in await FlutterNfcKit.readNDEFRawRecords(cached: false)) {
+    print(jsonEncode(record).toString());
+  }
+}
+
+// write NDEF records if applicable
+if (tag.ndefWritable) {
+  // decoded NDEF records
+  await FlutterNfcKit.writeNDEFRecords([new ndef.UriRecord.fromUriString("https://github.com/nfcim/flutter_nfc_kit")]);
+  // raw NDEF records
+  await FlutterNfcKit.writeNDEFRawRecords([new NDEFRawRecord("00", "0001", "0002", "0003", ndef.TypeNameFormat.unknown)]);
 }
 
 // Call finish() only once

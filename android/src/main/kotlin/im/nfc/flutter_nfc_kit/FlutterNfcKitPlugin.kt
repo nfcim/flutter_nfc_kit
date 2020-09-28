@@ -36,7 +36,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var tagTechnology: TagTechnology? = null
         private var ndefTechnology: Ndef? = null
 
-        private fun TagTechnology.transcieve(data: ByteArray, timeout: Int?): ByteArray {
+        private fun TagTechnology.transceive(data: ByteArray, timeout: Int?): ByteArray {
             if (timeout != null) {
                 try {
                     val timeoutMethod = this.javaClass.getMethod("setTimeout", Int::class.java)
@@ -80,7 +80,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "poll" -> {
                 val timeout = call.argument<Int>("timeout")!!
                 val platformSound = call.argument<Boolean>("androidPlatformSound")!!
-                pollTag(nfcAdapter, result, timeout, platformSound)
+                val checkNDEF = call.argument<Boolean>("androidCheckNDEF")!!
+                pollTag(nfcAdapter, result, timeout, platformSound, checkNDEF)
             }
 
             "finish" -> {
@@ -127,7 +128,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         else -> req as ByteArray
                     }
                     val timeout = call.argument<Int>("timeout")
-                    val resp = tagTech.transcieve(sendingBytes, timeout)
+                    val resp = tagTech.transceive(sendingBytes, timeout)
                     when (req) {
                         is String -> result.success(resp.toHexString())
                         else -> result.success(resp)
@@ -280,7 +281,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromActivityForConfigChanges() {}
 
-    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, platformSound: Boolean) {
+    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, platformSound: Boolean, checkNDEF: Boolean) {
 
         pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
             nfcAdapter.disableReaderMode(activity)
@@ -290,6 +291,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         var readerFlags = FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F
         if (!platformSound) {
             readerFlags = readerFlags or FLAG_READER_NO_PLATFORM_SOUNDS
+        }
+        if (!checkNDEF) {
+            readerFlags = readerFlags or FLAG_READER_SKIP_NDEF_CHECK
         }
 
         nfcAdapter.enableReaderMode(activity, { tag ->

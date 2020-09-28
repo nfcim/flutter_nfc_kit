@@ -60,6 +60,8 @@
 * Add initial NDEF support (read only, no decoding)
 * Allow disabling platform sound on Android when polling card
 
-## 2.0.0 [Unreleased]
+## 2.0.0
 
-* Switch to [ndef](https://pub.dev/packages/ndef) for NDEF record decoding (breaking API change)
+* Switch to [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding (breaking API change)
+* Support writing NDEF records
+* Add NDEF writing in example app

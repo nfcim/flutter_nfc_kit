@@ -114,7 +114,7 @@ class NFCTag {
 /// All [String] fields are in hex format.
 @JsonSerializable()
 class NDEFRawRecord {
-  /// identifier of the payload
+  /// identifier of the payload (empty if not existed)
   final String identifier;
 
   /// payload
@@ -133,26 +133,20 @@ class NDEFRawRecord {
   Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
-/// Extension for convert between [NDEFRawRecord] and [ndef.NDEFRecord]
+/// Extension for conversion between [NDEFRawRecord] and [ndef.NDEFRecord]
 extension NDEFRecordConvert on ndef.NDEFRecord {
-  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
+  /// Convert an [ndef.NDEFRecord] to encoded [NDEFRawRecord]
   NDEFRawRecord toRaw() {
     return NDEFRawRecord(
-        ndef.ByteUtils.list2hexString(this.id),
-        ndef.ByteUtils.list2hexString(this.payload),
-        ndef.ByteUtils.list2hexString(this.type),
-        this.tnf);
+        id.toHexString(), payload.toHexString(), type.toHexString(), this.tnf);
   }
 
-  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord]
+  /// Convert an [NDEFRawRecord] to decoded [ndef.NDEFRecord].
+  /// Use `NDEFRecordConvert.fromRaw` to invoke.
   static ndef.NDEFRecord fromRaw(NDEFRawRecord raw) {
     return ndef.decodePartialNdefMessage(
-        raw.typeNameFormat,
-        ndef.ByteUtils.hexString2list(raw.type),
-        ndef.ByteUtils.hexString2list(raw.payload),
-        id: raw.identifier == ""
-            ? null
-            : ndef.ByteUtils.hexString2list(raw.identifier));
+        raw.typeNameFormat, raw.type.toBytes(), raw.payload.toBytes(),
+        id: raw.identifier == "" ? null : raw.identifier.toBytes());
   }
 }
 
@@ -176,10 +170,16 @@ class FlutterNfcKit {
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
-  /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled.
+  /// 
+  /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
+  /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
+  /// 
+  /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
+  /// If disabled, you will not be able to use any NDEF-related methods in the current session.
   static Future<NFCTag> poll({
     Duration timeout,
     bool androidPlatformSound = true,
+    bool androidCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
         "More than one tags are detected, please leave only one tag and try again.",
@@ -188,7 +188,8 @@ class FlutterNfcKit {
       'timeout': timeout?.inMilliseconds ?? 20 * 1000,
       'iosAlertMessage': iosAlertMessage,
       'iosMultipleTagMessage': iosMultipleTagMessage,
-      'androidPlatformSound': androidPlatformSound
+      'androidPlatformSound': androidPlatformSound,
+      'androidCheckNDEF': androidCheckNDEF,
     });
     return NFCTag.fromJson(jsonDecode(data));
   }
@@ -221,17 +222,6 @@ class FlutterNfcKit {
         .toList();
   }
 
-  /// Convert a [NDEFRawRecord] to decoded [ndef.NDEFRecord].
-  static ndef.NDEFRecord decodeNDEFRawRecord(NDEFRawRecord raw) {
-    return ndef.decodePartialNdefMessage(
-        raw.typeNameFormat,
-        ndef.ByteUtils.hexString2list(raw.type),
-        ndef.ByteUtils.hexString2list(raw.payload),
-        id: raw.identifier == ""
-            ? null
-            : ndef.ByteUtils.hexString2list(raw.identifier));
-  }
-
   /// Read NDEF records (in raw data).
   ///
   /// There must be a valid session when invoking.
@@ -241,7 +231,6 @@ class FlutterNfcKit {
   static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool cached}) async {
     final String data =
         await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
-
     return (jsonDecode(data) as List<dynamic>)
         .map((object) => NDEFRawRecord.fromJson(object))
         .toList();
@@ -254,25 +243,15 @@ class FlutterNfcKit {
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
   static Future<void> writeNDEFRecords(List<ndef.NDEFRecord> message) async {
-    return await writeNDEFRawRecords(
-        message.map((r) => r.toRaw()).toList());
+    return await writeNDEFRawRecords(message.map((r) => r.toRaw()).toList());
   }
 
-  /// Convert a [ndef.NDEFRecord] to encoded [NDEFRawRecord]
-  static NDEFRawRecord encodeNDEFRecord(ndef.NDEFRecord record) {
-    return NDEFRawRecord(
-        ndef.ByteUtils.list2hexString(record.id),
-        ndef.ByteUtils.list2hexString(record.payload),
-        ndef.ByteUtils.list2hexString(record.type),
-        record.tnf);
-  }
-
-  /// Write NDEF records (in raw data)
+  /// Write NDEF records (in raw data).
   ///
   /// There must be a valid session when invoking.
   /// [message] is a list of NDEFRawRecord.
   static Future<void> writeNDEFRawRecords(List<NDEFRawRecord> message) async {
-    String data = jsonEncode(message);
+    var data = jsonEncode(message);
     return await _channel.invokeMethod('writeNDEF', {'data': data});
   }
 

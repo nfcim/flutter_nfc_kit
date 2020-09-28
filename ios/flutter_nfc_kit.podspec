@@ -4,17 +4,18 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_nfc_kit'
-  s.version          = '0.0.1'
-  s.summary          = 'A new flutter plugin project.'
+  s.version          = '2.0.0'
+  s.summary          = 'NFC support plugin of Flutter.'
   s.description      = <<-DESC
-A new flutter plugin project.
+  Flutter plugin to provide NFC functionality on Android and iOS, including reading metadata, read & write NDEF records, and transceive layer 3 & 4 data with NFC tags / cards.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/nfcim/flutter_nfc_kit'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'nfc.im' => 'nfsee@nfc.im' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
+  s.weak_frameworks = ['CoreNFC']
   s.platform = :ios, '13.0'
 
   # Flutter.framework does not contain a i386 slice. Only x86_64 simulators are supported.
