@@ -5,7 +5,7 @@ import 'package:ndef/ndef.dart' as ndef;
 class NDEFRecordSetting extends StatefulWidget {
   ndef.NDEFRecord record;
   NDEFRecordSetting({Key key, ndef.NDEFRecord record}) : super(key: key) {
-    if(record==null) {
+    if (record == null) {
       this.record = ndef.NDEFRecord();
     } else {
       this.record = record;
@@ -24,26 +24,28 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
 
   @override
   initState() {
-    if(widget.record.id==null){
+    if (widget.record.id == null) {
+      _identifierController =
+          new TextEditingController.fromValue(TextEditingValue(text: ""));
+    } else {
       _identifierController = new TextEditingController.fromValue(
-        TextEditingValue(text: ""));
-    }else{
-      _identifierController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.id.toHexString()));
+          TextEditingValue(text: widget.record.id.toHexString()));
     }
-    if(widget.record.payload==null){
+    if (widget.record.payload == null) {
+      _payloadController =
+          new TextEditingController.fromValue(TextEditingValue(text: ""));
+    } else {
       _payloadController = new TextEditingController.fromValue(
-        TextEditingValue(text: ""));
-    }else{
-      _payloadController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.payload.toHexString()));
+          TextEditingValue(text: widget.record.payload.toHexString()));
     }
-    if(widget.record.encodedType==null && widget.record.decodedType==null){ // bug in ndef package (fixed in newest version)
+    if (widget.record.encodedType == null &&
+        widget.record.decodedType == null) {
+      // bug in ndef package (fixed in newest version)
+      _typeController =
+          new TextEditingController.fromValue(TextEditingValue(text: ""));
+    } else {
       _typeController = new TextEditingController.fromValue(
-        TextEditingValue(text: ""));
-    }else{
-      _typeController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.type.toHexString()));
+          TextEditingValue(text: widget.record.type.toHexString()));
     }
     _dropButtonValue = ndef.TypeNameFormat.values.indexOf(widget.record.tnf);
   }

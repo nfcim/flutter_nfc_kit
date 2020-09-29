@@ -5,8 +5,8 @@ import 'package:ndef/ndef.dart' as ndef;
 class UriRecordSetting extends StatefulWidget {
   ndef.UriRecord record;
   UriRecordSetting({Key key, ndef.UriRecord record}) : super(key: key) {
-    if(record==null) {
-      this.record = ndef.UriRecord(uriData: '', uriPrefix: '');
+    if (record == null) {
+      this.record = ndef.UriRecord(prefix: '', content: '');
     } else {
       this.record = record;
     }
@@ -23,8 +23,8 @@ class _UriRecordSetting extends State<UriRecordSetting> {
   @override
   initState() {
     _contentController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.uriData));
-    _dropButtonValue = widget.record.uriPrefix;
+        TextEditingValue(text: widget.record.content));
+    _dropButtonValue = widget.record.prefix;
   }
 
   @override
@@ -43,8 +43,9 @@ class _UriRecordSetting extends State<UriRecordSetting> {
                       children: <Widget>[
                         DropdownButton(
                           value: _dropButtonValue,
-                          items: ndef.UriRecord.uriPrefixMap.map((value){
-                            return DropdownMenuItem<String>(child: Text(value),value: value);
+                          items: ndef.UriRecord.prefixMap.map((value) {
+                            return DropdownMenuItem<String>(
+                                child: Text(value), value: value);
                           }).toList(),
                           onChanged: (value) {
                             setState(() {
@@ -64,12 +65,11 @@ class _UriRecordSetting extends State<UriRecordSetting> {
                               Navigator.pop(
                                   context,
                                   ndef.UriRecord(
-                                      uriPrefix: _dropButtonValue,
-                                      uriData:
-                                          (_contentController.text == null
-                                              ? ""
-                                              : _contentController.text),
-                                      ));
+                                    prefix: _dropButtonValue,
+                                    content: (_contentController.text == null
+                                        ? ""
+                                        : _contentController.text),
+                                  ));
                             }
                           },
                         ),

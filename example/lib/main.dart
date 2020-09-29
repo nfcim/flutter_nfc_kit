@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io' show Platform, sleep;
@@ -25,7 +24,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   NFCTag _tag;
   String _result, _writeResult;
   TabController _tabController;
-  List<ndef.NDEFRecord> _message;
+  List<ndef.NDEFRecord> _records;
 
   @override
   void dispose() {
@@ -38,7 +37,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     super.initState();
     initPlatformState();
     _tabController = new TabController(length: 2, vsync: this);
-    _message = new List<ndef.NDEFRecord>();
+    _records = new List<ndef.NDEFRecord>();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -131,144 +130,147 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     'ID: ${_tag?.id}\nStandard: ${_tag?.standard}\nType: ${_tag?.type}\nATQA: ${_tag?.atqa}\nSAK: ${_tag?.sak}\nHistorical Bytes: ${_tag?.historicalBytes}\nProtocol Info: ${_tag?.protocolInfo}\nApplication Data: ${_tag?.applicationData}\nHigher Layer Response: ${_tag?.hiLayerResponse}\nManufacturer: ${_tag?.manufacturer}\nSystem Code: ${_tag?.systemCode}\nDSF ID: ${_tag?.dsfId}\nNDEF Available: ${_tag?.ndefAvailable}\nNDEF Type: ${_tag?.ndefType}\nNDEF Writable: ${_tag?.ndefWritable}\nNDEF Can Make Read Only: ${_tag?.ndefCanMakeReadOnly}\nNDEF Capacity: ${_tag?.ndefCapacity}\n\n Transceive Result:\n$_result'),
               ])))),
           Center(
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.start, children: <
-                    Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
-                  RaisedButton(
-                    onPressed: () async {
-                      if (_message.length != 0) {
-                        try {
-                          NFCTag tag = await FlutterNfcKit.poll();
-                          setState(() {
-                            _tag = tag;
-                          });
-                          if (tag.type == NFCTagType.mifare_ultralight ||
-                              tag.type == NFCTagType.mifare_classic) {
-                            await FlutterNfcKit.writeNDEFRecords(_message);
-                            setState(() {
-                              _writeResult = 'OK';
-                            });
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      RaisedButton(
+                        onPressed: () async {
+                          if (_records.length != 0) {
+                            try {
+                              NFCTag tag = await FlutterNfcKit.poll();
+                              setState(() {
+                                _tag = tag;
+                              });
+                              if (tag.type == NFCTagType.mifare_ultralight ||
+                                  tag.type == NFCTagType.mifare_classic) {
+                                await FlutterNfcKit.writeNDEFRecords(_records);
+                                setState(() {
+                                  _writeResult = 'OK';
+                                });
+                              } else {
+                                setState(() {
+                                  _writeResult =
+                                      'error: NDEF not supported: ${tag.type}';
+                                });
+                              }
+                            } catch (e, stacktrace) {
+                              setState(() {
+                                _writeResult = 'error: $e';
+                              });
+                              print(stacktrace);
+                            } finally {
+                              await FlutterNfcKit.finish();
+                            }
                           } else {
                             setState(() {
-                              _writeResult =
-                                  'error: NDEF not supported: ${tag.type}';
+                              _writeResult = 'error: No record';
                             });
                           }
-                        } catch (e) {
-                          setState(() {
-                            _writeResult = 'error: $e';
-                          });
-                        } finally {
-                          await FlutterNfcKit.finish();
-                        }
-                      } else {
-                        setState(() {
-                          _writeResult = 'error: No record';
-                        });
-                      }
-                    },
-                    child: Text("Start writing"),
+                        },
+                        child: Text("Start writing"),
+                      ),
+                      RaisedButton(
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return SimpleDialog(
+                                    title: Text("Record Type"),
+                                    children: <Widget>[
+                                      SimpleDialogOption(
+                                        child: Text("Text Record"),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          final result = await Navigator.push(
+                                              context, MaterialPageRoute(
+                                                  builder: (context) {
+                                            return TextRecordSetting();
+                                          }));
+                                          if (result != null) {
+                                            if (result is ndef.TextRecord) {
+                                              setState(() {
+                                                _records.add(result);
+                                              });
+                                            }
+                                          }
+                                        },
+                                      ),
+                                      SimpleDialogOption(
+                                        child: Text("Uri Record"),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          final result = await Navigator.push(
+                                              context, MaterialPageRoute(
+                                                  builder: (context) {
+                                            return UriRecordSetting();
+                                          }));
+                                          if (result != null) {
+                                            if (result is ndef.UriRecord) {
+                                              setState(() {
+                                                _records.add(result);
+                                              });
+                                            }
+                                          }
+                                        },
+                                      ),
+                                      SimpleDialogOption(
+                                        child: Text("Raw Record"),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          final result = await Navigator.push(
+                                              context, MaterialPageRoute(
+                                                  builder: (context) {
+                                            return NDEFRecordSetting();
+                                          }));
+                                          if (result != null) {
+                                            if (result is ndef.NDEFRecord) {
+                                              setState(() {
+                                                _records.add(result);
+                                              });
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ]);
+                              });
+                        },
+                        child: Text("Add record"),
+                      )
+                    ],
                   ),
-                  RaisedButton(
-                    onPressed: () {
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return SimpleDialog(
-                                title: Text("Record Type"),
-                                children: <Widget>[
-                                  SimpleDialogOption(
-                                    child: Text("Text Record"),
-                                    onPressed: () async {
-                                      final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (context) {
-                                        return TextRecordSetting();
-                                      }));
-                                      if(result!=null) {
-                                        if (result is ndef.TextRecord) {
-                                          setState(() {
-                                            _message.add(result);
-                                          });
-                                        }
+                  Text('Result:$_writeResult'),
+                  Expanded(
+                    flex: 1,
+                    child: ListView(
+                        shrinkWrap: true,
+                        children: List<Widget>.generate(
+                            _records.length,
+                            (index) => GestureDetector(
+                                  child: Text(
+                                      'id:${_records[index].id.toHexString()}\ntnf:${_records[index].tnf}\ntype:${_records[index].type.toHexString()}\npayload:${_records[index].payload.toHexString()}\n'),
+                                  onTap: () async {
+                                    final result = await Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) {
+                                      return NDEFRecordSetting(
+                                          record: _records[index]);
+                                    }));
+                                    if (result != null) {
+                                      if (result is ndef.NDEFRecord) {
+                                        setState(() {
+                                          _records[index] = result;
+                                        });
+                                      } else if (result is String &&
+                                          result == "Delete") {
+                                        _records.removeAt(index);
                                       }
-                                    },
-                                  ),
-                                  SimpleDialogOption(
-                                    child: Text("Uri Record"),
-                                    onPressed: () async {
-                                      final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (context) {
-                                        return UriRecordSetting();
-                                      }));
-                                      if(result!=null) {
-                                        if (result is ndef.UriRecord) {
-                                          setState(() {
-                                            _message.add(result);
-                                          });
-                                        }
-                                      }
-                                    },
-                                  ),
-                                  SimpleDialogOption(
-                                    child: Text("Raw Record"),
-                                    onPressed: () async {
-                                      final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (context) {
-                                        return NDEFRecordSetting();
-                                      }));
-                                      if (result != null) {
-                                        if (result is ndef.NDEFRecord) {
-                                          setState(() {
-                                            _message.add(result);
-                                          });
-                                        }
-                                      }
-                                    },
-                                  ),
-                                ]);
-                          });
-                    },
-                    child: Text("Add record"),
-                  )
-                ],
-              ),
-              Text('Result:$_writeResult'),
-              Expanded(
-                flex: 1,
-                child: ListView (
-                    shrinkWrap: true,
-                    children: List<Widget>.generate(
-                        _message.length,
-                        (index) => GestureDetector(
-                              child: Text(
-                                //id:${_message[index].id.toHexString()}\n
-                                  'tnf:${_message[index].tnf}\ntype:${_message[index].type.toHexString()}\npayload:${_message[index].payload.toHexString()}\n'),
-                              onTap: () async {
-                                final result = await Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) {
-                                  return NDEFRecordSetting(
-                                      record: _message[index]);
-                                }));
-                                if (result != null) {
-                                  if (result is ndef.NDEFRecord) {
-                                    setState(() {
-                                      _message[index] = result;
-                                    });
-                                  } else if (result is String &&
-                                      result == "Delete") {
-                                    _message.removeAt(index);
-                                  }
-                                }
-                              },
-                            ))),
-              ),
-            ]),
+                                    }
+                                  },
+                                ))),
+                  ),
+                ]),
           )
         ]),
       ),

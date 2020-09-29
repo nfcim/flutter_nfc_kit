@@ -5,7 +5,7 @@ import 'package:ndef/ndef.dart' as ndef;
 class TextRecordSetting extends StatefulWidget {
   ndef.TextRecord record;
   TextRecordSetting({Key key, ndef.TextRecord record}) : super(key: key) {
-    if(record==null) {
+    if (record == null) {
       this.record = ndef.TextRecord(language: 'en', text: '');
     } else {
       this.record = record;

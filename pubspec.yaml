@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   json_annotation: ^3.0.1
-  ndef: ^0.2.0
+  ndef: ^0.2.2
 
 dev_dependencies:
   flutter_test:
