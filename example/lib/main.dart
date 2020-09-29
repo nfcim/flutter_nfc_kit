@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io' show Platform, sleep;
@@ -7,6 +5,10 @@ import 'dart:io' show Platform, sleep;
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:ndef/ndef.dart' as ndef;
+
+import 'record-setting/raw_record_setting.dart';
+import 'record-setting/text_record_setting.dart';
+import 'record-setting/uri_record_setting.dart';
 
 void main() => runApp(MaterialApp(home: MyApp()));
 
@@ -22,7 +24,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   NFCTag _tag;
   String _result, _writeResult;
   TabController _tabController;
-  List<NDEFRawRecord> _message;
+  List<ndef.NDEFRecord> _records;
 
   @override
   void dispose() {
@@ -35,7 +37,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     super.initState();
     initPlatformState();
     _tabController = new TabController(length: 2, vsync: this);
-    _message = new List<NDEFRawRecord>();
+    _records = new List<ndef.NDEFRecord>();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -136,7 +138,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     children: <Widget>[
                       RaisedButton(
                         onPressed: () async {
-                          if (_message.length != 0) {
+                          if (_records.length != 0) {
                             try {
                               NFCTag tag = await FlutterNfcKit.poll();
                               setState(() {
@@ -144,8 +146,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                               });
                               if (tag.type == NFCTagType.mifare_ultralight ||
                                   tag.type == NFCTagType.mifare_classic) {
-                                await FlutterNfcKit.writeNDEFRawRecords(
-                                    _message);
+                                await FlutterNfcKit.writeNDEFRecords(_records);
                                 setState(() {
                                   _writeResult = 'OK';
                                 });
@@ -155,10 +156,11 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                       'error: NDEF not supported: ${tag.type}';
                                 });
                               }
-                            } catch (e) {
+                            } catch (e, stacktrace) {
                               setState(() {
                                 _writeResult = 'error: $e';
                               });
+                              print(stacktrace);
                             } finally {
                               await FlutterNfcKit.finish();
                             }
@@ -172,10 +174,68 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                       ),
                       RaisedButton(
                         onPressed: () {
-                          setState(() {
-                            _message.add(NDEFRawRecord(
-                                "", "", "", ndef.TypeNameFormat.empty));
-                          });
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return SimpleDialog(
+                                    title: Text("Record Type"),
+                                    children: <Widget>[
+                                      SimpleDialogOption(
+                                        child: Text("Text Record"),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          final result = await Navigator.push(
+                                              context, MaterialPageRoute(
+                                                  builder: (context) {
+                                            return TextRecordSetting();
+                                          }));
+                                          if (result != null) {
+                                            if (result is ndef.TextRecord) {
+                                              setState(() {
+                                                _records.add(result);
+                                              });
+                                            }
+                                          }
+                                        },
+                                      ),
+                                      SimpleDialogOption(
+                                        child: Text("Uri Record"),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          final result = await Navigator.push(
+                                              context, MaterialPageRoute(
+                                                  builder: (context) {
+                                            return UriRecordSetting();
+                                          }));
+                                          if (result != null) {
+                                            if (result is ndef.UriRecord) {
+                                              setState(() {
+                                                _records.add(result);
+                                              });
+                                            }
+                                          }
+                                        },
+                                      ),
+                                      SimpleDialogOption(
+                                        child: Text("Raw Record"),
+                                        onPressed: () async {
+                                          Navigator.pop(context);
+                                          final result = await Navigator.push(
+                                              context, MaterialPageRoute(
+                                                  builder: (context) {
+                                            return NDEFRecordSetting();
+                                          }));
+                                          if (result != null) {
+                                            if (result is ndef.NDEFRecord) {
+                                              setState(() {
+                                                _records.add(result);
+                                              });
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ]);
+                              });
                         },
                         child: Text("Add record"),
                       )
@@ -187,24 +247,24 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     child: ListView(
                         shrinkWrap: true,
                         children: List<Widget>.generate(
-                            _message.length,
+                            _records.length,
                             (index) => GestureDetector(
                                   child: Text(
-                                      'id:${_message[index].identifier}\ntnf:${_message[index].typeNameFormat}\ntype:${_message[index].type}\npayload:${_message[index].payload}\n'),
+                                      'id:${_records[index].id.toHexString()}\ntnf:${_records[index].tnf}\ntype:${_records[index].type.toHexString()}\npayload:${_records[index].payload.toHexString()}\n'),
                                   onTap: () async {
                                     final result = await Navigator.push(context,
                                         MaterialPageRoute(builder: (context) {
                                       return NDEFRecordSetting(
-                                          record: _message[index]);
+                                          record: _records[index]);
                                     }));
                                     if (result != null) {
-                                      if (result is NDEFRawRecord) {
+                                      if (result is ndef.NDEFRecord) {
                                         setState(() {
-                                          _message[index] = result;
+                                          _records[index] = result;
                                         });
                                       } else if (result is String &&
                                           result == "Delete") {
-                                        _message.removeAt(index);
+                                        _records.removeAt(index);
                                       }
                                     }
                                   },
@@ -215,144 +275,5 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
         ]),
       ),
     );
-  }
-}
-
-class NDEFRecordSetting extends StatefulWidget {
-  NDEFRawRecord record;
-  NDEFRecordSetting({Key key, this.record}) : super(key: key);
-  @override
-  _NDEFRecordSetting createState() => _NDEFRecordSetting();
-}
-
-class _NDEFRecordSetting extends State<NDEFRecordSetting> {
-  GlobalKey _formKey = new GlobalKey<FormState>();
-  TextEditingController _identifierController;
-  TextEditingController _payloadController;
-  TextEditingController _typeController;
-  ndef.TypeNameFormat _tnf = ndef.TypeNameFormat.empty;
-  int _dropButtonValue;
-
-  @override
-  initState() {
-    _identifierController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.identifier));
-    _payloadController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.payload));
-    _typeController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.type));
-    _tnf = widget.record.typeNameFormat;
-    _dropButtonValue = ndef.TypeNameFormat.values.indexOf(_tnf);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
-            appBar: AppBar(
-              title: Text('Set Record'),
-            ),
-            body: Center(
-                child: Form(
-                    key: _formKey,
-                    autovalidate: true,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        DropdownButton(
-                          value: _dropButtonValue,
-                          items: [
-                            DropdownMenuItem(
-                              child: Text('empty'),
-                              value: 0,
-                            ),
-                            DropdownMenuItem(
-                              child: Text('nfcWellKnown'),
-                              value: 1,
-                            ),
-                            DropdownMenuItem(
-                              child: Text('media'),
-                              value: 2,
-                            ),
-                            DropdownMenuItem(
-                              child: Text('absoluteURI'),
-                              value: 3,
-                            ),
-                            DropdownMenuItem(
-                                child: Text('nfcExternal'), value: 4),
-                            DropdownMenuItem(
-                                child: Text('unchanged'), value: 5),
-                            DropdownMenuItem(
-                              child: Text('unknown'),
-                              value: 6,
-                            ),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              _tnf = ndef.TypeNameFormat.values[value];
-                              _dropButtonValue =
-                                  ndef.TypeNameFormat.values.indexOf(_tnf);
-                            });
-                          },
-                        ),
-                        TextFormField(
-                          decoration: InputDecoration(labelText: 'identifier'),
-                          validator: (v) {
-                            return v.trim().length % 2 == 0
-                                ? null
-                                : 'length must be even';
-                          },
-                          controller: _identifierController,
-                        ),
-                        TextFormField(
-                          decoration: InputDecoration(labelText: 'type'),
-                          validator: (v) {
-                            return v.trim().length % 2 == 0
-                                ? null
-                                : 'length must be even';
-                          },
-                          controller: _typeController,
-                        ),
-                        TextFormField(
-                          decoration: InputDecoration(labelText: 'payload'),
-                          validator: (v) {
-                            return v.trim().length % 2 == 0
-                                ? null
-                                : 'length must be even';
-                          },
-                          controller: _payloadController,
-                        ),
-                        RaisedButton(
-                          child: Text('OK'),
-                          onPressed: () {
-                            if ((_formKey.currentState as FormState)
-                                .validate()) {
-                              Navigator.pop(
-                                  context,
-                                  NDEFRawRecord(
-                                      (_identifierController.text == null
-                                          ? ""
-                                          : _identifierController.text),
-                                      (_payloadController.text == null
-                                          ? ""
-                                          : _payloadController.text),
-                                      (_typeController.text == null
-                                          ? ""
-                                          : _typeController.text),
-                                      _tnf));
-                            }
-                          },
-                        ),
-                        RaisedButton(
-                          child: Text('Delete'),
-                          onPressed: () {
-                            if ((_formKey.currentState as FormState)
-                                .validate()) {
-                              Navigator.pop(context, 'Delete');
-                            }
-                          },
-                        ),
-                      ],
-                    )))));
   }
 }
