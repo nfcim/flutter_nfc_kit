@@ -75,3 +75,8 @@
 * Fix format of CHANGELOG.md
 * Format source code to pass static analysis
 
+## 2.1.0
+
+* Update to latest version of `ndef` package
+* Update example app on writing NDEF records
+
