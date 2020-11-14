@@ -79,9 +79,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             "poll" -> {
                 val timeout = call.argument<Int>("timeout")!!
-                val platformSound = call.argument<Boolean>("androidPlatformSound")!!
-                val checkNDEF = call.argument<Boolean>("androidCheckNDEF")!!
-                pollTag(nfcAdapter, result, timeout, platformSound, checkNDEF)
+                // technology and option bits are set in Dart code
+                val technologies = call.argument<Int>("technologies")!!
+                pollTag(nfcAdapter, result, timeout, technologies)
             }
 
             "finish" -> {
@@ -281,19 +281,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromActivityForConfigChanges() {}
 
-    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, platformSound: Boolean, checkNDEF: Boolean) {
+    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, technologies: Int) {
 
         pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
             nfcAdapter.disableReaderMode(activity)
             result.error("408", "Polling tag timeout", null)
-        }
-
-        var readerFlags = FLAG_READER_NFC_A or FLAG_READER_NFC_B or FLAG_READER_NFC_V or FLAG_READER_NFC_F
-        if (!platformSound) {
-            readerFlags = readerFlags or FLAG_READER_NO_PLATFORM_SOUNDS
-        }
-        if (!checkNDEF) {
-            readerFlags = readerFlags or FLAG_READER_SKIP_NDEF_CHECK
         }
 
         nfcAdapter.enableReaderMode(activity, { tag ->
@@ -414,7 +406,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     "ndefCapacity" to ndefCapacity
             )).toString())
 
-        }, readerFlags, null)
+        }, technologies, null)
     }
 
     private class MethodResultWrapper internal constructor(result: Result) : Result {

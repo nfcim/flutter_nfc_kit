@@ -173,6 +173,9 @@ class FlutterNfcKit {
   ///
   /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
   /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
+  /// 
+  /// The four boolean flags [readIso14443A], [readIso14443B], [readIso18092], [readIso15693] controls the NFC technology that would be tried.
+  /// On iOS, setting any of [readIso14443A] and [readIso14443B] will enable `iso14443` in `pollingOption`.
   ///
   /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
   /// If disabled, you will not be able to use any NDEF-related methods in the current session.
@@ -183,13 +186,26 @@ class FlutterNfcKit {
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
         "More than one tags are detected, please leave only one tag and try again.",
+    bool readIso14443A = true,
+    bool readIso14443B = true,
+    bool readIso18092 = true,
+    bool readIso15693 = true,
   }) async {
+    // use a bitmask for compact representation
+    int technologies = 0x0;
+    // hardcoded bits, corresponding to flags in android.nfc.NfcAdapter
+    if (readIso14443A) technologies |= 0x1;
+    if (readIso14443B) technologies |= 0x2;
+    if (readIso18092) technologies |= 0x4;
+    if (readIso15693) technologies |= 0x8;
+    // iOS can safely ignore these option bits
+    if (!androidCheckNDEF) technologies |= 0x100;
+    if (!androidPlatformSound) technologies |= 0x80;
     final String data = await _channel.invokeMethod('poll', {
       'timeout': timeout?.inMilliseconds ?? 20 * 1000,
       'iosAlertMessage': iosAlertMessage,
       'iosMultipleTagMessage': iosMultipleTagMessage,
-      'androidPlatformSound': androidPlatformSound,
-      'androidCheckNDEF': androidCheckNDEF,
+      'technologies': technologies
     });
     return NFCTag.fromJson(jsonDecode(data));
   }

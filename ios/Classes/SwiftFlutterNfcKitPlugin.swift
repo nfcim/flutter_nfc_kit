@@ -54,8 +54,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             if session != nil {
                 result(FlutterError(code: "406", message: "Cannot invoke poll in a active session", details: nil))
             } else {
-                session = NFCTagReaderSession(pollingOption: [.iso14443, .iso15693, .iso18092], delegate: self)
                 let arguments = call.arguments as! [String: Any?]
+                let technologies = arguments["technologies"] as! Int
+                // TODO: derive pollingOption from technology flags
+                session = NFCTagReaderSession(pollingOption: [.iso14443, .iso15693, .iso18092], delegate: self)
                 if let alertMessage = arguments["iosAlertMessage"] as? String {
                     session?.alertMessage = alertMessage
                 }
