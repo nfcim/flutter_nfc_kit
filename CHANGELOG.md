@@ -80,3 +80,6 @@
 * Update to latest version of `ndef` package
 * Update example app on writing NDEF records
 
+## 2.2.0
+
+* Allow specifying needed NFC technologies in `poll` (fix [#15](https://github.com/nfcim/flutter_nfc_kit/issues/15))
