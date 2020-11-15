@@ -57,7 +57,17 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 let arguments = call.arguments as! [String: Any?]
                 let technologies = arguments["technologies"] as! Int
                 // TODO: derive pollingOption from technology flags
-                session = NFCTagReaderSession(pollingOption: [.iso14443, .iso15693, .iso18092], delegate: self)
+                var pollingOption: NFCTagReaderSession.PollingOption = []
+                if (technologies & 0x3) != 0 {
+                    pollingOption.insert(.iso14443)
+                }
+                if (technologies & 0x4) != 0 {
+                    pollingOption.insert(.iso18092)
+                }
+                if (technologies & 0x8) != 0 {
+                    pollingOption.insert(.iso15693)
+                }
+                session = NFCTagReaderSession(pollingOption: pollingOption, delegate: self)
                 if let alertMessage = arguments["iosAlertMessage"] as? String {
                     session?.alertMessage = alertMessage
                 }
