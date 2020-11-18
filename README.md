@@ -35,6 +35,10 @@ Thank [nfc_manager](https://pub.dev/packages/nfc_manager) plugin for these instr
 
 * Add [com.apple.developer.nfc.readersession.felica.systemcodes](https://developer.apple.com/documentation/bundleresources/information_property_list/systemcodes) and [com.apple.developer.nfc.readersession.iso7816.select-identifiers](https://developer.apple.com/documentation/bundleresources/information_property_list/select-identifiers) to your `Info.plist` as needed.
 
+* Open Runner.xcworkspace with Xcode and navigate to project settings then the tab _Signing & Capabilities._
+
+* Select the Runner in targets in left sidebar then press the "+ Capability" in the left upper corner and choose _Near Field Communication Tag Reading._
+
 ## Usage
 
 Simple example:
