@@ -37,7 +37,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     super.initState();
     initPlatformState();
     _tabController = new TabController(length: 2, vsync: this);
-    _records = new List<ndef.NDEFRecord>();
+    _records = [];
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -81,7 +81,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                 Text('Running on: $_platformVersion\nNFC: $_availability'),
-                RaisedButton(
+                ElevatedButton(
                   onPressed: () async {
                     try {
                       NFCTag tag = await FlutterNfcKit.poll();
@@ -136,7 +136,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: <Widget>[
-                      RaisedButton(
+                      ElevatedButton(
                         onPressed: () async {
                           if (_records.length != 0) {
                             try {
@@ -172,7 +172,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         },
                         child: Text("Start writing"),
                       ),
-                      RaisedButton(
+                      ElevatedButton(
                         onPressed: () {
                           showDialog(
                               context: context,

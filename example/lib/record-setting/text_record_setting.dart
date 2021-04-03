@@ -23,6 +23,8 @@ class _TextRecordSetting extends State<TextRecordSetting> {
 
   @override
   initState() {
+    super.initState();
+
     _languageController = new TextEditingController.fromValue(
         TextEditingValue(text: widget.record.language));
     _textController = new TextEditingController.fromValue(
@@ -40,7 +42,7 @@ class _TextRecordSetting extends State<TextRecordSetting> {
             body: Center(
                 child: Form(
                     key: _formKey,
-                    autovalidate: true,
+                    autovalidateMode: AutovalidateMode.always,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
@@ -69,7 +71,7 @@ class _TextRecordSetting extends State<TextRecordSetting> {
                           decoration: InputDecoration(labelText: 'text'),
                           controller: _textController,
                         ),
-                        RaisedButton(
+                        ElevatedButton(
                           child: Text('OK'),
                           onPressed: () {
                             if ((_formKey.currentState as FormState)

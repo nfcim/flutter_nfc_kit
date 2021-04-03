@@ -24,6 +24,8 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
 
   @override
   initState() {
+    super.initState();
+
     if (widget.record.id == null) {
       _identifierController =
           new TextEditingController.fromValue(TextEditingValue(text: ""));
@@ -60,7 +62,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
             body: Center(
                 child: Form(
                     key: _formKey,
-                    autovalidate: true,
+                    autovalidateMode: AutovalidateMode.always,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
@@ -125,7 +127,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                           },
                           controller: _payloadController,
                         ),
-                        RaisedButton(
+                        ElevatedButton(
                           child: Text('OK'),
                           onPressed: () {
                             if ((_formKey.currentState as FormState)
@@ -150,7 +152,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                             }
                           },
                         ),
-                        RaisedButton(
+                        ElevatedButton(
                           child: Text('Delete'),
                           onPressed: () {
                             if ((_formKey.currentState as FormState)

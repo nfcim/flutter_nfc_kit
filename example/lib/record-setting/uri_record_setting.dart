@@ -22,6 +22,8 @@ class _UriRecordSetting extends State<UriRecordSetting> {
 
   @override
   initState() {
+    super.initState();
+
     _contentController = new TextEditingController.fromValue(
         TextEditingValue(text: widget.record.content));
     _dropButtonValue = widget.record.prefix;
@@ -37,7 +39,7 @@ class _UriRecordSetting extends State<UriRecordSetting> {
             body: Center(
                 child: Form(
                     key: _formKey,
-                    autovalidate: true,
+                    autovalidateMode: AutovalidateMode.always,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
@@ -57,7 +59,7 @@ class _UriRecordSetting extends State<UriRecordSetting> {
                           decoration: InputDecoration(labelText: 'content'),
                           controller: _contentController,
                         ),
-                        RaisedButton(
+                        ElevatedButton(
                           child: Text('OK'),
                           onPressed: () {
                             if ((_formKey.currentState as FormState)
