@@ -179,6 +179,9 @@ class FlutterNfcKit {
   ///
   /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
   /// If disabled, you will not be able to use any NDEF-related methods in the current session.
+  ///
+  /// Caution: due to [bug in iOS](https://github.com/nfcim/flutter_nfc_kit/issues/23) readIso18092 is disabled by default.
+  /// If enabled, please ensure that `com.apple.developer.nfc.readersession.felica.systemcodes` is set in `Info.plist`.
   static Future<NFCTag> poll({
     Duration timeout,
     bool androidPlatformSound = true,
@@ -188,7 +191,7 @@ class FlutterNfcKit {
         "More than one tags are detected, please leave only one tag and try again.",
     bool readIso14443A = true,
     bool readIso14443B = true,
-    bool readIso18092 = true,
+    bool readIso18092 = false,
     bool readIso15693 = true,
   }) async {
     // use a bitmask for compact representation
