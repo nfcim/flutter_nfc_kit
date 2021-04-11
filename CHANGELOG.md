@@ -83,3 +83,7 @@
 ## 2.2.0
 
 * Allow specifying needed NFC technologies in `poll` (fix [#15](https://github.com/nfcim/flutter_nfc_kit/issues/15))
+
+## 2.2.1
+
+* Disable ISO 18092 in `poll` by default due to iOS CoreNFC bug (see [#23](https://github.com/nfcim/flutter_nfc_kit/issues/23))
