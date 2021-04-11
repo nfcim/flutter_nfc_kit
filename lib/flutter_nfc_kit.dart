@@ -180,8 +180,9 @@ class FlutterNfcKit {
   /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
   /// If disabled, you will not be able to use any NDEF-related methods in the current session.
   ///
-  /// Caution: due to [bug in iOS](https://github.com/nfcim/flutter_nfc_kit/issues/23) readIso18092 is disabled by default.
-  /// If enabled, please ensure that `com.apple.developer.nfc.readersession.felica.systemcodes` is set in `Info.plist`.
+  /// Caution: due to [bug in iOS CoreNFC](https://github.com/nfcim/flutter_nfc_kit/issues/23), [readIso18092] is disabled by default from 2.2.1.
+  /// If enabled, please ensure that `com.apple.developer.nfc.readersession.felica.systemcodes` is set in `Info.plist`,
+  /// or your NFC **WILL BE TOTALLY UNAVAILABLE BEFORE REBOOT**.
   static Future<NFCTag> poll({
     Duration timeout,
     bool androidPlatformSound = true,
