@@ -87,3 +87,4 @@
 ## 2.2.1
 
 * Disable ISO 18092 in `poll` by default due to iOS CoreNFC bug (see [#23](https://github.com/nfcim/flutter_nfc_kit/issues/23))
+* Bump dependencies & fix some deprecation warnings
