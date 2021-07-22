@@ -8,7 +8,7 @@ part of 'flutter_nfc_kit.dart';
 
 NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
   return NFCTag(
-    _$enumDecodeNullable(_$NFCTagTypeEnumMap, json['type']),
+    _$enumDecodeNullable(_$NFCTagTypeEnumMap, json['type']) as NFCTagType,
     json['id'] as String,
     json['standard'] as String,
     json['atqa'] as String,
@@ -48,10 +48,10 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
     };
 
-T _$enumDecode<T>(
+T? _$enumDecode<T>(
   Map<T, dynamic> enumValues,
   dynamic source, {
-  T unknownValue,
+  T? unknownValue,
 }) {
   if (source == null) {
     throw ArgumentError('A value must be provided. Supported values: '
@@ -59,8 +59,8 @@ T _$enumDecode<T>(
   }
 
   final value = enumValues.entries
-      .singleWhere((e) => e.value == source, orElse: () => null)
-      ?.key;
+      .singleWhere((e) => e.value == source)
+      .key;
 
   if (value == null && unknownValue == null) {
     throw ArgumentError('`$source` is not one of the supported values: '
@@ -69,10 +69,10 @@ T _$enumDecode<T>(
   return value ?? unknownValue;
 }
 
-T _$enumDecodeNullable<T>(
+T? _$enumDecodeNullable<T>(
   Map<T, dynamic> enumValues,
   dynamic source, {
-  T unknownValue,
+  T? unknownValue,
 }) {
   if (source == null) {
     return null;
@@ -96,7 +96,7 @@ NDEFRawRecord _$NDEFRawRecordFromJson(Map<String, dynamic> json) {
     json['identifier'] as String,
     json['payload'] as String,
     json['type'] as String,
-    _$enumDecodeNullable(_$TypeNameFormatEnumMap, json['typeNameFormat']),
+    _$enumDecodeNullable(_$TypeNameFormatEnumMap, json['typeNameFormat']) as ndef.TypeNameFormat,
   );
 }
 
@@ -113,7 +113,7 @@ const _$TypeNameFormatEnumMap = {
   TypeNameFormat.nfcWellKnown: 'nfcWellKnown',
   TypeNameFormat.media: 'media',
   TypeNameFormat.absoluteURI: 'absoluteURI',
-  TypeNameFormat.nfcExternel: 'nfcExternel',
+  TypeNameFormat.nfcExternal: 'nfcExternal',
   TypeNameFormat.unknown: 'unknown',
   TypeNameFormat.unchanged: 'unchanged',
 };

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:ndef/ndef.dart' as ndef;
 
 class TextRecordSetting extends StatefulWidget {
-  ndef.TextRecord record;
-  TextRecordSetting({Key key, ndef.TextRecord record}) : super(key: key) {
+  late ndef.TextRecord record;
+  TextRecordSetting({Key? key, ndef.TextRecord? record}) : super(key: key) {
     if (record == null) {
       this.record = ndef.TextRecord(language: 'en', text: '');
     } else {
@@ -17,18 +17,18 @@ class TextRecordSetting extends StatefulWidget {
 
 class _TextRecordSetting extends State<TextRecordSetting> {
   GlobalKey _formKey = new GlobalKey<FormState>();
-  TextEditingController _languageController;
-  TextEditingController _textController;
-  int _dropButtonValue;
+  late TextEditingController _languageController;
+  late TextEditingController _textController;
+  late int _dropButtonValue;
 
   @override
   initState() {
     super.initState();
 
     _languageController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.language));
+        TextEditingValue(text: widget.record.language!));
     _textController = new TextEditingController.fromValue(
-        TextEditingValue(text: widget.record.text));
+        TextEditingValue(text: widget.record.text!));
     _dropButtonValue = ndef.TextEncoding.values.indexOf(widget.record.encoding);
   }
 
@@ -54,14 +54,14 @@ class _TextRecordSetting extends State<TextRecordSetting> {
                           ],
                           onChanged: (value) {
                             setState(() {
-                              _dropButtonValue = value;
+                              _dropButtonValue = value as int;
                             });
                           },
                         ),
                         TextFormField(
                           decoration: InputDecoration(labelText: 'language'),
                           validator: (v) {
-                            return v.trim().length % 2 == 0
+                            return v!.trim().length % 2 == 0
                                 ? null
                                 : 'length must not be blank';
                           },

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:ndef/ndef.dart' as ndef;
 
 class NDEFRecordSetting extends StatefulWidget {
-  ndef.NDEFRecord record;
-  NDEFRecordSetting({Key key, ndef.NDEFRecord record}) : super(key: key) {
+  late  ndef.NDEFRecord record;
+  NDEFRecordSetting({Key? key, ndef.NDEFRecord? record}) : super(key: key) {
     if (record == null) {
       this.record = ndef.NDEFRecord();
     } else {
@@ -17,10 +17,10 @@ class NDEFRecordSetting extends StatefulWidget {
 
 class _NDEFRecordSetting extends State<NDEFRecordSetting> {
   GlobalKey _formKey = new GlobalKey<FormState>();
-  TextEditingController _identifierController;
-  TextEditingController _payloadController;
-  TextEditingController _typeController;
-  int _dropButtonValue;
+  late TextEditingController _identifierController;
+  late TextEditingController _payloadController;
+  late TextEditingController _typeController;
+  late int _dropButtonValue;
 
   @override
   initState() {
@@ -31,14 +31,14 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
           new TextEditingController.fromValue(TextEditingValue(text: ""));
     } else {
       _identifierController = new TextEditingController.fromValue(
-          TextEditingValue(text: widget.record.id.toHexString()));
+          TextEditingValue(text: widget.record.id!.toHexString()));
     }
     if (widget.record.payload == null) {
       _payloadController =
           new TextEditingController.fromValue(TextEditingValue(text: ""));
     } else {
       _payloadController = new TextEditingController.fromValue(
-          TextEditingValue(text: widget.record.payload.toHexString()));
+          TextEditingValue(text: widget.record.payload!.toHexString()));
     }
     if (widget.record.encodedType == null &&
         widget.record.decodedType == null) {
@@ -47,7 +47,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
           new TextEditingController.fromValue(TextEditingValue(text: ""));
     } else {
       _typeController = new TextEditingController.fromValue(
-          TextEditingValue(text: widget.record.type.toHexString()));
+          TextEditingValue(text: widget.record.type!.toHexString()));
     }
     _dropButtonValue = ndef.TypeNameFormat.values.indexOf(widget.record.tnf);
   }
@@ -96,14 +96,14 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                           ],
                           onChanged: (value) {
                             setState(() {
-                              _dropButtonValue = value;
+                              _dropButtonValue = value as int;
                             });
                           },
                         ),
                         TextFormField(
                           decoration: InputDecoration(labelText: 'identifier'),
                           validator: (v) {
-                            return v.trim().length % 2 == 0
+                            return v!.trim().length % 2 == 0
                                 ? null
                                 : 'length must be even';
                           },
@@ -112,7 +112,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                         TextFormField(
                           decoration: InputDecoration(labelText: 'type'),
                           validator: (v) {
-                            return v.trim().length % 2 == 0
+                            return v!.trim().length % 2 == 0
                                 ? null
                                 : 'length must be even';
                           },
@@ -121,7 +121,7 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                         TextFormField(
                           decoration: InputDecoration(labelText: 'payload'),
                           validator: (v) {
-                            return v.trim().length % 2 == 0
+                            return v!.trim().length % 2 == 0
                                 ? null
                                 : 'length must be even';
                           },
