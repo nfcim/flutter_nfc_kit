@@ -105,10 +105,10 @@ packages:
   ndef:
     dependency: transitive
     description:
-      path: "/Users/mr8god/OSPP/ProjectCode/ndef_integrate/finish/ndef"
-      relative: false
-    source: path
-    version: "0.3.0"
+      name: ndef
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.3.1"
   path:
     dependency: transitive
     description:

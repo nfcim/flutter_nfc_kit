@@ -8,7 +8,7 @@ part of 'flutter_nfc_kit.dart';
 
 NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
   return NFCTag(
-    _$enumDecodeNullable(_$NFCTagTypeEnumMap, json['type']) as NFCTagType,
+    _$enumDecode(_$NFCTagTypeEnumMap, json['type']),
     json['id'] as String,
     json['standard'] as String,
     json['atqa'] as String,
@@ -48,36 +48,30 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
     };
 
-T? _$enumDecode<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T? unknownValue,
+K _$enumDecode<K, V>(
+  Map<K, V> enumValues,
+  Object? source, {
+  K? unknownValue,
 }) {
   if (source == null) {
-    throw ArgumentError('A value must be provided. Supported values: '
-        '${enumValues.values.join(', ')}');
+    throw ArgumentError(
+      'A value must be provided. Supported values: '
+      '${enumValues.values.join(', ')}',
+    );
   }
 
-  final value = enumValues.entries
-      .singleWhere((e) => e.value == source)
-      .key;
-
-  if (value == null && unknownValue == null) {
-    throw ArgumentError('`$source` is not one of the supported values: '
-        '${enumValues.values.join(', ')}');
-  }
-  return value ?? unknownValue;
-}
-
-T? _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source, {
-  T? unknownValue,
-}) {
-  if (source == null) {
-    return null;
-  }
-  return _$enumDecode<T>(enumValues, source, unknownValue: unknownValue);
+  return enumValues.entries.singleWhere(
+    (e) => e.value == source,
+    orElse: () {
+      if (unknownValue == null) {
+        throw ArgumentError(
+          '`$source` is not one of the supported values: '
+          '${enumValues.values.join(', ')}',
+        );
+      }
+      return MapEntry(unknownValue, enumValues.values.first);
+    },
+  ).key;
 }
 
 const _$NFCTagTypeEnumMap = {
@@ -96,7 +90,7 @@ NDEFRawRecord _$NDEFRawRecordFromJson(Map<String, dynamic> json) {
     json['identifier'] as String,
     json['payload'] as String,
     json['type'] as String,
-    _$enumDecodeNullable(_$TypeNameFormatEnumMap, json['typeNameFormat']) as ndef.TypeNameFormat,
+    _$enumDecode(_$TypeNameFormatEnumMap, json['typeNameFormat']),
   );
 }
 
