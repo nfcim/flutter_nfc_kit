@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io' show Platform, sleep;
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:ndef/ndef.dart' as ndef;
@@ -126,8 +126,10 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                   },
                   child: Text('Start polling'),
                 ),
-                Text(
-                    'ID: ${_tag?.id ?? "ccc"}\nStandard: ${_tag?.standard ?? "ccc"}\nType: ${_tag?.type ?? "ccc"}\nATQA: ${_tag?.atqa ?? "ccc"}\nSAK: ${_tag?.sak ?? "ccc"}\nHistorical Bytes: ${_tag?.historicalBytes ?? "ccc"}\nProtocol Info: ${_tag?.protocolInfo ?? "ccc"}\nApplication Data: ${_tag?.applicationData ?? "ccc"}\nHigher Layer Response: ${_tag?.hiLayerResponse ?? "ccc"}\nManufacturer: ${_tag?.manufacturer ?? "ccc"}\nSystem Code: ${_tag?.systemCode ?? "ccc"}\nDSF ID: ${_tag?.dsfId ?? "ccc"}\nNDEF Available: ${_tag?.ndefAvailable ?? "ccc"}\nNDEF Type: ${_tag?.ndefType ?? "ccc"}\nNDEF Writable: ${_tag?.ndefWritable ?? "ccc"}\nNDEF Can Make Read Only: ${_tag?.ndefCanMakeReadOnly ?? "ccc"}\nNDEF Capacity: ${_tag?.ndefCapacity ?? "ccc"}\n\n Transceive Result:\n$_result'),
+                _tag != null
+                    ? Text(
+                        'ID: ${_tag?.id}\nStandard: ${_tag?.standard}\nType: ${_tag?.type}\nATQA: ${_tag?.atqa}\nSAK: ${_tag?.sak}\nHistorical Bytes: ${_tag?.historicalBytes}\nProtocol Info: ${_tag?.protocolInfo}\nApplication Data: ${_tag?.applicationData}\nHigher Layer Response: ${_tag?.hiLayerResponse}\nManufacturer: ${_tag?.manufacturer}\nSystem Code: ${_tag?.systemCode}\nDSF ID: ${_tag?.dsfId}\nNDEF Available: ${_tag?.ndefAvailable}\nNDEF Type: ${_tag?.ndefType}\nNDEF Writable: ${_tag?.ndefWritable}\nNDEF Can Make Read Only: ${_tag?.ndefCanMakeReadOnly}\nNDEF Capacity: ${_tag?.ndefCapacity}\n\n Transceive Result:\n$_result')
+                    : Text('waiting for nfc card reading......')
               ])))),
           Center(
             child: Column(
