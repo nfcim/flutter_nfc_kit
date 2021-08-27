@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ndef/ndef.dart' as ndef;
 
 class NDEFRecordSetting extends StatefulWidget {
-  late  ndef.NDEFRecord record;
+  late ndef.NDEFRecord record;
   NDEFRecordSetting({Key? key, ndef.NDEFRecord? record}) : super(key: key) {
     if (record == null) {
       this.record = ndef.NDEFRecord();
