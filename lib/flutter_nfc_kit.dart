@@ -138,7 +138,7 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
   /// Convert an [ndef.NDEFRecord] to encoded [NDEFRawRecord]
   NDEFRawRecord toRaw() {
     return NDEFRawRecord(
-        id.toHexString(), payload.toHexString(), type.toHexString(), this.tnf);
+        id!.toHexString(), payload!.toHexString(), type!.toHexString(), this.tnf);
   }
 
   /// Convert an [NDEFRawRecord] to decoded [ndef.NDEFRecord].
@@ -184,7 +184,7 @@ class FlutterNfcKit {
   /// If enabled, please ensure that `com.apple.developer.nfc.readersession.felica.systemcodes` is set in `Info.plist`,
   /// or your NFC **WILL BE TOTALLY UNAVAILABLE BEFORE REBOOT**.
   static Future<NFCTag> poll({
-    Duration timeout,
+    Duration? timeout,
     bool androidPlatformSound = true,
     bool androidCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
@@ -224,7 +224,7 @@ class FlutterNfcKit {
   /// Also, Ndef TagTechnology will be closed if active.
   /// On iOS, this parameter is ignored and is decided by the OS again.
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
-  static Future<T> transceive<T>(T capdu, {Duration timeout}) async {
+  static Future<T> transceive<T>(T capdu, {Duration? timeout}) async {
     assert(capdu is String || capdu is Uint8List);
     return await _channel.invokeMethod(
         'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds});
@@ -236,7 +236,7 @@ class FlutterNfcKit {
   /// [cached] only works on Android, allowing cached read (may obtain stale data).
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
-  static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool cached}) async {
+  static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool? cached}) async {
     return (await readNDEFRawRecords(cached: cached))
         .map((r) => NDEFRecordConvert.fromRaw(r))
         .toList();
@@ -248,7 +248,7 @@ class FlutterNfcKit {
   /// [cached] only works on Android, allowing cached read (may obtain stale data).
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// Please use [readNDEFRecords] if you want decoded NDEF records
-  static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool cached}) async {
+  static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool? cached}) async {
     final String data =
         await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
     return (jsonDecode(data) as List<dynamic>)
@@ -282,7 +282,7 @@ class FlutterNfcKit {
   /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
   /// If both parameters are set, [iosErrorMessage] will be used.
   static Future<void> finish(
-      {String iosAlertMessage, String iosErrorMessage}) async {
+      {String? iosAlertMessage, String? iosErrorMessage}) async {
     return await _channel.invokeMethod('finish', {
       'iosErrorMessage': iosErrorMessage,
       'iosAlertMessage': iosAlertMessage,
