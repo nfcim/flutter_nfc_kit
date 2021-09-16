@@ -94,3 +94,6 @@
 * Upgrade to Flutter 2.0, add null-safety support for APIs
 * Bump dependencies (`ndef` to 0.3.1)
 
+## 3.0.1
+
+* Remove errorous non-null assertion in `ndef.NDEFRecord.toRaw()` extension method & fix example app (#38)
