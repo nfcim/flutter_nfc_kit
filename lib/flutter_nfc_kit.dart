@@ -203,8 +203,8 @@ class FlutterNfcKit {
     if (readIso18092) technologies |= 0x4;
     if (readIso15693) technologies |= 0x8;
     // iOS can safely ignore these option bits
-    if (!androidCheckNDEF) technologies |= 0x100;
-    if (!androidPlatformSound) technologies |= 0x80;
+    if (!androidCheckNDEF) technologies |= 0x80;
+    if (!androidPlatformSound) technologies |= 0x100;
     final String data = await _channel.invokeMethod('poll', {
       'timeout': timeout?.inMilliseconds ?? 20 * 1000,
       'iosAlertMessage': iosAlertMessage,
