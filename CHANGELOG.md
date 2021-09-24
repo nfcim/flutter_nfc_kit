@@ -97,3 +97,8 @@
 ## 3.0.1
 
 * Remove errorous non-null assertion in `ndef.NDEFRecord.toRaw()` extension method & fix example app (#38)
+
+## 3.0.2
+
+* Fix incorrect flags passed by `poll` method to Android NFC API (#42)
+
