@@ -9,7 +9,7 @@ object ByteUtils {
 
         val result = ByteArray(length / 2)
 
-        val str = this.toUpperCase()
+        val str = this.uppercase()
         for (i in 0 until length step 2) {
             val firstIndex = HEX_CHARS.indexOf(str[i])
             val secondIndex = HEX_CHARS.indexOf(str[i + 1])

@@ -102,3 +102,6 @@
 
 * Fix incorrect flags passed by `poll` method to Android NFC API (#42)
 
+## 3.1.0
+
+* Fix inappropriate non-null type in fields of `NFCTag` (#43)
