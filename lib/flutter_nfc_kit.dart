@@ -45,46 +45,46 @@ class NFCTag {
   final String id;
 
   /// ATQA (Type A only, Android only)
-  final String atqa;
+  final String? atqa;
 
   /// SAK (Type A only, Android only)
-  final String sak;
+  final String? sak;
 
   /// Historical bytes (ISO 14443-4A only)
-  final String historicalBytes;
+  final String? historicalBytes;
 
   /// Higher layer response (ISO 14443-4B only, Android only)
-  final String hiLayerResponse;
+  final String? hiLayerResponse;
 
   /// Protocol information (Type B only， Android only)
-  final String protocolInfo;
+  final String? protocolInfo;
 
   /// Application data (Type B only)
-  final String applicationData;
+  final String? applicationData;
 
   /// Manufacturer (ISO 18092 only)
-  final String manufacturer;
+  final String? manufacturer;
 
   /// System code (ISO 18092 only)
-  final String systemCode;
+  final String? systemCode;
 
   /// DSF ID (ISO 15693 only, Android only)
-  final String dsfId;
+  final String? dsfId;
 
   /// NDEF availability
   final bool ndefAvailable;
 
   /// NDEF tag type (Android only)
-  final String ndefType;
+  final String? ndefType;
 
   /// Maximum NDEF message size in bytes (only meaningful when ndef available)
-  final int ndefCapacity;
+  final int? ndefCapacity;
 
   /// NDEF writebility
-  final bool ndefWritable;
+  final bool? ndefWritable;
 
   /// Indicates whether this NDEF tag can be made read-only (only works on Android, always false on iOS)
-  final bool ndefCanMakeReadOnly;
+  final bool? ndefCanMakeReadOnly;
 
   NFCTag(
       this.type,
