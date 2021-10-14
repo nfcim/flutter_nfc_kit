@@ -24,6 +24,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
+    android.ndkVersion '22.0.7026061'
     compileSdkVersion 29
 
     sourceSets {
