@@ -25,6 +25,7 @@ import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.util.*
 import kotlin.concurrent.schedule
+import kotlin.concurrent.thread
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -114,37 +115,49 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
 
-                try {
-                    if (!tagTech.isConnected) {
-                        val ndefTech = ndefTechnology
-                        // close previously connected technology
-                        if (ndefTech !== null && ndefTech.isConnected) {
-                            ndefTech.close()
+                thread {
+                    try {
+                        if (!tagTech.isConnected) {
+                            val ndefTech = ndefTechnology
+                            // close previously connected technology
+                            if (ndefTech !== null && ndefTech.isConnected) {
+                                ndefTech.close()
+                            }
+                            tagTech.connect()
                         }
-                        tagTech.connect()
+                        val sendingBytes = when (req) {
+                            is String -> req.hexToBytes()
+                            else -> req as ByteArray
+                        }
+                        val timeout = call.argument<Int>("timeout")
+                        val resp = tagTech.transceive(sendingBytes, timeout)
+                        Handler(Looper.getMainLooper()).post {
+                            when (req) {
+                                is String -> result.success(resp.toHexString())
+                                else -> result.success(resp)
+                            }
+                        }
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Transceive Error: $req", ex)
+                        Handler(Looper.getMainLooper()).post {
+                            result.error("500", "Communication error", ex.localizedMessage)
+                        }
+                    } catch (ex: InvocationTargetException) {
+                        Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
+                        Handler(Looper.getMainLooper()).post {
+                            result.error("500", "Communication error", ex.cause?.localizedMessage)
+                        }
+                    } catch (ex: IllegalArgumentException) {
+                        Log.e(TAG, "Command Error: $req", ex)
+                        Handler(Looper.getMainLooper()).post {
+                            result.error("400", "Command format error", ex.localizedMessage)
+                        }
+                    } catch (ex: NoSuchMethodException) {
+                        Log.e(TAG, "Transceive not supported: $req", ex)
+                        Handler(Looper.getMainLooper()).post {
+                            result.error("405", "Transceive not supported for this type of card", null)
+                        }
                     }
-                    val sendingBytes = when (req) {
-                        is String -> req.hexToBytes()
-                        else -> req as ByteArray
-                    }
-                    val timeout = call.argument<Int>("timeout")
-                    val resp = tagTech.transceive(sendingBytes, timeout)
-                    when (req) {
-                        is String -> result.success(resp.toHexString())
-                        else -> result.success(resp)
-                    }
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Transceive Error: $req", ex)
-                    result.error("500", "Communication error", ex.localizedMessage)
-                } catch (ex: InvocationTargetException) {
-                    Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
-                    result.error("500", "Communication error", ex.cause?.localizedMessage)
-                } catch (ex: IllegalArgumentException) {
-                    Log.e(TAG, "Command Error: $req", ex)
-                    result.error("400", "Command format error", ex.localizedMessage)
-                } catch (ex: NoSuchMethodException) {
-                    Log.e(TAG, "Transceive not supported: $req", ex)
-                    result.error("405", "Transceive not supported for this type of card", null)
                 }
             }
 
