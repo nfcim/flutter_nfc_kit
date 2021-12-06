@@ -298,7 +298,9 @@ class FlutterNfcKit {
     }
   }
 
-  /// Make the NDEF tag readonly.
+  /// Make the NDEF tag readonly (a.k.a. lock the NDEF tag).
+  /// 
+  /// **WARNING: IT CANNOT BE UNDONE!**
   static Future<void> makeNdefReadOnly() async {
     return await _channel.invokeMethod('makeNdefReadOnly');
   }

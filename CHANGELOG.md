@@ -105,3 +105,8 @@
 ## 3.1.0
 
 * Fix inappropriate non-null type in fields of `NFCTag` (#43)
+
+## Unreleased
+
+* Add `makeNdefReadOnly` (#53, thanks to @timnew)
+* Avoid NFC API calls to block the main thread on Android (#54, thanks to @cyberbobs)
