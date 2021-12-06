@@ -314,7 +314,37 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             } else {
                 result(FlutterError(code: "406", message: "Session not active", details: nil))
             }
-        } else {
+        } else if call.method = "makeNdefReadOnly" {
+            if tag != nil {
+                var ndefTag: NFCNDEFTag?
+                switch tag {
+                case let .iso7816(tag):
+                    ndefTag = tag
+                case let .miFare(tag):
+                    ndefTag = tag
+                case let .feliCa(tag):
+                    ndefTag = tag
+                case let .iso15693(tag):
+                    ndefTag = tag
+                default:
+                    ndefTag = nil
+                }
+                if ndefTag != nil {
+                    ndefTag!.writeLock(completionHandler: completionHandler: { (error: Error?) in
+                        if let error = error {
+                            result(FlutterError(code: "500", message: "Lock NDEF error", details: error.localizedDescription))
+                        } else {
+                            result(nil)
+                        }
+                    })
+                } else {
+                    result(FlutterError(code: "405", message: "NDEF not supported on this type of card", details: nil))
+                }
+            } else {
+                result(FlutterError(code: "406", message: "No tag polled", details: nil))
+            }
+        }
+        else {
             result(FlutterMethodNotImplemented)
         }
     }
