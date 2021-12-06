@@ -297,4 +297,9 @@ class FlutterNfcKit {
       return await _channel.invokeMethod('setIosAlertMessage', message);
     }
   }
+
+  /// Make the NDEF tag readonly.
+  static Future<void> makeNdefReadOnly() async {
+    return await _channel.invokeMethod('makeNdefReadOnly');
+  }
 }
