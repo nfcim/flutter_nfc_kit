@@ -106,7 +106,10 @@
 
 * Fix inappropriate non-null type in fields of `NFCTag` (#43)
 
-## Unreleased
+## 3.2.0
 
 * Add `makeNdefReadOnly` (#53, thanks to @timnew)
 * Avoid NFC API calls to block the main thread on Android (#54, thanks to @cyberbobs)
+* Bump dependencies of Android plugin and example App (esp. Kotlin 1.6.0)
+* Exclude example app in published version to reduce package size
+
