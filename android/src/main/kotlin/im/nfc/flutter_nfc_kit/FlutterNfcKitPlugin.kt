@@ -25,6 +25,7 @@ import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.util.*
 import kotlin.concurrent.schedule
+import kotlin.concurrent.thread
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -102,25 +103,29 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val timeout = call.argument<Int>("timeout")!!
                 // technology and option bits are set in Dart code
                 val technologies = call.argument<Int>("technologies")!!
-                pollTag(nfcAdapter, result, timeout, technologies)
+                thread {
+                    pollTag(nfcAdapter, result, timeout, technologies)
+                }
             }
 
             "finish" -> {
                 pollingTimeoutTask?.cancel()
-                try {
-                    val tagTech = tagTechnology
-                    if (tagTech != null && tagTech.isConnected) {
-                        tagTech.close()
+                thread {
+                    try {
+                        val tagTech = tagTechnology
+                        if (tagTech != null && tagTech.isConnected) {
+                            tagTech.close()
+                        }
+                        val ndefTech = ndefTechnology
+                        if (ndefTech != null && ndefTech.isConnected) {
+                            ndefTech.close()
+                        }
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Close tag error", ex)
                     }
-                    val ndefTech = ndefTechnology
-                    if (ndefTech != null && ndefTech.isConnected) {
-                        ndefTech.close()
-                    }
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Close tag error", ex)
+                    nfcAdapter.disableReaderMode(activity)
+                    result.success("")
                 }
-                nfcAdapter.disableReaderMode(activity)
-                result.success("")
             }
 
             "transceive" -> {
@@ -135,70 +140,74 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
 
-                try {
-                    switchTechnology(tagTech, ndefTechnology)
-                    val sendingBytes = when (req) {
-                        is String -> req.hexToBytes()
-                        else -> req as ByteArray
+                thread {
+                    try {
+                        switchTechnology(tagTech, ndefTechnology)
+                        val sendingBytes = when (req) {
+                            is String -> req.hexToBytes()
+                            else -> req as ByteArray
+                        }
+                        val timeout = call.argument<Int>("timeout")
+                        val resp = tagTech.transceive(sendingBytes, timeout)
+                        when (req) {
+                            is String -> result.success(resp.toHexString())
+                            else -> result.success(resp)
+                        }
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Transceive Error: $req", ex)
+                        result.error("500", "Communication error", ex.localizedMessage)
+                    } catch (ex: InvocationTargetException) {
+                        Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
+                        result.error("500", "Communication error", ex.cause?.localizedMessage)
+                    } catch (ex: IllegalArgumentException) {
+                        Log.e(TAG, "Command Error: $req", ex)
+                        result.error("400", "Command format error", ex.localizedMessage)
+                    } catch (ex: NoSuchMethodException) {
+                        Log.e(TAG, "Transceive not supported: $req", ex)
+                        result.error("405", "Transceive not supported for this type of card", null)
                     }
-                    val timeout = call.argument<Int>("timeout")
-                    val resp = tagTech.transceive(sendingBytes, timeout)
-                    when (req) {
-                        is String -> result.success(resp.toHexString())
-                        else -> result.success(resp)
-                    }
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Transceive Error: $req", ex)
-                    result.error("500", "Communication error", ex.localizedMessage)
-                } catch (ex: InvocationTargetException) {
-                    Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
-                    result.error("500", "Communication error", ex.cause?.localizedMessage)
-                } catch (ex: IllegalArgumentException) {
-                    Log.e(TAG, "Command Error: $req", ex)
-                    result.error("400", "Command format error", ex.localizedMessage)
-                } catch (ex: NoSuchMethodException) {
-                    Log.e(TAG, "Transceive not supported: $req", ex)
-                    result.error("405", "Transceive not supported for this type of card", null)
                 }
             }
 
             "readNDEF" -> {
                 if (!ensureNDEF()) return
                 val ndef = ndefTechnology!!
-                try {
-                    switchTechnology(ndef, tagTechnology)
-                    // read NDEF message
-                    val message: NdefMessage? = if (call.argument<Boolean>("cached")!!) {
-                        ndef.cachedNdefMessage
-                    } else {
-                        ndef.ndefMessage
-                    }
-                    val parsedMessages = mutableListOf<Map<String, String>>()
-                    if (message != null) {
-                        for (record in message.records) {
-                            parsedMessages.add(mapOf(
-                                    "identifier" to record.id.toHexString(),
-                                    "payload" to record.payload.toHexString(),
-                                    "type" to record.type.toHexString(),
-                                    "typeNameFormat" to when (record.tnf) {
-                                        NdefRecord.TNF_ABSOLUTE_URI -> "absoluteURI"
-                                        NdefRecord.TNF_EMPTY -> "empty"
-                                        NdefRecord.TNF_EXTERNAL_TYPE -> "nfcExternal"
-                                        NdefRecord.TNF_WELL_KNOWN -> "nfcWellKnown"
-                                        NdefRecord.TNF_MIME_MEDIA -> "media"
-                                        NdefRecord.TNF_UNCHANGED -> "unchanged"
-                                        else -> "unknown"
-                                    }
-                            ))
+                thread {
+                    try {
+                        switchTechnology(ndef, tagTechnology)
+                        // read NDEF message
+                        val message: NdefMessage? = if (call.argument<Boolean>("cached")!!) {
+                            ndef.cachedNdefMessage
+                        } else {
+                            ndef.ndefMessage
                         }
+                        val parsedMessages = mutableListOf<Map<String, String>>()
+                        if (message != null) {
+                            for (record in message.records) {
+                                parsedMessages.add(mapOf(
+                                        "identifier" to record.id.toHexString(),
+                                        "payload" to record.payload.toHexString(),
+                                        "type" to record.type.toHexString(),
+                                        "typeNameFormat" to when (record.tnf) {
+                                            NdefRecord.TNF_ABSOLUTE_URI -> "absoluteURI"
+                                            NdefRecord.TNF_EMPTY -> "empty"
+                                            NdefRecord.TNF_EXTERNAL_TYPE -> "nfcExternal"
+                                            NdefRecord.TNF_WELL_KNOWN -> "nfcWellKnown"
+                                            NdefRecord.TNF_MIME_MEDIA -> "media"
+                                            NdefRecord.TNF_UNCHANGED -> "unchanged"
+                                            else -> "unknown"
+                                        }
+                                ))
+                            }
+                        }
+                        result.success(JSONArray(parsedMessages).toString())
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Read NDEF Error", ex)
+                        result.error("500", "Communication error", ex.localizedMessage)
+                    } catch (ex: FormatException) {
+                        Log.e(TAG, "NDEF Format Error", ex)
+                        result.error("400", "NDEF format error", ex.localizedMessage)
                     }
-                    result.success(JSONArray(parsedMessages).toString())
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Read NDEF Error", ex)
-                    result.error("500", "Communication error", ex.localizedMessage)
-                } catch (ex: FormatException) {
-                    Log.e(TAG, "NDEF Format Error", ex)
-                    result.error("400", "NDEF format error", ex.localizedMessage)
                 }
             }
 
@@ -208,38 +217,40 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
                 }
-                try {
-                    switchTechnology(ndef, tagTechnology)
-                    // generate NDEF message
-                    val jsonString = call.argument<String>("data")!!
-                    val recordData = JSONArray(jsonString)
-                    val records = Array<NdefRecord>(recordData.length(), init = { i: Int ->
-                        val record: JSONObject = recordData.get(i) as JSONObject
-                        NdefRecord(
-                                when (record.getString("typeNameFormat")) {
-                                    "absoluteURI" -> NdefRecord.TNF_ABSOLUTE_URI
-                                    "empty" -> NdefRecord.TNF_EMPTY
-                                    "nfcExternal" -> NdefRecord.TNF_EXTERNAL_TYPE
-                                    "nfcWellKnown" -> NdefRecord.TNF_WELL_KNOWN
-                                    "media" -> NdefRecord.TNF_MIME_MEDIA
-                                    "unchanged" -> NdefRecord.TNF_UNCHANGED
-                                    else -> NdefRecord.TNF_UNKNOWN
-                                },
-                                record.getString("type").hexToBytes(),
-                                record.getString("identifier").hexToBytes(),
-                                record.getString("payload").hexToBytes()
-                        )
-                    })
-                    // write NDEF message
-                    val message: NdefMessage = NdefMessage(records)
-                    ndef.writeNdefMessage(message)
-                    result.success("")
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Write NDEF Error", ex)
-                    result.error("500", "Communication error", ex.localizedMessage)
-                } catch (ex: FormatException) {
-                    Log.e(TAG, "NDEF Format Error", ex)
-                    result.error("400", "NDEF format error", ex.localizedMessage)
+                thread {
+                    try {
+                        switchTechnology(ndef, tagTechnology)
+                        // generate NDEF message
+                        val jsonString = call.argument<String>("data")!!
+                        val recordData = JSONArray(jsonString)
+                        val records = Array<NdefRecord>(recordData.length(), init = { i: Int ->
+                            val record: JSONObject = recordData.get(i) as JSONObject
+                            NdefRecord(
+                                    when (record.getString("typeNameFormat")) {
+                                        "absoluteURI" -> NdefRecord.TNF_ABSOLUTE_URI
+                                        "empty" -> NdefRecord.TNF_EMPTY
+                                        "nfcExternal" -> NdefRecord.TNF_EXTERNAL_TYPE
+                                        "nfcWellKnown" -> NdefRecord.TNF_WELL_KNOWN
+                                        "media" -> NdefRecord.TNF_MIME_MEDIA
+                                        "unchanged" -> NdefRecord.TNF_UNCHANGED
+                                        else -> NdefRecord.TNF_UNKNOWN
+                                    },
+                                    record.getString("type").hexToBytes(),
+                                    record.getString("identifier").hexToBytes(),
+                                    record.getString("payload").hexToBytes()
+                            )
+                        })
+                        // write NDEF message
+                        val message: NdefMessage = NdefMessage(records)
+                        ndef.writeNdefMessage(message)
+                        result.success("")
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Write NDEF Error", ex)
+                        result.error("500", "Communication error", ex.localizedMessage)
+                    } catch (ex: FormatException) {
+                        Log.e(TAG, "NDEF Format Error", ex)
+                        result.error("400", "NDEF format error", ex.localizedMessage)
+                    }
                 }
             }
 
@@ -249,16 +260,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
                 }
-                try {
-                    switchTechnology(ndef, tagTechnology)
-                    if (ndef.makeReadOnly()) {
-                        result.success("")
-                    } else {
-                        result.error("500", "Failed to lock NDEF tag", null)
+                thread {
+                    try {
+                        switchTechnology(ndef, tagTechnology)
+                        if (ndef.makeReadOnly()) {
+                            result.success("")
+                        } else {
+                            result.error("500", "Failed to lock NDEF tag", null)
+                        }
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Lock NDEF Error", ex)
+                        result.error("500", "Communication error", ex.localizedMessage)
                     }
-                } catch (ex: IOException) {
-                    Log.e(TAG, "Lock NDEF Error", ex)
-                    result.error("500", "Communication error", ex.localizedMessage)
                 }
             }
 
