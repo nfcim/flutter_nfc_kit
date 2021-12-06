@@ -67,6 +67,27 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             return
         }
 
+        val ensureNDEF = {
+            if (ndefTechnology == null) {
+                if (tagTechnology == null) {
+                    result.error("406", "No tag polled", null)
+                } else {
+                    result.error("405", "NDEF not supported on current tag", null)
+                }
+                false
+            } else true
+        }
+
+        val switchTechnology = { target: TagTechnology, other: TagTechnology? -> 
+            if (!target.isConnected) {
+                // close previously connected technology
+                if (other !== null && other.isConnected) {
+                    other.close()
+                }
+                target.connect()
+            }
+        }
+
         when (call.method) {
 
             "getNFCAvailability" -> {
@@ -115,14 +136,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
 
                 try {
-                    if (!tagTech.isConnected) {
-                        val ndefTech = ndefTechnology
-                        // close previously connected technology
-                        if (ndefTech !== null && ndefTech.isConnected) {
-                            ndefTech.close()
-                        }
-                        tagTech.connect()
-                    }
+                    switchTechnology(tagTech, ndefTechnology)
                     val sendingBytes = when (req) {
                         is String -> req.hexToBytes()
                         else -> req as ByteArray
@@ -149,25 +163,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "readNDEF" -> {
-                if (ndefTechnology == null) {
-                    if (tagTechnology == null) {
-                        result.error("406", "No tag polled", null)
-                    } else {
-                        result.error("405", "NDEF not supported on current tag", null)
-                    }
-                    return
-                }
+                if (!ensureNDEF()) return
                 val ndef = ndefTechnology!!
                 try {
-                    // try to connect
-                    if (!ndef.isConnected) {
-                        val otherTech = tagTechnology
-                        // close previously connected technology
-                        if (otherTech !== null && otherTech.isConnected) {
-                            otherTech.close()
-                        }
-                        ndef.connect()
-                    }
+                    switchTechnology(ndef, tagTechnology)
                     // read NDEF message
                     val message: NdefMessage? = if (call.argument<Boolean>("cached")!!) {
                         ndef.cachedNdefMessage
@@ -204,28 +203,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "writeNDEF" -> {
-                if (ndefTechnology == null) {
-                    if (tagTechnology == null) {
-                        result.error("406", "No tag polled", null)
-                    } else {
-                        result.error("405", "NDEF not supported on current tag", null)
-                    }
-                    return
-                }
+                if (!ensureNDEF()) return
                 val ndef = ndefTechnology!!
                 if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
                 }
                 try {
-                    // try to connect
-                    if (!ndef.isConnected) {
-                        val otherTech = tagTechnology
-                        // close previously connected technology
-                        if (otherTech !== null && otherTech.isConnected) {
-                            otherTech.close()
-                        }
-                        ndef.connect()
-                    }
+                    switchTechnology(ndef, tagTechnology)
                     // generate NDEF message
                     val jsonString = call.argument<String>("data")!!
                     val recordData = JSONArray(jsonString)
@@ -260,39 +244,21 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "makeNdefReadOnly" -> {
-                if (ndefTechnology == null) {
-                    if (tagTechnology == null) {
-                        result.error("406", "No tag polled", null)
-                    } else {
-                        result.error("405", "NDEF not supported on current tag", null)
-                    }
-                    return
-                }
+                if (!ensureNDEF()) return
                 val ndef = ndefTechnology!!
                 if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
                 }
                 try {
-                    // try to connect
-                    if (!ndef.isConnected) {
-                        val otherTech = tagTechnology
-                        // close previously connected technology
-                        if (otherTech !== null && otherTech.isConnected) {
-                            otherTech.close()
-                        }
-                        ndef.connect()
-                    }
+                    switchTechnology(ndef, tagTechnology)
                     if (ndef.makeReadOnly()) {
                         result.success("")
                     } else {
-                        result.error(500, "Failed to lock NDEF tag")
+                        result.error("500", "Failed to lock NDEF tag", null)
                     }
                 } catch (ex: IOException) {
                     Log.e(TAG, "Lock NDEF Error", ex)
                     result.error("500", "Communication error", ex.localizedMessage)
-                } catch (ex: FormatException) {
-                    Log.e(TAG, "NDEF Format Error", ex)
-                    result.error("400", "NDEF format error", ex.localizedMessage)
                 }
             }
 
