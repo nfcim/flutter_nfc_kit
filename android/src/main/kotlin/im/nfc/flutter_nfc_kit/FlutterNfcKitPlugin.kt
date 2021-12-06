@@ -213,7 +213,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
                 val ndef = ndefTechnology!!
-                if(ndef.isWritable() == false){
+                if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
                 }
                 try {
@@ -229,28 +229,66 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     // generate NDEF message
                     val jsonString = call.argument<String>("data")!!
                     val recordData = JSONArray(jsonString)
-                    val records = Array<NdefRecord>(recordData.length(),init= {i:Int -> 
-                        val record:JSONObject = recordData.get(i) as JSONObject
+                    val records = Array<NdefRecord>(recordData.length(), init = { i: Int ->
+                        val record: JSONObject = recordData.get(i) as JSONObject
                         NdefRecord(
-                            when(record.getString("typeNameFormat")){
-                                "absoluteURI" -> NdefRecord.TNF_ABSOLUTE_URI
-                                "empty" -> NdefRecord.TNF_EMPTY
-                                "nfcExternal" -> NdefRecord.TNF_EXTERNAL_TYPE
-                                "nfcWellKnown" -> NdefRecord.TNF_WELL_KNOWN
-                                "media" -> NdefRecord.TNF_MIME_MEDIA
-                                "unchanged" -> NdefRecord.TNF_UNCHANGED
-                                else -> NdefRecord.TNF_UNKNOWN
-                            },
-                            record.getString("type").hexToBytes(),
-                            record.getString("identifier").hexToBytes(),
-                            record.getString("payload").hexToBytes()
-                        )})
+                                when (record.getString("typeNameFormat")) {
+                                    "absoluteURI" -> NdefRecord.TNF_ABSOLUTE_URI
+                                    "empty" -> NdefRecord.TNF_EMPTY
+                                    "nfcExternal" -> NdefRecord.TNF_EXTERNAL_TYPE
+                                    "nfcWellKnown" -> NdefRecord.TNF_WELL_KNOWN
+                                    "media" -> NdefRecord.TNF_MIME_MEDIA
+                                    "unchanged" -> NdefRecord.TNF_UNCHANGED
+                                    else -> NdefRecord.TNF_UNKNOWN
+                                },
+                                record.getString("type").hexToBytes(),
+                                record.getString("identifier").hexToBytes(),
+                                record.getString("payload").hexToBytes()
+                        )
+                    })
                     // write NDEF message
                     val message: NdefMessage = NdefMessage(records)
                     ndef.writeNdefMessage(message)
                     result.success("")
                 } catch (ex: IOException) {
                     Log.e(TAG, "Write NDEF Error", ex)
+                    result.error("500", "Communication error", ex.localizedMessage)
+                } catch (ex: FormatException) {
+                    Log.e(TAG, "NDEF Format Error", ex)
+                    result.error("400", "NDEF format error", ex.localizedMessage)
+                }
+            }
+
+            "makeNdefReadOnly" -> {
+                if (ndefTechnology == null) {
+                    if (tagTechnology == null) {
+                        result.error("406", "No tag polled", null)
+                    } else {
+                        result.error("405", "NDEF not supported on current tag", null)
+                    }
+                    return
+                }
+                val ndef = ndefTechnology!!
+                if (ndef.isWritable() == false) {
+                    result.error("405", "Tag not writable", null)
+                }
+                try {
+                    // try to connect
+                    if (!ndef.isConnected) {
+                        val otherTech = tagTechnology
+                        // close previously connected technology
+                        if (otherTech !== null && otherTech.isConnected) {
+                            otherTech.close()
+                        }
+                        ndef.connect()
+                    }
+                    if (ndef.makeReadOnly()) {
+                        result.success("")
+                    } else {
+                        result.error(500, "Failed to lock NDEF tag")
+                    }
+                } catch (ex: IOException) {
+                    Log.e(TAG, "Lock NDEF Error", ex)
                     result.error("500", "Communication error", ex.localizedMessage)
                 } catch (ex: FormatException) {
                     Log.e(TAG, "NDEF Format Error", ex)
