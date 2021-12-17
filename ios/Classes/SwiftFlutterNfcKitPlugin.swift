@@ -354,13 +354,26 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        if result != nil {
-            NSLog("Got error when reading NFC: %@", error.localizedDescription)
+        guard result != nil else { return; }
+        
+        if let nfcError = error as? NFCReaderError {
+            NSLog("Got NFCError when reading NFC: %@", nfcError.localizedDescription)
+            switch nfcError.errorCode {
+            case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
+                result?(FlutterError(code: "501", message: "SessionCanceled", details: error.localizedDescription))
+            case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
+                result?(FlutterError(code: "502", message: "SessionTimeOut", details: error.localizedDescription))
+            default:
+                result?(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
+            }
+        } else {
+            NSLog("Got unknown when reading NFC: %@", error.localizedDescription)
             result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
-            result = nil
-            session = nil
-            tag = nil
         }
+        
+        result = nil
+        session = nil
+        tag = nil
     }
 
     // from NFCTagReaderSessionDelegate
