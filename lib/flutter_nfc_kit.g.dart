@@ -20,7 +20,7 @@ NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
     json['manufacturer'] as String?,
     json['systemCode'] as String?,
     json['dsfId'] as String?,
-    json['ndefAvailable'] as bool,
+    json['ndefAvailable'] as bool?,
     json['ndefType'] as String?,
     json['ndefCapacity'] as int?,
     json['ndefWritable'] as bool?,
@@ -82,6 +82,7 @@ const _$NFCTagTypeEnumMap = {
   NFCTagType.mifare_ultralight: 'mifare_ultralight',
   NFCTagType.mifare_desfire: 'mifare_desfire',
   NFCTagType.mifare_plus: 'mifare_plus',
+  NFCTagType.webusb: 'webusb',
   NFCTagType.unknown: 'unknown',
 };
 

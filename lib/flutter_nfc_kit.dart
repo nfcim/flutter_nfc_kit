@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:ndef/ndef.dart' as ndef;
 import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
@@ -26,7 +27,8 @@ enum NFCTagType {
   mifare_ultralight,
   mifare_desfire,
   mifare_plus,
-  unknown
+  webusb,
+  unknown,
 }
 
 /// Metadata of the polled NFC tag.
@@ -72,7 +74,7 @@ class NFCTag {
   final String? dsfId;
 
   /// NDEF availability
-  final bool ndefAvailable;
+  final bool? ndefAvailable;
 
   /// NDEF tag type (Android only)
   final String? ndefType;
@@ -293,7 +295,7 @@ class FlutterNfcKit {
   /// There must be a valid session when invoking.
   /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
-    if (Platform.isIOS) {
+    if (!kIsWeb && Platform.isIOS) {
       return await _channel.invokeMethod('setIosAlertMessage', message);
     }
   }
