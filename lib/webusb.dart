@@ -39,7 +39,7 @@ class WebUSB {
   static dynamic device;
 
   static Future<String> poll() async {
-    if (device == null || getProperty(device, 'opened')) {
+    if (device == null || !getProperty(device, 'opened')) {
       var devicePromise = _USB.requestDevice(new _USBDeviceRequestOptions(filters: [new _USBDeviceFilter(classCode: 0xFF)]));
       device = await promiseToFuture(devicePromise);
       await promiseToFuture(callMethod(device, 'open', List.empty()));
