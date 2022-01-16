@@ -4,6 +4,7 @@ import 'dart:async';
 // package as the core of your plugin.
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html show window;
+import 'dart:js_util';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/webusb.dart';
@@ -28,7 +29,10 @@ class FlutterNfcKitWeb {
   Future<dynamic> handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'getNFCAvailability':
-        return 'available';
+        if (hasProperty(html.window.navigator, 'usb'))
+          return 'available';
+        else
+          return 'not_supported';
 
       case 'poll':
         return await WebUSB.poll();
@@ -37,7 +41,7 @@ class FlutterNfcKitWeb {
         return await WebUSB.transceive(call.arguments["data"]);
 
       case 'finish':
-        return getPlatformVersion();
+        return '';
 
       default:
         throw PlatformException(
@@ -45,11 +49,5 @@ class FlutterNfcKitWeb {
           details: 'flutter_nfc_kit for web doesn\'t implement \'${call.method}\'',
         );
     }
-  }
-
-  /// Returns a [String] containing the version of the platform.
-  Future<String> getPlatformVersion() {
-    final version = html.window.navigator.userAgent;
-    return Future.value(version);
   }
 }

@@ -36,54 +36,39 @@ class _USBControlTransferParameters {
 }
 
 class WebUSB {
-  static dynamic device;
+  static dynamic _device;
 
   static Future<String> poll() async {
-    if (device == null || !getProperty(device, 'opened')) {
+    if (_device == null || !getProperty(_device, 'opened')) {
       var devicePromise = _USB.requestDevice(new _USBDeviceRequestOptions(filters: [new _USBDeviceFilter(classCode: 0xFF)]));
-      device = await promiseToFuture(devicePromise);
+      dynamic device = await promiseToFuture(devicePromise);
       await promiseToFuture(callMethod(device, 'open', List.empty()));
       await promiseToFuture(callMethod(device, 'claimInterface', [1]));
+      _device = device;
       _USB.ondisconnect = allowInterop(onDisconnect);
     }
-    int vendorId = getProperty(device, 'vendorId');
-    int productId = getProperty(device, 'productId');
+    int vendorId = getProperty(_device, 'vendorId');
+    int productId = getProperty(_device, 'productId');
     String id = '${vendorId.toRadixString(16).padLeft(4, '0')}:${productId.toRadixString(16).padLeft(4, '0')}';
     return json.encode({'type': 'webusb', 'id': id, 'standard': 'unknown'});
   }
 
-  static Future<String> transceive(String capdu) async {
-    log.config('capdu: $capdu');
-    var rapdu = '';
-    do {
-      if (rapdu.length >= 4) {
-        var remain = rapdu.substring(rapdu.length - 2);
-        if (remain != '') {
-          capdu = '00C00000$remain';
-          rapdu = rapdu.substring(rapdu.length - 4);
-        }
-      }
-      rapdu += await _transceive(capdu);
-    } while (rapdu.substring(rapdu.length - 4, rapdu.length - 2) == '61');
-    log.config('rapdu: $rapdu');
-    return rapdu;
-  }
-
   static void onDisconnect(event) {
-    device = null;
+    _device = null;
     log.info('device is disconnected');
   }
 
-  static Future<String> _transceive(String capdu) async {
+  static Future<String> transceive(String capdu) async {
+    log.config('capdu: $capdu');
     // send a command
-    var promise = callMethod(device, 'controlTransferOut', [
+    var promise = callMethod(_device, 'controlTransferOut', [
       new _USBControlTransferParameters(requestType: 'vendor', recipient: 'interface', request: 0, value: 0, index: 1),
       hex.decode(capdu)
     ]);
     await promiseToFuture(promise);
     // wait for execution
     while (true) {
-      promise = callMethod(device, 'controlTransferIn',
+      promise = callMethod(_device, 'controlTransferIn',
           [new _USBControlTransferParameters(requestType: 'vendor', recipient: 'interface', request: 2, value: 0, index: 1), 1]);
       var resp = await promiseToFuture(promise);
       if (getProperty(resp, 'status') == 'stalled') {
@@ -99,12 +84,14 @@ class WebUSB {
       }
     }
     // get the response
-    promise = callMethod(device, 'controlTransferIn',
+    promise = callMethod(_device, 'controlTransferIn',
         [new _USBControlTransferParameters(requestType: 'vendor', recipient: 'interface', request: 1, value: 0, index: 1), 1500]);
     var resp = await promiseToFuture(promise);
     if (getProperty(resp, 'status') != 'ok') {
       throw Exception('device error');
     }
-    return hex.encode(getProperty(resp, 'data').buffer.asUint8List());
+    String rapdu = hex.encode(getProperty(resp, 'data').buffer.asUint8List());
+    log.config('rapdu: $rapdu');
+    return rapdu;
   }
 }
