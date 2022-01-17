@@ -5,6 +5,8 @@ import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html show window;
 import 'dart:js_util';
+import 'dart:typed_data';
+import 'package:convert/convert.dart';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/webusb.dart';
@@ -35,19 +37,39 @@ class FlutterNfcKitWeb {
           return 'not_supported';
 
       case 'poll':
-        return await WebUSB.poll();
+        int timeout = call.arguments["timeout"];
+        return await WebUSB.poll(timeout);
 
       case 'transceive':
-        return await WebUSB.transceive(call.arguments["data"]);
+        var data = call.arguments["data"];
+        if (!(data is Uint8List || data is String)) {
+          throw PlatformException(
+              code: "400",
+              message:
+                  "Bad argument: data should be String or Uint8List, got $data");
+        }
+        // always pass String to [transceive]
+        var encodedData = data;
+        if (data is Uint8List) {
+          encodedData = hex.encode(data);
+        }
+        var encodedResp = await WebUSB.transceive(encodedData);
+        dynamic resp = encodedResp;
+        // return type should be the same as [data]
+        if (data is Uint8List) {
+          resp = Uint8List.fromList(hex.decode(encodedResp));
+        }
+        return resp;
 
       case 'finish':
-        return '';
+        bool closeWebUSB = call.arguments["closeWebUSB"];
+        return await WebUSB.finish(closeWebUSB);
 
       default:
         throw PlatformException(
-          code: 'Unimplemented',
-          details: 'flutter_nfc_kit for web doesn\'t implement \'${call.method}\'',
-        );
+            code: "501",
+            details:
+                "flutter_nfc_kit for web does not support \"${call.method}\"");
     }
   }
 }
