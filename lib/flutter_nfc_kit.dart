@@ -152,12 +152,11 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
   }
 }
 
-
 /// Main class of NFC Kit
 class FlutterNfcKit {
-
   /// Default timeout for [transceive] (in milliseconds)
   static const int TRANSCEIVE_TIMEOUT = 5 * 1000;
+
   /// Default timeout for [poll] (in milliseconds)
   static const int POLL_TIIMEOUT = 20 * 1000;
 
@@ -236,8 +235,10 @@ class FlutterNfcKit {
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration? timeout}) async {
     assert(capdu is String || capdu is Uint8List);
-    return await _channel.invokeMethod(
-        'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT});
+    return await _channel.invokeMethod('transceive', {
+      'data': capdu,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
   }
 
   /// Read NDEF records (in decoded format).
@@ -313,7 +314,7 @@ class FlutterNfcKit {
   }
 
   /// Make the NDEF tag readonly (a.k.a. lock the NDEF tag).
-  /// 
+  ///
   /// **WARNING: IT CANNOT BE UNDONE!**
   static Future<void> makeNdefReadOnly() async {
     return await _channel.invokeMethod('makeNdefReadOnly');

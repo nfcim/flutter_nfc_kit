@@ -115,7 +115,8 @@ class WebUSB {
       ]);
       var resp = await promiseToFuture(promise);
       if (getProperty(resp, 'status') == 'stalled') {
-        throw PlatformException(code: "500", message: "Device error: transfer stalled");
+        throw PlatformException(
+            code: "500", message: "Device error: transfer stalled");
       }
       var code = getProperty(resp, 'data').buffer.asUint8List()[0];
       if (code == 0) {
@@ -123,7 +124,8 @@ class WebUSB {
       } else if (code == 1) {
         await Future.delayed(const Duration(microseconds: 100));
       } else {
-        throw PlatformException(code: "500", message: "Device error: unexpected RESP code $code");
+        throw PlatformException(
+            code: "500", message: "Device error: unexpected RESP code $code");
       }
     }
     // get the response (RESP)
@@ -140,7 +142,9 @@ class WebUSB {
     var deviceStatus = getProperty(resp, 'status');
     if (deviceStatus != 'ok') {
       throw PlatformException(
-          code: "500", message: "Device error: status should be \"ok\", got \"$deviceStatus\"");
+          code: "500",
+          message:
+              "Device error: status should be \"ok\", got \"$deviceStatus\"");
     }
     return getProperty(resp, 'data').buffer.asUint8List();
   }
