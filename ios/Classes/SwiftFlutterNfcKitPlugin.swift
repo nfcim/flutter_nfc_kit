@@ -176,7 +176,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 if ndefTag != nil {
                     ndefTag!.readNDEF(completionHandler: { (msg: NFCNDEFMessage?, error: Error?) in
-                        if let error = error {
+                        if let nfcError = error as? NFCReaderError, nfcError.errorCode == 403  {
+                            // NDEF tag does not contain any NDEF message
+                            result("[]")
+                        } else if let error = error {
                             result(FlutterError(code: "500", message: "Read NDEF error", details: error.localizedDescription))
                         } else if let msg = msg {
                             var records: [[String: Any]] = []
@@ -211,7 +214,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             let jsonString = String(data: jsonData, encoding: .utf8)
                             result(jsonString)
                         } else {
-                            result("[]")
+                            result(FlutterError(code: "500", message: "Impossible branch reached", details: nil))
                         }
                     })
                 } else {
