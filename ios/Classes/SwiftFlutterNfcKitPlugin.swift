@@ -211,7 +211,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             let jsonString = String(data: jsonData, encoding: .utf8)
                             result(jsonString)
                         } else {
-                            result(FlutterError(code: "500", message: "Got no NDEF records", details: nil))
+                            result("[]")
                         }
                     })
                 } else {
@@ -354,8 +354,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
 
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
+
         if result != nil {
             NSLog("Got error when reading NFC: %@", error.localizedDescription)
+
             result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
             result = nil
             session = nil
