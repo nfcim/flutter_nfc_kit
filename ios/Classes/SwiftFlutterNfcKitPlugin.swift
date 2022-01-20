@@ -360,9 +360,9 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             NSLog("Got NFCError when reading NFC: %@", nfcError.localizedDescription)
             switch nfcError.errorCode {
             case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
-                result?(FlutterError(code: "501", message: "SessionCanceled", details: error.localizedDescription))
+                result?(FlutterError(code: "409", message: "SessionCanceled", details: error.localizedDescription))
             case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
-                result?(FlutterError(code: "502", message: "SessionTimeOut", details: error.localizedDescription))
+                result?(FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription))
             default:
                 result?(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
             }
