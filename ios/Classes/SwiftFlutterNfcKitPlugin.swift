@@ -464,6 +464,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         }
                         if status == NFCNDEFStatus.readWrite {
                             result["ndefWritable"] = true
+                            result["ndefCanMakeReadOnly"] = true
                         }
                         result["ndefCapacity"] = capacity
                     }
