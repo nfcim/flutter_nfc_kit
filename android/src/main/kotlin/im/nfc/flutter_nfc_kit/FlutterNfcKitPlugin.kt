@@ -216,6 +216,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val ndef = ndefTechnology!!
                 if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
+                    return
                 }
                 thread {
                     try {
