@@ -79,7 +79,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } else true
         }
 
-        val switchTechnology = { target: TagTechnology, other: TagTechnology? -> 
+        val switchTechnology = { target: TagTechnology, other: TagTechnology? ->
             if (!target.isConnected) {
                 // close previously connected technology
                 if (other !== null && other.isConnected) {
@@ -259,6 +259,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val ndef = ndefTechnology!!
                 if (ndef.isWritable() == false) {
                     result.error("405", "Tag not writable", null)
+                    return
                 }
                 thread {
                     try {
