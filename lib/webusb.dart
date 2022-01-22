@@ -186,8 +186,8 @@ class WebUSB {
           throw PlatformException(
               code: "500", message: "WebUSB API error", details: e);
         }
+        _device = null;
       }
-      _device = null;
     }
   }
 }
