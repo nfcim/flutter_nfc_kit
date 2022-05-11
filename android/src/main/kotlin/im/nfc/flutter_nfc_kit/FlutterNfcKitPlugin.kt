@@ -61,6 +61,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun handleMethodCall(call: MethodCall, result: Result) {
 
+        if (activity == null) {
+            result.error("500", "Cannot call method when not attached to activity", null)
+            return
+        }
+
         val nfcAdapter = getDefaultAdapter(activity)
 
         if (nfcAdapter?.isEnabled != true && call.method != "getNFCAvailability") {
@@ -123,7 +128,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (ex: IOException) {
                         Log.e(TAG, "Close tag error", ex)
                     }
-                    nfcAdapter.disableReaderMode(activity)
+                    if (activity != null) {
+                        nfcAdapter.disableReaderMode(activity)
+                    }
                     result.success("")
                 }
             }
@@ -301,7 +308,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, technologies: Int) {
 
         pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
-            nfcAdapter.disableReaderMode(activity)
+            if (activity != null) {
+                nfcAdapter.disableReaderMode(activity)
+            }
             result.error("408", "Polling tag timeout", null)
         }
 
