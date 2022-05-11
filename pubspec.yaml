@@ -10,8 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   json_annotation: ^4.0.1
   ndef: ^0.3.1
+  convert: ^3.0.1
+  logging: ^1.0.2
 
 dev_dependencies:
   flutter_test:
@@ -27,3 +31,6 @@ flutter:
         pluginClass: FlutterNfcKitPlugin
       ios:
         pluginClass: FlutterNfcKitPlugin
+      web:
+        pluginClass: FlutterNfcKitWeb
+        fileName: flutter_nfc_kit_web.dart

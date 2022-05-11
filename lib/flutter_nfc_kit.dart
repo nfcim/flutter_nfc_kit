@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:ndef/ndef.dart' as ndef;
 import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
@@ -26,7 +27,8 @@ enum NFCTagType {
   mifare_ultralight,
   mifare_desfire,
   mifare_plus,
-  unknown
+  webusb,
+  unknown,
 }
 
 /// Metadata of the polled NFC tag.
@@ -72,7 +74,7 @@ class NFCTag {
   final String? dsfId;
 
   /// NDEF availability
-  final bool ndefAvailable;
+  final bool? ndefAvailable;
 
   /// NDEF tag type (Android only)
   final String? ndefType;
@@ -152,6 +154,12 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
 
 /// Main class of NFC Kit
 class FlutterNfcKit {
+  /// Default timeout for [transceive] (in milliseconds)
+  static const int TRANSCEIVE_TIMEOUT = 5 * 1000;
+
+  /// Default timeout for [poll] (in milliseconds)
+  static const int POLL_TIIMEOUT = 20 * 1000;
+
   static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
 
   /// get the availablility of NFC reader on this device
@@ -166,7 +174,7 @@ class FlutterNfcKit {
   ///
   /// If tag is successfully polled, a session is started.
   ///
-  /// The [timeout] parameter only works on Android (default to be 20 seconds). On iOS it is ignored and decided by the OS.
+  /// The [timeout] parameter only works on Android & Web (default to be 20 seconds). On iOS it is ignored and decided by the OS.
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
@@ -206,7 +214,7 @@ class FlutterNfcKit {
     if (!androidCheckNDEF) technologies |= 0x80;
     if (!androidPlatformSound) technologies |= 0x100;
     final String data = await _channel.invokeMethod('poll', {
-      'timeout': timeout?.inMilliseconds ?? 20 * 1000,
+      'timeout': timeout?.inMilliseconds ?? POLL_TIIMEOUT,
       'iosAlertMessage': iosAlertMessage,
       'iosMultipleTagMessage': iosMultipleTagMessage,
       'technologies': technologies
@@ -222,12 +230,15 @@ class FlutterNfcKit {
   ///
   /// On Android, [timeout] parameter will set transceive execution timeout that is persistent during a active session.
   /// Also, Ndef TagTechnology will be closed if active.
-  /// On iOS, this parameter is ignored and is decided by the OS again.
+  /// On iOS, this parameter is ignored and is decided by the OS.
+  /// On Web, [timeout] should be provided on each invocation.
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration? timeout}) async {
     assert(capdu is String || capdu is Uint8List);
-    return await _channel.invokeMethod(
-        'transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds});
+    return await _channel.invokeMethod('transceive', {
+      'data': capdu,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
   }
 
   /// Read NDEF records (in decoded format).
@@ -281,11 +292,15 @@ class FlutterNfcKit {
   ///
   /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
   /// If both parameters are set, [iosErrorMessage] will be used.
+  /// On Web, set [closeWebUSB] to `true` to end the session, so that user can choose a different device in next [poll].
   static Future<void> finish(
-      {String? iosAlertMessage, String? iosErrorMessage}) async {
+      {String? iosAlertMessage,
+      String? iosErrorMessage,
+      bool? closeWebUSB}) async {
     return await _channel.invokeMethod('finish', {
       'iosErrorMessage': iosErrorMessage,
       'iosAlertMessage': iosAlertMessage,
+      'closeWebUSB': closeWebUSB ?? false,
     });
   }
 
@@ -293,13 +308,13 @@ class FlutterNfcKit {
   /// There must be a valid session when invoking.
   /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
-    if (Platform.isIOS) {
+    if (!kIsWeb && Platform.isIOS) {
       return await _channel.invokeMethod('setIosAlertMessage', message);
     }
   }
 
   /// Make the NDEF tag readonly (a.k.a. lock the NDEF tag).
-  /// 
+  ///
   /// **WARNING: IT CANNOT BE UNDONE!**
   static Future<void> makeNdefReadOnly() async {
     return await _channel.invokeMethod('makeNdefReadOnly');

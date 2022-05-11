@@ -1,16 +1,24 @@
 import 'dart:async';
 import 'dart:io' show Platform, sleep;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
+import 'package:logging/logging.dart';
 import 'package:ndef/ndef.dart' as ndef;
 
 import 'record-setting/raw_record_setting.dart';
 import 'record-setting/text_record_setting.dart';
 import 'record-setting/uri_record_setting.dart';
 
-void main() => runApp(MaterialApp(home: MyApp()));
+void main() {
+  Logger.root.level = Level.ALL; // defaults to Level.INFO
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  runApp(MaterialApp(home: MyApp()));
+}
 
 class MyApp extends StatefulWidget {
   @override
@@ -18,8 +26,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
-  String _platformVersion =
-      '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
+  String _platformVersion = '';
   NFCAvailability _availability = NFCAvailability.not_supported;
   NFCTag? _tag;
   String? _result, _writeResult;
@@ -35,6 +42,11 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    if (!kIsWeb)
+      _platformVersion =
+          '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
+    else
+      _platformVersion = 'Web';
     initPlatformState();
     _tabController = new TabController(length: 2, vsync: this);
     _records = [];
@@ -113,6 +125,9 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         setState(() {
                           _result = '1: $ndefString\n';
                         });
+                      } else if (tag.type == NFCTagType.webusb) {
+                        var r = await FlutterNfcKit.transceive("00A4040006D27600012401");
+                        print(r);
                       }
                     } catch (e) {
                       setState(() {
@@ -121,7 +136,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     }
 
                     // Pretend that we are working
-                    sleep(new Duration(seconds: 1));
+                    if (!kIsWeb) sleep(new Duration(seconds: 1));
                     await FlutterNfcKit.finish(iosAlertMessage: "Finished!");
                   },
                   child: Text('Start polling'),
