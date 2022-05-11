@@ -48,7 +48,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             if NFCReaderSession.readingAvailable {
                 result("available")
             } else {
-                result("disabled")
+                result("not_supported")
             }
         } else if call.method == "poll" {
             if session != nil {
