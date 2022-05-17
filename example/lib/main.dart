@@ -30,12 +30,12 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   NFCAvailability _availability = NFCAvailability.not_supported;
   NFCTag? _tag;
   String? _result, _writeResult;
-  TabController? _tabController;
+  late TabController _tabController;
   List<ndef.NDEFRecord>? _records;
 
   @override
   void dispose() {
-    _tabController!.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
