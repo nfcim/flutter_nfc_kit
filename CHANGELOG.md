@@ -113,3 +113,9 @@
 * Bump dependencies of Android plugin and example App (esp. Kotlin 1.6.0)
 * Exclude example app in published version to reduce package size
 
+## 3.3.0
+
+* Add Web support using own WebUSB protocol (see documentation for detail)
+* Bump dependencies (esp. Kotlin 1.6.21 and SDK 31) of Android plugin and example App to fix build error (#55)
+* Distinguish session canceled and session timeout (#58, #59, thanks to @timnew)
+* Minor error fixes (#61, #63, #64, #65, #71, #72, many of them come from @timnew)
