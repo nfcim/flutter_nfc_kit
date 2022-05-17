@@ -126,7 +126,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           _result = '1: $ndefString\n';
                         });
                       } else if (tag.type == NFCTagType.webusb) {
-                        var r = await FlutterNfcKit.transceive("00A4040006D27600012401");
+                        var r = await FlutterNfcKit.transceive(
+                            "00A4040006D27600012401");
                         print(r);
                       }
                     } catch (e) {

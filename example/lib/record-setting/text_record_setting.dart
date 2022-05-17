@@ -3,14 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:ndef/ndef.dart' as ndef;
 
 class TextRecordSetting extends StatefulWidget {
-  late ndef.TextRecord record;
-  TextRecordSetting({Key? key, ndef.TextRecord? record}) : super(key: key) {
-    if (record == null) {
-      this.record = ndef.TextRecord(language: 'en', text: '');
-    } else {
-      this.record = record;
-    }
-  }
+  final ndef.TextRecord record;
+  TextRecordSetting({Key? key, ndef.TextRecord? record})
+      : record = record ?? ndef.TextRecord(language: 'en', text: ''),
+        super(key: key);
   @override
   _TextRecordSetting createState() => _TextRecordSetting();
 }
@@ -81,13 +77,8 @@ class _TextRecordSetting extends State<TextRecordSetting> {
                                   ndef.TextRecord(
                                       encoding: ndef.TextEncoding
                                           .values[_dropButtonValue],
-                                      language:
-                                          (_languageController.text == null
-                                              ? ""
-                                              : _languageController.text),
-                                      text: (_textController.text == null
-                                          ? ""
-                                          : _textController.text)));
+                                      language: (_languageController.text),
+                                      text: (_textController.text)));
                             }
                           },
                         ),

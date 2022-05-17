@@ -3,14 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:ndef/ndef.dart' as ndef;
 
 class NDEFRecordSetting extends StatefulWidget {
-  late ndef.NDEFRecord record;
-  NDEFRecordSetting({Key? key, ndef.NDEFRecord? record}) : super(key: key) {
-    if (record == null) {
-      this.record = ndef.NDEFRecord();
-    } else {
-      this.record = record;
-    }
-  }
+  final ndef.NDEFRecord record;
+  NDEFRecordSetting({Key? key, ndef.NDEFRecord? record})
+      : record = record ?? ndef.NDEFRecord(),
+        super(key: key);
   @override
   _NDEFRecordSetting createState() => _NDEFRecordSetting();
 }
@@ -137,18 +133,11 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
                                   ndef.NDEFRecord(
                                       tnf: ndef.TypeNameFormat
                                           .values[_dropButtonValue],
-                                      type: (_typeController.text == null
-                                              ? ""
-                                              : _typeController.text)
+                                      type: (_typeController.text).toBytes(),
+                                      id: (_identifierController.text)
                                           .toBytes(),
-                                      id: (_identifierController.text == null
-                                              ? ""
-                                              : _identifierController.text)
-                                          .toBytes(),
-                                      payload: (_payloadController.text == null
-                                              ? ""
-                                              : _payloadController.text)
-                                          .toBytes()));
+                                      payload:
+                                          (_payloadController.text).toBytes()));
                             }
                           },
                         ),
