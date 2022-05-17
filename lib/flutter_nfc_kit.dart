@@ -88,6 +88,9 @@ class NFCTag {
   /// Indicates whether this NDEF tag can be made read-only (only works on Android, always false on iOS)
   final bool? ndefCanMakeReadOnly;
 
+  /// Custom probe data returned by WebUSB device (see [FlutterNfcKitWeb] for detail, only on Web)
+  final String? webUSBCustomProbeData;
+
   NFCTag(
       this.type,
       this.id,
@@ -105,7 +108,8 @@ class NFCTag {
       this.ndefType,
       this.ndefCapacity,
       this.ndefWritable,
-      this.ndefCanMakeReadOnly);
+      this.ndefCanMakeReadOnly,
+      this.webUSBCustomProbeData);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
@@ -175,7 +179,6 @@ class FlutterNfcKit {
   /// If tag is successfully polled, a session is started.
   ///
   /// The [timeout] parameter only works on Android & Web (default to be 20 seconds). On iOS it is ignored and decided by the OS.
-  /// On Web, all parameters are ignored except [timeout].
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
@@ -185,6 +188,9 @@ class FlutterNfcKit {
   ///
   /// The four boolean flags [readIso14443A], [readIso14443B], [readIso18092], [readIso15693] controls the NFC technology that would be tried.
   /// On iOS, setting any of [readIso14443A] and [readIso14443B] will enable `iso14443` in `pollingOption`.
+  ///
+  /// On Web, all parameters are ignored except [timeout] and [probeWebUSBMagic].
+  /// If [probeWebUSBMagic] is set, the library will use the `PROBE` request to check whether the device supports our API (see [FlutterNfcKitWeb] for details).
   ///
   /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
   /// If disabled, you will not be able to use any NDEF-related methods in the current session.
@@ -203,6 +209,7 @@ class FlutterNfcKit {
     bool readIso14443B = true,
     bool readIso18092 = false,
     bool readIso15693 = true,
+    bool probeWebUSBMagic = false,
   }) async {
     // use a bitmask for compact representation
     int technologies = 0x0;
@@ -218,7 +225,8 @@ class FlutterNfcKit {
       'timeout': timeout?.inMilliseconds ?? POLL_TIIMEOUT,
       'iosAlertMessage': iosAlertMessage,
       'iosMultipleTagMessage': iosMultipleTagMessage,
-      'technologies': technologies
+      'technologies': technologies,
+      'probeWebUSBMagic': probeWebUSBMagic,
     });
     return NFCTag.fromJson(jsonDecode(data));
   }

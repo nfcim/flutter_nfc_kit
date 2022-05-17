@@ -43,7 +43,8 @@ class FlutterNfcKitWeb {
 
       case 'poll':
         int timeout = call.arguments["timeout"];
-        return await WebUSB.poll(timeout);
+        bool probe = call.arguments["probeWebUSBMagic"];
+        return await WebUSB.poll(timeout, probe);
 
       case 'transceive':
         var data = call.arguments["data"];

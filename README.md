@@ -37,7 +37,7 @@ Thank [nfc_manager](https://pub.dev/packages/nfc_manager) plugin for these instr
 
 ## Web
 
-The web version of this plugin **does not actually support NFC** in browsers, but uses a specific [WebUSB protocol](WebUSB.md), so that Flutter programs can communicate with dual-interface (NFC / USB) devices in a platform-independent way.
+The web version of this plugin **does not actually support NFC** in browsers, but uses a specific [WebUSB protocol](https://github.com/nfcim/flutter_nfc_kit/blob/master/WebUSB.md), so that Flutter programs can communicate with dual-interface (NFC / USB) devices in a platform-independent way.
 
 Make sure you understand the statement above and the protocol before using this plugin.
 

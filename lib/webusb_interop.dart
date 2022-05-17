@@ -16,11 +16,14 @@ import 'package:js/js.dart';
 import 'package:logging/logging.dart';
 
 final log = Logger('FlutterNFCKit:WebUSB');
+
+/// The USB class code used to identify a WebUSB device that supports this protocol.
 const int USB_CLASS_CODE_VENDOR_SPECIFIC = 0xFF;
 
 @JS('navigator.usb')
 class _USB {
   external static dynamic requestDevice(_USBDeviceRequestOptions options);
+  // ignore: unused_field
   external static Function ondisconnect;
 }
 
@@ -52,6 +55,7 @@ class _USBControlTransferParameters {
 /// Note: you should **NEVER use this class directly**, but instead use the [FlutterNfcKit] class in your project.
 class WebUSB {
   static dynamic _device;
+  static String customProbeData = "";
 
   static bool _deviceAvailable() {
     return _device != null && getProperty(_device, 'opened');
@@ -62,8 +66,10 @@ class WebUSB {
     log.info('device is disconnected from WebUSB API');
   }
 
+  static const USB_PROBE_MAGIC = '_NFC_IM_';
+
   /// Try to poll a WebUSB device according to our protocol.
-  static Future<String> poll(int timeout) async {
+  static Future<String> poll(int timeout, bool probeMagic) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
       var devicePromise = _USB.requestDevice(new _USBDeviceRequestOptions(
@@ -87,14 +93,55 @@ class WebUSB {
         throw PlatformException(
             code: "500", message: "WebUSB API error", details: e);
       }
+
+      if (probeMagic) {
+        try {
+          // PROBE request
+          var promise = callMethod(_device, 'controlTransferIn', [
+            new _USBControlTransferParameters(
+                requestType: 'vendor',
+                recipient: 'interface',
+                request: 0xff,
+                value: 0,
+                index: 1),
+            1
+          ]);
+          var resp = await promiseToFuture(promise);
+          if (getProperty(resp, 'status') == 'stalled') {
+            throw PlatformException(
+                code: "500", message: "Device error: transfer stalled");
+          }
+          var result =
+              (getProperty(resp, 'data').buffer as ByteBuffer).asUint8List();
+          if (result.length < USB_PROBE_MAGIC.length ||
+              result.sublist(0, USB_PROBE_MAGIC.length) !=
+                  Uint8List.fromList(USB_PROBE_MAGIC.codeUnits)) {
+            throw PlatformException(
+                code: "500",
+                message:
+                    "Device error: invalid probe response: ${hex.encode(result)}, should begin with $USB_PROBE_MAGIC");
+          }
+          customProbeData = hex.encode(result.sublist(USB_PROBE_MAGIC.length));
+        } on Exception catch (e) {
+          log.severe("Probe error", e);
+          throw PlatformException(
+              code: "500", message: "WebUSB API error", details: e);
+        }
+      } else {
+        customProbeData = "";
+      }
     }
     // get VID & PID
     int vendorId = getProperty(_device, 'vendorId');
     int productId = getProperty(_device, 'productId');
     String id =
         '${vendorId.toRadixString(16).padLeft(4, '0')}:${productId.toRadixString(16).padLeft(4, '0')}';
-    return json
-        .encode({'type': 'webusb', 'id': id, 'standard': 'canokey-procotol'});
+    return json.encode({
+      'type': 'webusb',
+      'id': id,
+      'standard': 'nfc-im-webusb-protocol',
+      'customProbeData': customProbeData
+    });
   }
 
   static Future<Uint8List> _doTransceive(Uint8List capdu) async {

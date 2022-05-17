@@ -28,8 +28,20 @@ Each type of message is a vendor-specific request, defined as:
 | CMD      | 00h   |
 | RESP     | 01h   |
 | STAT     | 02h   |
+| PROBE    | FFh   |
 
-1. Command APDU
+1. Probe device
+
+The following control pipe request is used to probe whether the device supports this protocol.
+
+| bmRequestType | bRequest | wValue | wIndex | wLength | Data |
+| ------------- | -------- | ------ | ------ | ------- | ---- |
+| 11000001B     | PROBE    | 0000h  | 1      | 0       | N/A  |
+
+The response data **MUST** begin with magic bytes `0x5f4e46435f494d5f` (`_NFC_IM_`) in order to be recognized.
+The remaining bytes can be used as custom information provided by the device.
+
+2. Send command APDU
 
 The following control pipe request is used to send a command APDU.
 
@@ -37,19 +49,9 @@ The following control pipe request is used to send a command APDU.
 | ------------- | -------- | ------ | ------ | -------------- | ----- |
 | 01000001B     | CMD      | 0000h  | 1      | length of data | bytes |
 
-2. Get the response APDU
+3. Get execution status
 
-The following control pipe request is used to get the response APDU.
-
-| bmRequestType | bRequest | wValue | wIndex | wLength | Data |
-| ------------- | -------- | ------ | ------ | ------- | ---- |
-| 11000001B     | RESP     | 0000h  | 1      | 0       | N/A  |
-
-The device will send the response no more than 1500 bytes.
-
-3. Get the execution status
-
-The following control pipe request is used to get the status of the card.
+The following control pipe request is used to get the status of the device.
 
 | bmRequestType | bRequest | wValue | wIndex | wLength | Data |
 | ------------- | -------- | ------ | ------ | ------- | ---- |
@@ -59,3 +61,13 @@ The response data is 1-byte long, `0x01` for in progress and `0x00` for finishin
 and you can fetch the result using `RESP` command, and other values for invalid states.
 
 If the command is still under processing, the response will be empty.
+
+4. Get response APDU
+
+The following control pipe request is used to get the response APDU.
+
+| bmRequestType | bRequest | wValue | wIndex | wLength | Data |
+| ------------- | -------- | ------ | ------ | ------- | ---- |
+| 11000001B     | RESP     | 0000h  | 1      | 0       | N/A  |
+
+The device will send the response no more than 1500 bytes.

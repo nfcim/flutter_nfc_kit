@@ -25,6 +25,7 @@ NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
     json['ndefCapacity'] as int?,
     json['ndefWritable'] as bool?,
     json['ndefCanMakeReadOnly'] as bool?,
+    json['webUSBCustomProbeData'] as String?,
   );
 }
 
@@ -46,6 +47,7 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'ndefCapacity': instance.ndefCapacity,
       'ndefWritable': instance.ndefWritable,
       'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
+      'webUSBCustomProbeData': instance.webUSBCustomProbeData,
     };
 
 K _$enumDecode<K, V>(
