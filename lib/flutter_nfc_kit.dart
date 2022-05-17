@@ -175,6 +175,7 @@ class FlutterNfcKit {
   /// If tag is successfully polled, a session is started.
   ///
   /// The [timeout] parameter only works on Android & Web (default to be 20 seconds). On iOS it is ignored and decided by the OS.
+  /// On Web, all parameters are ignored except [timeout].
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
@@ -231,7 +232,7 @@ class FlutterNfcKit {
   /// On Android, [timeout] parameter will set transceive execution timeout that is persistent during a active session.
   /// Also, Ndef TagTechnology will be closed if active.
   /// On iOS, this parameter is ignored and is decided by the OS.
-  /// On Web, [timeout] should be provided on each invocation.
+  /// On Web, [timeout] is currently not
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration? timeout}) async {
     assert(capdu is String || capdu is Uint8List);
@@ -241,19 +242,19 @@ class FlutterNfcKit {
     });
   }
 
-  /// Read NDEF records (in decoded format).
+  /// Read NDEF records (in decoded format, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
   /// [cached] only works on Android, allowing cached read (may obtain stale data).
   /// On Android, this would cause any other open TagTechnology to be closed.
-  /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord]
+  /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord].
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool? cached}) async {
     return (await readNDEFRawRecords(cached: cached))
         .map((r) => NDEFRecordConvert.fromRaw(r))
         .toList();
   }
 
-  /// Read NDEF records (in raw data).
+  /// Read NDEF records (in raw data, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
   /// [cached] only works on Android, allowing cached read (may obtain stale data).
@@ -267,7 +268,7 @@ class FlutterNfcKit {
         .toList();
   }
 
-  /// Write NDEF records (in decoded format).
+  /// Write NDEF records (in decoded format, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
   /// [cached] only works on Android, allowing cached read (may obtain stale data).
@@ -277,7 +278,7 @@ class FlutterNfcKit {
     return await writeNDEFRawRecords(message.map((r) => r.toRaw()).toList());
   }
 
-  /// Write NDEF records (in raw data).
+  /// Write NDEF records (in raw data, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
   /// [message] is a list of NDEFRawRecord.
@@ -313,7 +314,7 @@ class FlutterNfcKit {
     }
   }
 
-  /// Make the NDEF tag readonly (a.k.a. lock the NDEF tag).
+  /// Make the NDEF tag readonly (i.e. lock the NDEF tag, Android & iOS only).
   ///
   /// **WARNING: IT CANNOT BE UNDONE!**
   static Future<void> makeNdefReadOnly() async {

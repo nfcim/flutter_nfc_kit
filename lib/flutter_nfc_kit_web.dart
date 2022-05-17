@@ -9,10 +9,15 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_nfc_kit/webusb.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:flutter_nfc_kit/webusb_interop.dart';
 
 /// A web implementation of the FlutterNfcKit plugin.
+///
+/// Note: you should **NEVER use this class directly**, but instead use the [FlutterNfcKit] class in your project.
+///
+/// You **need to implement our WebUSB protocol** on the device side for this to work.
+/// See [WebUSB.md](https://github.com/nfcim/flutter_nfc_kit/blob/master/WebUSB.md) for protocol details.
 class FlutterNfcKitWeb {
   static void registerWith(Registrar registrar) {
     final MethodChannel channel = MethodChannel(
@@ -48,7 +53,7 @@ class FlutterNfcKitWeb {
               message:
                   "Bad argument: data should be String or Uint8List, got $data");
         }
-        // always pass String to [transceive]
+        // always pass hex string to [transceive]
         var encodedData = data;
         if (data is Uint8List) {
           encodedData = hex.encode(data);

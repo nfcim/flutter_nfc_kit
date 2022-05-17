@@ -1,5 +1,9 @@
 @JS()
-library usb;
+
+/// Library that inter-ops with JavaScript on WebUSB APIs.
+///
+/// Note: you should **NEVER use this library directly**, but instead use the [FlutterNfcKit] class in your project.
+library webusb_interop;
 
 import 'dart:convert';
 import 'dart:js_util';
@@ -43,6 +47,9 @@ class _USBControlTransferParameters {
       int index});
 }
 
+/// Wraps around WebUSB APIs from browsers to provide low-level interfaces such as [poll] for [FlutterNfcKitWeb].
+///
+/// Note: you should **NEVER use this class directly**, but instead use the [FlutterNfcKit] class in your project.
 class WebUSB {
   static dynamic _device;
 
@@ -55,6 +62,7 @@ class WebUSB {
     log.info('device is disconnected from WebUSB API');
   }
 
+  /// Try to poll a WebUSB device according to our protocol.
   static Future<String> poll(int timeout) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
@@ -89,7 +97,6 @@ class WebUSB {
         .encode({'type': 'webusb', 'id': id, 'standard': 'canokey-procotol'});
   }
 
-  /// protocol described at <https://docs.canokeys.org/development/protocols/webusb/>
   static Future<Uint8List> _doTransceive(Uint8List capdu) async {
     // send a command (CMD)
     var promise = callMethod(_device, 'controlTransferOut', [
@@ -149,7 +156,7 @@ class WebUSB {
     return getProperty(resp, 'data').buffer.asUint8List();
   }
 
-  /// Transceive data with polled WebUSB device according to procotol at <<https://docs.canokeys.org/development/protocols/webusb/>
+  /// Transceive data with polled WebUSB device according to our protocol.
   static Future<String> transceive(String capdu) async {
     log.config('CAPDU: $capdu');
     if (!_deviceAvailable()) {
@@ -175,7 +182,7 @@ class WebUSB {
     }
   }
 
-  /// Finish this session, end WebUSB session if explicitly asked by user
+  /// Finish this session, also end WebUSB session if explicitly asked by user.
   static Future<void> finish(bool closeWebUSB) async {
     if (_deviceAvailable()) {
       if (closeWebUSB) {
