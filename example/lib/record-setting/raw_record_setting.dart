@@ -56,101 +56,105 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
               title: Text('Set Record'),
             ),
             body: Center(
-                child: Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.always,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: <Widget>[
-                        DropdownButton(
-                          value: _dropButtonValue,
-                          items: [
-                            DropdownMenuItem(
-                              child: Text('empty'),
-                              value: 0,
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.always,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: <Widget>[
+                            DropdownButton(
+                              value: _dropButtonValue,
+                              items: [
+                                DropdownMenuItem(
+                                  child: Text('empty'),
+                                  value: 0,
+                                ),
+                                DropdownMenuItem(
+                                  child: Text('nfcWellKnown'),
+                                  value: 1,
+                                ),
+                                DropdownMenuItem(
+                                  child: Text('media'),
+                                  value: 2,
+                                ),
+                                DropdownMenuItem(
+                                  child: Text('absoluteURI'),
+                                  value: 3,
+                                ),
+                                DropdownMenuItem(
+                                    child: Text('nfcExternal'), value: 4),
+                                DropdownMenuItem(
+                                    child: Text('unchanged'), value: 5),
+                                DropdownMenuItem(
+                                  child: Text('unknown'),
+                                  value: 6,
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _dropButtonValue = value as int;
+                                });
+                              },
                             ),
-                            DropdownMenuItem(
-                              child: Text('nfcWellKnown'),
-                              value: 1,
+                            TextFormField(
+                              decoration:
+                                  InputDecoration(labelText: 'identifier'),
+                              validator: (v) {
+                                return v!.trim().length % 2 == 0
+                                    ? null
+                                    : 'length must be even';
+                              },
+                              controller: _identifierController,
                             ),
-                            DropdownMenuItem(
-                              child: Text('media'),
-                              value: 2,
+                            TextFormField(
+                              decoration: InputDecoration(labelText: 'type'),
+                              validator: (v) {
+                                return v!.trim().length % 2 == 0
+                                    ? null
+                                    : 'length must be even';
+                              },
+                              controller: _typeController,
                             ),
-                            DropdownMenuItem(
-                              child: Text('absoluteURI'),
-                              value: 3,
+                            TextFormField(
+                              decoration: InputDecoration(labelText: 'payload'),
+                              validator: (v) {
+                                return v!.trim().length % 2 == 0
+                                    ? null
+                                    : 'length must be even';
+                              },
+                              controller: _payloadController,
                             ),
-                            DropdownMenuItem(
-                                child: Text('nfcExternal'), value: 4),
-                            DropdownMenuItem(
-                                child: Text('unchanged'), value: 5),
-                            DropdownMenuItem(
-                              child: Text('unknown'),
-                              value: 6,
+                            ElevatedButton(
+                              child: Text('OK'),
+                              onPressed: () {
+                                if ((_formKey.currentState as FormState)
+                                    .validate()) {
+                                  Navigator.pop(
+                                      context,
+                                      ndef.NDEFRecord(
+                                          tnf: ndef.TypeNameFormat
+                                              .values[_dropButtonValue],
+                                          type:
+                                              (_typeController.text).toBytes(),
+                                          id: (_identifierController.text)
+                                              .toBytes(),
+                                          payload: (_payloadController.text)
+                                              .toBytes()));
+                                }
+                              },
+                            ),
+                            ElevatedButton(
+                              child: Text('Delete'),
+                              onPressed: () {
+                                if ((_formKey.currentState as FormState)
+                                    .validate()) {
+                                  Navigator.pop(context, 'Delete');
+                                }
+                              },
                             ),
                           ],
-                          onChanged: (value) {
-                            setState(() {
-                              _dropButtonValue = value as int;
-                            });
-                          },
-                        ),
-                        TextFormField(
-                          decoration: InputDecoration(labelText: 'identifier'),
-                          validator: (v) {
-                            return v!.trim().length % 2 == 0
-                                ? null
-                                : 'length must be even';
-                          },
-                          controller: _identifierController,
-                        ),
-                        TextFormField(
-                          decoration: InputDecoration(labelText: 'type'),
-                          validator: (v) {
-                            return v!.trim().length % 2 == 0
-                                ? null
-                                : 'length must be even';
-                          },
-                          controller: _typeController,
-                        ),
-                        TextFormField(
-                          decoration: InputDecoration(labelText: 'payload'),
-                          validator: (v) {
-                            return v!.trim().length % 2 == 0
-                                ? null
-                                : 'length must be even';
-                          },
-                          controller: _payloadController,
-                        ),
-                        ElevatedButton(
-                          child: Text('OK'),
-                          onPressed: () {
-                            if ((_formKey.currentState as FormState)
-                                .validate()) {
-                              Navigator.pop(
-                                  context,
-                                  ndef.NDEFRecord(
-                                      tnf: ndef.TypeNameFormat
-                                          .values[_dropButtonValue],
-                                      type: (_typeController.text).toBytes(),
-                                      id: (_identifierController.text)
-                                          .toBytes(),
-                                      payload:
-                                          (_payloadController.text).toBytes()));
-                            }
-                          },
-                        ),
-                        ElevatedButton(
-                          child: Text('Delete'),
-                          onPressed: () {
-                            if ((_formKey.currentState as FormState)
-                                .validate()) {
-                              Navigator.pop(context, 'Delete');
-                            }
-                          },
-                        ),
-                      ],
-                    )))));
+                        ))))));
   }
 }
