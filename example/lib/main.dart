@@ -114,18 +114,20 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         });
                       } else if (tag.type == NFCTagType.iso18092) {
                         String result1 =
-                            await FlutterNfcKit.transceive("060080080100");
+                          await FlutterNfcKit.transceive("060080080100");
                         setState(() {
                           _result = '1: $result1\n';
                         });
                       } else if (tag.type == NFCTagType.mifare_ultralight ||
-                          tag.type == NFCTagType.mifare_classic) {
+                          tag.type == NFCTagType.mifare_classic ||
+                          tag.type == NFCTagType.iso15693) {
                         var ndefRecords = await FlutterNfcKit.readNDEFRecords();
-                        var ndefString = ndefRecords
-                            .map((r) => r.toString())
-                            .reduce((value, element) => value + "\n" + element);
+                        var ndefString = '';
+                        for (int i = 0; i < ndefRecords.length; i++) {
+                          ndefString += '${i + 1}: ${ndefRecords[i]}\n';
+                        }
                         setState(() {
-                          _result = '1: $ndefString\n';
+                          _result = ndefString;
                         });
                       } else if (tag.type == NFCTagType.webusb) {
                         var r = await FlutterNfcKit.transceive(
@@ -169,7 +171,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                 _tag = tag;
                               });
                               if (tag.type == NFCTagType.mifare_ultralight ||
-                                  tag.type == NFCTagType.mifare_classic) {
+                                  tag.type == NFCTagType.mifare_classic ||
+                                  tag.type == NFCTagType.iso15693) {
                                 await FlutterNfcKit.writeNDEFRecords(_records!);
                                 setState(() {
                                   _writeResult = 'OK';
