@@ -9,6 +9,8 @@ import android.nfc.NfcAdapter.*
 import android.nfc.tech.*
 import android.os.Handler
 import android.os.Looper
+import com.github.devnied.emvnfccard.model.EmvCard
+import com.github.devnied.emvnfccard.parser.EmvTemplate
 import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
 import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
 import io.flutter.Log
@@ -23,6 +25,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.concurrent.thread
@@ -344,6 +347,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var ndefCapacity = 0
             var ndefType = ""
 
+            var paymentCardNumber = ""
+            var expiryDate = ""
+            var cardHolderName = ""
+
             if (tag.techList.contains(NfcA::class.java.name)) {
                 val aTag = NfcA.get(tag)
                 atqa = aTag.atqa.toHexString()
@@ -356,6 +363,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         val isoDep = IsoDep.get(tag)
                         tagTechnology = isoDep
                         historicalBytes = isoDep.historicalBytes.toHexString()
+
+                        val paymentCard = readPaymentCardInfo(isoDep)
+
+                        paymentCardNumber = paymentCard.cardNumber
+
+                        val format = SimpleDateFormat("MM / yy", Locale.getDefault())
+                        expiryDate = format.format(paymentCard.expireDate)
+
+                        if (paymentCard.holderFirstname != null && paymentCard.holderLastname != null) {
+                            cardHolderName =
+                                paymentCard.holderFirstname + " " + paymentCard.holderLastname
+                        }
                     }
                     tag.techList.contains(MifareClassic::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
@@ -380,6 +399,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     val isoDep = IsoDep.get(tag)
                     tagTechnology = isoDep
                     hiLayerResponse = isoDep.hiLayerResponse.toHexString()
+
+                    val paymentCard = readPaymentCardInfo(isoDep)
+
+                    paymentCardNumber = paymentCard.cardNumber
+
+                    val format = SimpleDateFormat("MM / yy", Locale.getDefault())
+                    expiryDate = format.format(paymentCard.expireDate)
+
+                    if (paymentCard.holderFirstname != null && paymentCard.holderLastname != null) {
+                        cardHolderName =
+                            paymentCard.holderFirstname + " " + paymentCard.holderLastname
+                    }
                 } else {
                     type = "unknown"
                     standard = "ISO 14443-3 (Type B)"
@@ -431,10 +462,38 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     "ndefType" to ndefType,
                     "ndefWritable" to ndefWritable,
                     "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
-                    "ndefCapacity" to ndefCapacity
+                    "ndefCapacity" to ndefCapacity,
+                    "paymentCardNumber" to paymentCardNumber,
+                    "expiryDate" to expiryDate,
+                    "cardHolderName" to cardHolderName
             )).toString())
 
         }, technologies, null)
+    }
+
+    private fun readPaymentCardInfo(isoDep: IsoDep) : EmvCard {
+        isoDep.connect()
+
+        val provider = Provider(isoDep)
+
+        val config: EmvTemplate.Config = EmvTemplate.Config()
+            .setContactLess(true) // Enable contact less reading
+            .setReadAllAids(true) // Read all aids in card
+            .setReadTransactions(true) // Read all transactions
+            .setRemoveDefaultParsers(false) // Remove default parsers (GeldKarte and Emv)
+            .setReadAt(true)
+            .setReadCplc(true)
+
+        val parser = EmvTemplate.Builder() //
+            .setProvider(provider) // Define provider
+            .setConfig(config) // Define config
+            .build()
+
+        val emvCard = parser.readEmvCard()
+
+        isoDep.close()
+
+        return emvCard
     }
 
     private class MethodResultWrapper internal constructor(result: Result) : Result {

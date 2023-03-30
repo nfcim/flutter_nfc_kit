@@ -91,6 +91,15 @@ class NFCTag {
   /// Custom probe data returned by WebUSB device (see [FlutterNfcKitWeb] for detail, only on Web)
   final String? webUSBCustomProbeData;
 
+  /// Represents the payment card number if the tag is associated with a contactless payment card
+  final String? paymentCardNumber;
+
+  /// Represents the payment card expiry date if the tag is associated with a contactless payment card
+  final String? expiryDate;
+
+  /// Represents the payment card holder name if the tag is associated with a contactless payment card
+  final String? cardHolderName;
+
   NFCTag(
       this.type,
       this.id,
@@ -109,7 +118,10 @@ class NFCTag {
       this.ndefCapacity,
       this.ndefWritable,
       this.ndefCanMakeReadOnly,
-      this.webUSBCustomProbeData);
+      this.webUSBCustomProbeData,
+      this.paymentCardNumber,
+      this.expiryDate,
+      this.cardHolderName);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
