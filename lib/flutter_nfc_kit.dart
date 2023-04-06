@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -100,8 +99,7 @@ class NFCTag {
   /// Represents the payment card holder name if the tag is associated with a contactless payment card
   final String? cardHolderName;
 
-  NFCTag(
-      this.type,
+  NFCTag(this.type,
       this.id,
       this.standard,
       this.atqa,
@@ -124,6 +122,7 @@ class NFCTag {
       this.cardHolderName);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
+
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 }
 
@@ -148,6 +147,7 @@ class NDEFRawRecord {
 
   factory NDEFRawRecord.fromJson(Map<String, dynamic> json) =>
       _$NDEFRawRecordFromJson(json);
+
   Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
@@ -181,9 +181,16 @@ class FlutterNfcKit {
   /// get the availablility of NFC reader on this device
   static Future<NFCAvailability> get nfcAvailability async {
     final String availability =
-        await _channel.invokeMethod('getNFCAvailability');
+    await _channel.invokeMethod('getNFCAvailability');
     return NFCAvailability.values
         .firstWhere((it) => it.toString() == "NFCAvailability.$availability");
+  }
+
+  /// This method stops the Android OS from automatically detecting NFC tags.
+  /// [finish] should be called ofter NFC operations are done to release
+  /// the NFC resources on the device, un-silence NFC detection again.
+  static Future<void> silenceOsNfcDetection() async {
+    return await _channel.invokeMethod('silenceNfcDetection', {});
   }
 
   /// Try to poll a NFC tag from reader.
@@ -216,7 +223,7 @@ class FlutterNfcKit {
     bool androidCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
-        "More than one tags are detected, please leave only one tag and try again.",
+    "More than one tags are detected, please leave only one tag and try again.",
     bool readIso14443A = true,
     bool readIso14443B = true,
     bool readIso18092 = false,
@@ -282,7 +289,7 @@ class FlutterNfcKit {
   /// Please use [readNDEFRecords] if you want decoded NDEF records
   static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool? cached}) async {
     final String data =
-        await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
+    await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
     return (jsonDecode(data) as List<dynamic>)
         .map((object) => NDEFRawRecord.fromJson(object))
         .toList();
@@ -314,10 +321,9 @@ class FlutterNfcKit {
   /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
   /// If both parameters are set, [iosErrorMessage] will be used.
   /// On Web, set [closeWebUSB] to `true` to end the session, so that user can choose a different device in next [poll].
-  static Future<void> finish(
-      {String? iosAlertMessage,
-      String? iosErrorMessage,
-      bool? closeWebUSB}) async {
+  static Future<void> finish({String? iosAlertMessage,
+    String? iosErrorMessage,
+    bool? closeWebUSB}) async {
     return await _channel.invokeMethod('finish', {
       'iosErrorMessage': iosErrorMessage,
       'iosAlertMessage': iosAlertMessage,
