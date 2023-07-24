@@ -23,6 +23,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
+import java.lang.SecurityException
 import java.util.*
 import kotlin.concurrent.schedule
 import kotlin.concurrent.thread
@@ -125,7 +126,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         if (ndefTech != null && ndefTech.isConnected) {
                             ndefTech.close()
                         }
-                    } catch (ex: IOException) {
+                    } catch (ex: Exception) {
                         Log.e(TAG, "Close tag error", ex)
                     }
                     if (activity != null) {
@@ -172,6 +173,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (ex: NoSuchMethodException) {
                         Log.e(TAG, "Transceive not supported: $req", ex)
                         result.error("405", "Transceive not supported for this type of card", null)
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Security exception found: $req", ex)
+                        result.error("405", "Transceive failed due to a security exception", null)
                     }
                 }
             }
@@ -214,6 +218,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (ex: FormatException) {
                         Log.e(TAG, "NDEF Format Error", ex)
                         result.error("400", "NDEF format error", ex.localizedMessage)
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Security Exception", ex)
+                        result.error("500", "Security exception found", ex.localizedMessage)
                     }
                 }
             }
@@ -258,6 +265,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (ex: FormatException) {
                         Log.e(TAG, "NDEF Format Error", ex)
                         result.error("400", "NDEF format error", ex.localizedMessage)
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Security Exception", ex)
+                        result.error("500", "Security exception found", ex.localizedMessage)
                     }
                 }
             }
@@ -277,7 +287,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         } else {
                             result.error("500", "Failed to lock NDEF tag", null)
                         }
-                    } catch (ex: IOException) {
+                    } catch (ex: Exception) {
                         Log.e(TAG, "Lock NDEF Error", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
                     }
