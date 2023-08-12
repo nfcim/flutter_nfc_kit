@@ -6,6 +6,7 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
+import android.nfc.Tag
 import android.nfc.tech.*
 import android.os.Handler
 import android.os.Looper
@@ -36,6 +37,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
         private var ndefTechnology: Ndef? = null
+        private var isMifareClassic: Boolean = false;
+        private var isMifareUltralight: Boolean = false;
 
         private fun TagTechnology.transceive(data: ByteArray, timeout: Int?): ByteArray {
             if (timeout != null) {
@@ -91,6 +94,12 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     other.close()
                 }
                 target.connect()
+            }
+        }
+
+        val closeTechnology = {tagTech: TagTechnology? ->
+            if (tagTech !==null && tagTech.isConnected) {
+                tagTech.close()
             }
         }
 
@@ -284,8 +293,271 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
+            "readBlock" -> {
+                val blockIndex = call.argument<Int>("blockIndex")!!
+                val authenticateKeyA = call.argument<String>("authenticateKeyA")
+                var authenticateKey: ByteArray? = null
+                if (!authenticateKeyA.isNullOrEmpty()) {
+                    authenticateKey = authenticateKeyA.hexToBytes()
+                }
+                thread {
+                    try {
+                        closeTechnology(ndefTechnology)
+                        closeTechnology(tagTechnology)
+                        readBlock(result, blockIndex, authenticateKey)
+                    } catch (e: IOException) {
+                        Log.e(TAG, "Read Mifare Tag In Block $blockIndex Error", e)
+                    }
+                }
+            }
+
+            "readAll" -> {
+                val authenticateKeyA = call.argument<String>("authenticateKeyA")
+                var authenticateKey: ByteArray? = null
+                if (!authenticateKeyA.isNullOrEmpty()) {
+                    authenticateKey = authenticateKeyA.hexToBytes()
+                }
+                thread {
+                    try {
+                        closeTechnology(ndefTechnology)
+                        closeTechnology(tagTechnology)
+                        readAll(result,authenticateKey)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Read Mifare Tag All Error", e)
+                    }
+                }
+            }
+
+            "readSector" -> {
+                val sectorIndex = call.argument<Int>("sectorIndex")!!
+                val authenticateKeyA = call.argument<String>("authenticateKeyA")
+                var authenticateKey: ByteArray? = null
+                if (!authenticateKeyA.isNullOrEmpty()) {
+                    authenticateKey = authenticateKeyA.hexToBytes()
+                }
+                thread {
+                    try {
+                        closeTechnology(ndefTechnology)
+                        closeTechnology(tagTechnology)
+                        readSector(result, sectorIndex, authenticateKey)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Read Mifare In Sector $sectorIndex Error", e)
+                    }
+                }
+            }
+
+
+            "writeBlock" -> {
+                val blockIndex = call.argument<Int>("blockIndex")!!
+                val authenticateKeyA = call.argument<String>("authenticateKeyA")
+                val message = call.argument<String>("message")!!
+                var authenticateKey: ByteArray? = null
+                if (!authenticateKeyA.isNullOrEmpty()) {
+                    authenticateKey = authenticateKeyA.hexToBytes()
+                }
+                thread {
+                    try {
+                        closeTechnology(ndefTechnology)
+                        closeTechnology(tagTechnology)
+                        writeBlock(result, blockIndex, authenticateKey, message.hexToBytes())
+                    } catch (ex: IOException) {
+                        Log.e(TAG, "Write Mifare Tag Error", ex)
+                    }
+                }
+            }
             else -> result.notImplemented()
         }
+    }
+
+    private fun readBlock(result: Result, blockIndex: Int, authenticateKeyA: ByteArray?) {
+        // MifareClassic
+        if (isMifareClassic) {
+            val sectorAuthenticateKeyA: ByteArray? = if (authenticateKeyA?.isEmpty() == null) {
+                MifareClassic.KEY_DEFAULT
+            } else {
+                authenticateKeyA
+            }
+            val mifareClassic = MifareClassic.get(tagTechnology?.tag)
+            try {
+                mifareClassic.connect()
+                val sectorIndex = mifareClassic.blockToSector(blockIndex)
+                mifareClassic.authenticateSectorWithKeyA(sectorIndex, sectorAuthenticateKeyA)
+                var blockBytes = mifareClassic.readBlock(blockIndex)
+                if (blockBytes != null) {
+                    if (blockBytes.size < 16) {
+                        throw IOException()
+                    }
+                }
+                if (blockBytes != null) {
+                    if (blockBytes.size > 16) {
+                        blockBytes = blockBytes.copyOf(16)
+                    }
+                }
+                Log.d(TAG, "readBlock: ${blockBytes.toString()}")
+                activity?.runOnUiThread { result.success(blockBytes.toString()) }
+            } catch (ex: IOException) {
+                Log.e(TAG, "Read Block Error", ex)
+                activity?.runOnUiThread { result.error("501", ex.localizedMessage, null) }
+            } finally {
+                mifareClassic.close()
+            }
+        } else if (isMifareUltralight) { // MifareUltralight
+            val mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
+            try {
+                mifareUltralight.connect()
+                // For mifareUltralight block is page offset
+                var blockBytes = mifareUltralight.readPages(blockIndex)
+                Log.d(TAG, "readBlock: ${blockBytes.toString()}")
+                activity?.runOnUiThread { result.success(blockBytes.toString()) }
+            } catch (ex: IOException) {
+                Log.e(TAG, "error", ex)
+                activity?.runOnUiThread { result.error("501", ex.localizedMessage, null) }
+            } finally {
+                mifareUltralight.close()
+            }
+        }
+    }
+
+    private fun readSector(result: Result, sectorIndex: Int, authenticateKeyA: ByteArray?) {
+        if (isMifareClassic) {
+            val mifareClassic = MifareClassic.get(tagTechnology?.tag)
+            try {
+                val sectorAuthenticateKeyA: ByteArray? = if (authenticateKeyA?.isEmpty() == null) {
+                    MifareClassic.KEY_DEFAULT
+                } else {
+                    authenticateKeyA
+                }
+                mifareClassic.connect()
+                mifareClassic.authenticateSectorWithKeyA(sectorIndex,sectorAuthenticateKeyA)
+                val sector = ByteUtils.mifareClassPrintEntireBlock(mifareClassic, sectorIndex)
+                activity?.runOnUiThread { result.success(sector) }
+            } catch (e: Exception) {
+                Log.e(TAG, "read sector error", e)
+                activity?.runOnUiThread { result.error("502", e.localizedMessage, null) }
+            } finally {
+                mifareClassic.close()
+            }
+        }
+    }
+
+    private fun readAll(result: Result, authenticateKeyA: ByteArray?) {
+        val response = mutableMapOf<Int, List<String>>()
+        if (isMifareClassic) {
+            val mifareClassic = MifareClassic.get(tagTechnology?.tag)
+            try {
+                val sectorAuthenticateKeyA: ByteArray? = if (authenticateKeyA?.isEmpty() == null) {
+                    MifareClassic.KEY_DEFAULT
+                } else {
+                    authenticateKeyA
+                }
+                mifareClassic.connect()
+                for (i in 0 until mifareClassic.sectorCount) {
+                    mifareClassic.authenticateSectorWithKeyA(i, sectorAuthenticateKeyA)
+                    response[i] = ByteUtils.mifareClassPrintEntireBlock(mifareClassic, i)
+                }
+                activity?.runOnUiThread { result.success(response) }
+            } catch (e:java.lang.Exception) {
+                Log.e(TAG, "Read MifareClassic All Error: ", e)
+                activity?.runOnUiThread { result.error("503", e.localizedMessage, null) }
+            } finally {
+                mifareClassic.close()
+            }
+        } else if (isMifareUltralight) {
+            val  mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
+            try {
+                mifareUltralight.connect()
+                for (i in 0 until 16) {
+                    response[i] = ByteUtils.mifareUltralightPrintEntireBlock(mifareUltralight, i)
+                }
+                activity?.runOnUiThread { result.success(response) }
+            } catch (ex: Exception) {
+                Log.e(TAG, "Read MifareUltralight All Error: ", ex)
+                activity?.runOnUiThread { result.error("503", ex.localizedMessage, null) }
+            } finally {
+                mifareUltralight.close()
+            }
+        }
+    }
+    private fun writeBlock(result: Result, blockIndex: Int, authenticateKeyA: ByteArray?, message: ByteArray) {
+        if (isMifareClassic) {
+            val sectorAuthenticateKeyA: ByteArray? = if (authenticateKeyA?.isEmpty() == null) {
+                MifareClassic.KEY_DEFAULT
+            } else {
+                authenticateKeyA
+            }
+            val mifareClassic = MifareClassic.get(tagTechnology?.tag)
+            Log.d(TAG, "Write Block Of Sector: $message")
+            try {
+                mifareClassic.connect()
+                val sectorIndex = mifareClassic.blockToSector(blockIndex)
+                mifareClassic.authenticateSectorWithKeyA(sectorIndex, sectorAuthenticateKeyA)
+                mifareClassic.writeBlock(
+                    blockIndex,
+                    message
+                )
+            } catch (ex: IOException) {
+                Log.e(TAG, "MifareClassic Write Error:", ex)
+                activity?.runOnUiThread { result.error("504", ex.localizedMessage, null) }
+            } finally {
+                mifareClassic.close()
+            }
+        } else if (isMifareUltralight) { // MifareUltralight
+            val mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
+            try {
+                mifareUltralight.connect()
+                if (blockIndex < 4) {
+                    // block index in mifareUltralight must be more than 4
+                    throw IOException("Error block index in mifareUltralight must be more than 4")
+                }
+                mifareUltralight.writePage(
+                    blockIndex,
+                    message
+                )
+            } catch (ex: IOException) {
+                Log.e(TAG, "MifareUltralight Write Error:", ex)
+                activity?.runOnUiThread { result.error("504", ex.localizedMessage, null) }
+            } finally {
+                mifareUltralight.close()
+            }
+        }
+    }
+    private fun getMaxTransceiveLength(): Int {
+        if (isMifareClassic) {
+            try {
+                val mifareClassic = MifareClassic.get(tagTechnology?.tag)
+                val maxTransceiveLen = mifareClassic.maxTransceiveLength
+                return maxTransceiveLen
+            } catch (ex: Exception) {
+                Log.e(TAG, "Get MifareClassic Max Transceive Length Error", ex)
+            }
+        } else if (isMifareUltralight) {
+            try {
+                val mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
+                val maxTransceiveLen = mifareUltralight.maxTransceiveLength
+                return maxTransceiveLen
+            } catch (ex: Exception) {
+                Log.e(TAG, "Get MifareUltralight Max Transceive Length Error", ex)
+            }
+        }
+        return -1
+    }
+    /// Return the type of this MIFARE Classic compatible tag.
+    /// One of TYPE_UNKNOWN, TYPE_CLASSIC, TYPE_PLUS or TYPE_PRO.
+    private fun mifareClassicGetType(): Int {
+        return MifareClassic.get(tagTechnology?.tag).type
+    }
+    /// Return the size of the tag in bytes
+    /// One of SIZE_MINI, SIZE_1K, SIZE_2K, SIZE_4K. These constants are equal to their respective size in bytes.
+    private fun mifareClassicGetSize(): Int {
+        return MifareClassic.get(tagTechnology?.tag).size
+    }
+    /// Return the number of MIFARE Classic sectors.
+    private fun mifareClassicGetSectorCount(): Int {
+        return MifareClassic.get(tagTechnology?.tag).sectorCount;
+    }
+    /// Return the total number of MIFARE Classic blocks.
+    private fun mifareClassGetBlockCount(): Int {
+        return MifareClassic.get(tagTechnology?.tag).blockCount;
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {}
@@ -343,6 +615,12 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var ndefCanMakeReadOnly = false
             var ndefCapacity = 0
             var ndefType = ""
+            // Mifare
+            var mifareClassType: Int? = null
+            var mifareClassSize: Int? = null
+            var mifareClassSectorCount: Int? = null
+            var mifareClassicBlockCount: Int? = null
+            var mifareMaxTransceiveLength: Int? = null
 
             if (tag.techList.contains(NfcA::class.java.name)) {
                 val aTag = NfcA.get(tag)
@@ -360,10 +638,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     tag.techList.contains(MifareClassic::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
                         type = "mifare_classic"
+                        isMifareClassic = true
+                        mifareClassType = mifareClassicGetType()
+                        mifareClassSize = mifareClassicGetSize()
+                        mifareClassSectorCount = mifareClassicGetSectorCount()
+                        mifareClassicBlockCount = mifareClassGetBlockCount()
+                        mifareMaxTransceiveLength = getMaxTransceiveLength()
                     }
                     tag.techList.contains(MifareUltralight::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
                         type = "mifare_ultralight"
+                        isMifareUltralight = true
+                        mifareMaxTransceiveLength = getMaxTransceiveLength()
                     }
                     else -> {
                         standard = "ISO 14443-3 (Type A)"
@@ -431,7 +717,12 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     "ndefType" to ndefType,
                     "ndefWritable" to ndefWritable,
                     "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
-                    "ndefCapacity" to ndefCapacity
+                    "ndefCapacity" to ndefCapacity,
+                    "mifareClassType" to mifareClassType,
+                    "mifareClassSize" to mifareClassSize,
+                    "mifareClassSectorCount" to mifareClassSectorCount,
+                    "mifareClassicBlockCount" to mifareClassicBlockCount,
+                    "mifareMaxTransceiveLength" to mifareMaxTransceiveLength,
             )).toString())
 
         }, technologies, null)

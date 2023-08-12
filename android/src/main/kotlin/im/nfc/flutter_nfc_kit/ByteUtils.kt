@@ -1,5 +1,10 @@
 package im.nfc.flutter_nfc_kit
 
+import android.nfc.tech.MifareClassic
+import android.nfc.tech.MifareUltralight
+import android.util.Log
+import java.io.IOException
+
 object ByteUtils {
     private const val HEX_CHARS = "0123456789ABCDEF"
     private val HEX_CHARS_ARRAY = HEX_CHARS.toCharArray()
@@ -34,5 +39,39 @@ object ByteUtils {
         val firstIndex = (octet and 0xF0) ushr 4
         val secondIndex = octet and 0x0F
         return "${HEX_CHARS_ARRAY[firstIndex]}${HEX_CHARS_ARRAY[secondIndex]}"
+    }
+
+    // MifareClassic
+    fun mifareClassPrintEntireBlock(mifareClassic: MifareClassic, sectorIndex: Int): ArrayList<String> {
+        val sectorAsHex = arrayListOf<String>()
+        val firstBlock: Int = mifareClassic.sectorToBlock(sectorIndex)
+        val lastBlock = firstBlock + 4
+        for (i in firstBlock until lastBlock) {
+            try {
+                var blockBytes: ByteArray = mifareClassic.readBlock(i)
+                if (blockBytes.size < 16) {
+                    throw IOException()
+                }
+                if (blockBytes.size > 16) {
+                    blockBytes = blockBytes.copyOf(16)
+                }
+                val hex = blockBytes.toHexString()
+                sectorAsHex.add(hex)
+            } catch (e: Exception) {
+                print(e)
+            }
+        }
+        return sectorAsHex
+    }
+    fun mifareUltralightPrintEntireBlock(mifareUltralight: MifareUltralight, pageOffset: Int): ArrayList<String> {
+        val pageAsHex = arrayListOf<String>()
+        try {
+            var pageBytes = mifareUltralight.readPages(pageOffset)
+            val hex = pageBytes.toHexString()
+            pageAsHex.add(hex)
+        } catch (ex: Exception) {
+            print(ex)
+        }
+        return pageAsHex
     }
 }
