@@ -393,8 +393,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         blockBytes = blockBytes.copyOf(16)
                     }
                 }
-                Log.d(TAG, "readBlock: ${blockBytes.toString()}")
-                activity?.runOnUiThread { result.success(blockBytes.toString()) }
+                Log.d(TAG, "readBlock: ${blockBytes.toHexString()}")
+                activity?.runOnUiThread { result.success(blockBytes.toHexString()) }
             } catch (ex: IOException) {
                 Log.e(TAG, "Read Block Error", ex)
                 activity?.runOnUiThread { result.error("501", ex.localizedMessage, null) }
@@ -407,8 +407,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 mifareUltralight.connect()
                 // For mifareUltralight block is page offset
                 var blockBytes = mifareUltralight.readPages(blockIndex)
-                Log.d(TAG, "readBlock: ${blockBytes.toString()}")
-                activity?.runOnUiThread { result.success(blockBytes.toString()) }
+                Log.d(TAG, "readBlock: ${blockBytes.toHexString()}")
+                activity?.runOnUiThread { result.success(blockBytes.toHexString()) }
             } catch (ex: IOException) {
                 Log.e(TAG, "error", ex)
                 activity?.runOnUiThread { result.error("501", ex.localizedMessage, null) }
