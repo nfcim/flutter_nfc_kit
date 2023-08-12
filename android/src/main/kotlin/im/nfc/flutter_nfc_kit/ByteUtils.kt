@@ -2,7 +2,6 @@ package im.nfc.flutter_nfc_kit
 
 import android.nfc.tech.MifareClassic
 import android.nfc.tech.MifareUltralight
-import android.util.Log
 import java.io.IOException
 
 object ByteUtils {

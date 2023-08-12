@@ -350,7 +350,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "writeBlock" -> {
                 val blockIndex = call.argument<Int>("blockIndex")!!
                 val authenticateKeyA = call.argument<String>("authenticateKeyA")
-                val message = call.argument<String>("message")!!
+                val message = call.argument<String>("data")!!
                 var authenticateKey: ByteArray? = null
                 if (!authenticateKeyA.isNullOrEmpty()) {
                     authenticateKey = authenticateKeyA.hexToBytes()
@@ -359,7 +359,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     try {
                         closeTechnology(ndefTechnology)
                         closeTechnology(tagTechnology)
-                        writeBlock(result, blockIndex, authenticateKey, message.hexToBytes())
+                        writeBlock(result, blockIndex, authenticateKey, message.toByteArray())
                     } catch (ex: IOException) {
                         Log.e(TAG, "Write Mifare Tag Error", ex)
                     }
@@ -622,6 +622,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var mifareClassicBlockCount: Int? = null
             var mifareMaxTransceiveLength: Int? = null
 
+            isMifareUltralight = false
+            isMifareClassic = false
             if (tag.techList.contains(NfcA::class.java.name)) {
                 val aTag = NfcA.get(tag)
                 atqa = aTag.atqa.toHexString()

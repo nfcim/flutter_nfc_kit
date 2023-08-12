@@ -346,7 +346,7 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('makeNdefReadOnly');
   }
 
-  /// Read block message in given index.
+  /// Read block message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
   /// There must be a valid session when invoking.
   /// This would cause any other open TagTechnology to be closed.
   static Future<String> readBlock({
@@ -360,7 +360,7 @@ class FlutterNfcKit {
     return data as String;
   }
 
-  /// Read sector message in given index.
+  /// Read sector message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
   /// There must be a valid session when invoking.
   /// This would cause any other open TagTechnology to be closed.
   static Future<List<String>> readSector({
@@ -387,7 +387,7 @@ class FlutterNfcKit {
   }
 
 
-  /// Write message to block in given index.
+  /// Write message to block in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
   /// There must be a valid session when invoking.
   /// This would cause any other open TagTechnology to be closed.
   static Future<void> writeBlock({
