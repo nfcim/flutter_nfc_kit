@@ -124,33 +124,20 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           tag.type == NFCTagType.iso15693) {
                         if (tag.type == NFCTagType.mifare_classic ||
                             tag.type == NFCTagType.mifare_ultralight) {
-                          String data = await FlutterNfcKit.readBlock(blockIndex: 1);
-                          setState(() {
-                            _mifareResult = data;
-                          });
-                          // List<String> data = await FlutterNfcKit.readSector(sectorIndex: 1);
-                          // StringBuffer result = StringBuffer();
-                          //     for(int i = 0; i < data.length; i ++) {
-                          //       result.write(data[i]);
-                          //       result.write("\n");
-                          //     }
-                          // setState(() {
-                          //   _mifareResult = result.toString();
-                          // });
-                          // List<List<String>> data = await FlutterNfcKit.readAll();
-                          // if (data != null) {
-                          //   StringBuffer result = StringBuffer();
-                          //   for(int i = 0; i < data.length; i++) {
-                          //     List<String> sectorData = data[i];
-                          //     for(int i = 0; i < sectorData.length; i ++) {
-                          //       result.write(sectorData[i]);
-                          //       result.write("\n");
-                          //     }
-                          //   }
-                          //   setState(() {
-                          //     _mifareResult = result.toString();
-                          //   });
-                          // }
+                          List<List<String>> data = await FlutterNfcKit.readAll();
+                          if (data != null) {
+                            StringBuffer result = StringBuffer();
+                            for(int i = 0; i < data.length; i++) {
+                              List<String> sectorData = data[i];
+                              for(int i = 0; i < sectorData.length; i ++) {
+                                result.write(sectorData[i]);
+                                result.write("\n");
+                              }
+                            }
+                            setState(() {
+                              _mifareResult = result.toString();
+                            });
+                          }
                         }
                         var ndefRecords = await FlutterNfcKit.readNDEFRecords();
                         var ndefString = '';

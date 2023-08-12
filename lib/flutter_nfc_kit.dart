@@ -387,7 +387,7 @@ class FlutterNfcKit {
   }
 
 
-  /// Write message to block in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
+  /// Write message (String type) to block in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
   /// There must be a valid session when invoking.
   /// This would cause any other open TagTechnology to be closed.
   static Future<void> writeBlock({
@@ -395,7 +395,7 @@ class FlutterNfcKit {
     required String message,
     String? authenticateKeyA
   }) async {
-    return await _channel.invokeMethod('writeBlock', {
+     await _channel.invokeMethod('writeBlock', {
       'blockIndex': blockIndex,
       'data': message,
       'authenticateKeyA': authenticateKeyA

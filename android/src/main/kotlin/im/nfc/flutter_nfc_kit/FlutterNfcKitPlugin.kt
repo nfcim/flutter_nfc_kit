@@ -486,14 +486,17 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 authenticateKeyA
             }
             val mifareClassic = MifareClassic.get(tagTechnology?.tag)
-            Log.d(TAG, "Write Block Of Sector: $message")
+            var messageAsHex = message.toHexString()
+            val diff = 32 - messageAsHex.length
+            messageAsHex = "$messageAsHex${"0".repeat(diff)}"
+            Log.d(TAG, "Write Block Of Sector: $messageAsHex")
             try {
                 mifareClassic.connect()
                 val sectorIndex = mifareClassic.blockToSector(blockIndex)
                 mifareClassic.authenticateSectorWithKeyA(sectorIndex, sectorAuthenticateKeyA)
                 mifareClassic.writeBlock(
                     blockIndex,
-                    message
+                    messageAsHex.hexToBytes()
                 )
             } catch (ex: IOException) {
                 Log.e(TAG, "MifareClassic Write Error:", ex)
