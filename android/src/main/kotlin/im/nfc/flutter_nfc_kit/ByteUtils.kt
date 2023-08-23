@@ -39,38 +39,4 @@ object ByteUtils {
         val secondIndex = octet and 0x0F
         return "${HEX_CHARS_ARRAY[firstIndex]}${HEX_CHARS_ARRAY[secondIndex]}"
     }
-
-    // MifareClassic
-    fun mifareClassPrintEntireBlock(mifareClassic: MifareClassic, sectorIndex: Int): ArrayList<String> {
-        val sectorAsHex = arrayListOf<String>()
-        val firstBlock: Int = mifareClassic.sectorToBlock(sectorIndex)
-        val lastBlock = firstBlock + 4
-        for (i in firstBlock until lastBlock) {
-            try {
-                var blockBytes: ByteArray = mifareClassic.readBlock(i)
-                if (blockBytes.size < 16) {
-                    throw IOException()
-                }
-                if (blockBytes.size > 16) {
-                    blockBytes = blockBytes.copyOf(16)
-                }
-                val hex = blockBytes.toHexString()
-                sectorAsHex.add(hex)
-            } catch (e: Exception) {
-                print(e)
-            }
-        }
-        return sectorAsHex
-    }
-    fun mifareUltralightPrintEntireBlock(mifareUltralight: MifareUltralight, pageOffset: Int): ArrayList<String> {
-        val pageAsHex = arrayListOf<String>()
-        try {
-            var pageBytes = mifareUltralight.readPages(pageOffset)
-            val hex = pageBytes.toHexString()
-            pageAsHex.add(hex)
-        } catch (ex: Exception) {
-            print(ex)
-        }
-        return pageAsHex
-    }
 }

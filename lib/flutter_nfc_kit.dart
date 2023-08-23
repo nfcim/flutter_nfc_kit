@@ -346,6 +346,13 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('makeNdefReadOnly');
   }
 
+  static Future<void> setAuthenticateKey({
+    required String authenticateKeyA,
+    String? authenticateKeyB
+  }) async {
+    await _channel.invokeMethod("setAuthenticateKey");
+  }
+
   /// Read block message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
   /// There must be a valid session when invoking.
   /// This would cause any other open TagTechnology to be closed.
@@ -401,6 +408,4 @@ class FlutterNfcKit {
       'authenticateKeyA': authenticateKeyA
     });
   }
-
-
 }
