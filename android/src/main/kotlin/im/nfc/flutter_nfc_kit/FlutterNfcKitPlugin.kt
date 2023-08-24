@@ -441,7 +441,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 mifareUltralight.close()
             }
         } else {
-
+            Log.e(TAG, "read block function need tag type is mifare_classic or mifare_ultralight")
+            result?.error("505", "read block function need tag type is mifare_classic or mifare_ultralight", null)
         }
         return null
     }
@@ -474,6 +475,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareClassic.close()
             }
+        } else {
+            Log.e(TAG, "read sector function need tag type is mifare_classic")
+            result.error("505", "read sector function need tag type is mifare_classic",null)
         }
     }
 
@@ -531,6 +535,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareUltralight.close()
             }
+        } else {
+            Log.e(TAG, "read all function need tag type is mifare_classic or mifare_ultralight")
+            result.error("505", "read all function need tag type is mifare_classic or mifare_ultralight",null)
         }
     }
     private fun writeBlock(result: Result, blockIndex: Int, message: ByteArray) {
@@ -572,6 +579,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareUltralight.close()
             }
+        } else {
+            Log.e(TAG, "write block function need tag type is mifare_classic or mifare_ultralight")
+            result.error("505", "write block function need tag type is mifare_classic or mifare_ultralight",null)
         }
     }
 
