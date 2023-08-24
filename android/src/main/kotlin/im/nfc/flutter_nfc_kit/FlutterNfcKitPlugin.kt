@@ -30,6 +30,13 @@ import kotlin.concurrent.thread
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+    inner class MifareInfo(
+        val mifareClassicType:Int?,
+        val mifareClassSize: Int?,
+        val mifareClassSectorCount: Int?,
+        val mifareClassicBlockCount: Int?,
+        val mifareMaxTransceiveLength: Int?
+    ) {}
 
     companion object {
         private val TAG = FlutterNfcKitPlugin::class.java.name
@@ -424,6 +431,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareUltralight.close()
             }
+        } else {
+
         }
         return null
     }
@@ -648,12 +657,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var ndefCanMakeReadOnly = false
             var ndefCapacity = 0
             var ndefType = ""
-            // Mifare
-            var mifareClassType: Int? = null
-            var mifareClassSize: Int? = null
-            var mifareClassSectorCount: Int? = null
-            var mifareClassicBlockCount: Int? = null
-            var mifareMaxTransceiveLength: Int? = null
+            var mifareInfo: MifareInfo? = null
 
             isMifareUltralight = false
             isMifareClassic = false
@@ -674,17 +678,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         standard = "ISO 14443-3 (Type A)"
                         type = "mifare_classic"
                         isMifareClassic = true
-                        mifareClassType = mifareClassicGetType()
-                        mifareClassSize = mifareClassicGetSize()
-                        mifareClassSectorCount = mifareClassicGetSectorCount()
-                        mifareClassicBlockCount = mifareClassGetBlockCount()
-                        mifareMaxTransceiveLength = getMaxTransceiveLength()
+                        mifareInfo = MifareInfo(
+                            mifareClassicGetType(),
+                            mifareClassicGetSize(),
+                            mifareClassicGetSectorCount(),
+                            mifareClassGetBlockCount(),
+                            getMaxTransceiveLength())
                     }
                     tag.techList.contains(MifareUltralight::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
                         type = "mifare_ultralight"
                         isMifareUltralight = true
-                        mifareMaxTransceiveLength = getMaxTransceiveLength()
+                        mifareInfo = MifareInfo(null,null,null,null,mifareMaxTransceiveLength = getMaxTransceiveLength())
                     }
                     else -> {
                         standard = "ISO 14443-3 (Type A)"
@@ -753,11 +758,11 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     "ndefWritable" to ndefWritable,
                     "ndefCanMakeReadOnly" to ndefCanMakeReadOnly,
                     "ndefCapacity" to ndefCapacity,
-                    "mifareClassType" to mifareClassType,
-                    "mifareClassSize" to mifareClassSize,
-                    "mifareClassSectorCount" to mifareClassSectorCount,
-                    "mifareClassicBlockCount" to mifareClassicBlockCount,
-                    "mifareMaxTransceiveLength" to mifareMaxTransceiveLength,
+                    "mifareClassType" to mifareInfo?.mifareClassicType,
+                    "mifareClassSize" to mifareInfo?.mifareClassSize,
+                    "mifareClassSectorCount" to mifareInfo?.mifareClassSectorCount,
+                    "mifareClassicBlockCount" to mifareInfo?.mifareClassicBlockCount,
+                    "mifareMaxTransceiveLength" to mifareInfo?.mifareMaxTransceiveLength,
             )).toString())
 
         }, technologies, null)
