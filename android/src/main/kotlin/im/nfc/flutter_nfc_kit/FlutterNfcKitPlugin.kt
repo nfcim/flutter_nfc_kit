@@ -44,8 +44,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
         private var ndefTechnology: Ndef? = null
-        private var isMifareClassic: Boolean = false;
-        private var isMifareUltralight: Boolean = false;
+        private var tagType: String? = null
         private var mifareClassicKeyA: ByteArray? = null
         private var mifareClassicKeyB: ByteArray? = null
 
@@ -103,12 +102,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     other.close()
                 }
                 target.connect()
-            }
-        }
-
-        val closeTechnology = {tagTech: TagTechnology? ->
-            if (tagTech !==null && tagTech.isConnected) {
-                tagTech.close()
             }
         }
 
@@ -303,11 +296,15 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "readBlock" -> {
+                val tagTech = tagTechnology
+                if (tagTech == null) {
+                    result.error("406", "No tag polled", null)
+                    return
+                }
                 val blockIndex = call.argument<Int>("blockIndex")!!
                 thread {
                     try {
-                        closeTechnology(ndefTechnology)
-                        closeTechnology(tagTechnology)
+                        switchTechnology(tagTech, ndefTechnology)
                         readBlock(result, blockIndex)
                     } catch (e: IOException) {
                         Log.e(TAG, "Read Mifare Tag In Block $blockIndex Error", e)
@@ -316,10 +313,14 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "readAll" -> {
+                val tagTech = tagTechnology
+                if (tagTech == null) {
+                    result.error("406", "No tag polled", null)
+                    return
+                }
                 thread {
                     try {
-                        closeTechnology(ndefTechnology)
-                        closeTechnology(tagTechnology)
+                        switchTechnology(tagTech, ndefTechnology)
                         readAll(result)
                     } catch (e: Exception) {
                         Log.e(TAG, "Read Mifare Tag All Error", e)
@@ -328,11 +329,15 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "readSector" -> {
+                val tagTech = tagTechnology
+                if (tagTech == null) {
+                    result.error("406", "No tag polled", null)
+                    return
+                }
                 val sectorIndex = call.argument<Int>("sectorIndex")!!
                 thread {
                     try {
-                        closeTechnology(ndefTechnology)
-                        closeTechnology(tagTechnology)
+                        switchTechnology(tagTech, ndefTechnology)
                         readSector(result, sectorIndex)
                     } catch (e: Exception) {
                         Log.e(TAG, "Read Mifare In Sector $sectorIndex Error", e)
@@ -342,12 +347,16 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
 
             "writeBlock" -> {
+                val tagTech = tagTechnology
+                if (tagTech == null) {
+                    result.error("406", "No tag polled", null)
+                    return
+                }
                 val blockIndex = call.argument<Int>("blockIndex")!!
                 val message = call.argument<String>("data")!!
                 thread {
                     try {
-                        closeTechnology(ndefTechnology)
-                        closeTechnology(tagTechnology)
+                        switchTechnology(tagTech, ndefTechnology)
                         writeBlock(result, blockIndex, message.toByteArray())
                     } catch (ex: IOException) {
                         Log.e(TAG, "Write Mifare Tag Error", ex)
@@ -386,7 +395,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun readBlock(result: Result?, blockIndex: Int): ByteArray? {
         // MifareClassic
         var blockBytes: ByteArray?
-        if (isMifareClassic) {
+        if (tagType == "mifare_classic") {
             val mifareClassic = MifareClassic.get(tagTechnology?.tag)
             try {
                 mifareClassic.connect()
@@ -414,7 +423,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareClassic.close()
             }
-        } else if (isMifareUltralight) { // MifareUltralight
+        } else if (tagType == "mifare_ultralight") { // MifareUltralight
             val mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
             try {
                 mifareUltralight.connect()
@@ -438,7 +447,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     private fun readSector(result: Result, sectorIndex: Int) {
-        if (isMifareClassic) {
+        if (tagType == "mifare_classic") {
             val mifareClassic = MifareClassic.get(tagTechnology?.tag)
             try {
                 mifareClassic.connect()
@@ -470,7 +479,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun readAll(result: Result) {
         val response = mutableMapOf<Int, List<String>>()
-        if (isMifareClassic) {
+        if (tagType == "mifare_classic") {
             val mifareClassic = MifareClassic.get(tagTechnology?.tag)
             try {
                 mifareClassic.connect()
@@ -500,7 +509,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareClassic.close()
             }
-        } else if (isMifareUltralight) {
+        } else if (tagType == "mifare_ultralight") {
             val  mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
             try {
                 mifareUltralight.connect()
@@ -525,7 +534,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
     private fun writeBlock(result: Result, blockIndex: Int, message: ByteArray) {
-        if (isMifareClassic) {
+        if (tagType == "mifare_classic") {
             val mifareClassic = MifareClassic.get(tagTechnology?.tag)
             var messageAsHex = message.toHexString()
             val diff = 32 - messageAsHex.length
@@ -545,7 +554,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             } finally {
                 mifareClassic.close()
             }
-        } else if (isMifareUltralight) { // MifareUltralight
+        } else if (tagType == "mifare_ultralight") { // MifareUltralight
             val mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
             try {
                 mifareUltralight.connect()
@@ -603,7 +612,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
 
         val getMaxTransceiveLength = {
-            if (isMifareClassic) {
+            if (tagType == "mifare_classic") {
                 try {
                     val mifareClassic = MifareClassic.get(tagTechnology?.tag)
                     val maxTransceiveLen = mifareClassic.maxTransceiveLength
@@ -611,7 +620,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 } catch (ex: Exception) {
                     Log.e(TAG, "Get MifareClassic Max Transceive Length Error", ex)
                 }
-            } else if (isMifareUltralight) {
+            } else if (tagType == "mifare_ultralight") {
                 try {
                     val mifareUltralight = MifareUltralight.get(tagTechnology?.tag)
                     val maxTransceiveLen = mifareUltralight.maxTransceiveLength
@@ -659,8 +668,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             var ndefType = ""
             var mifareInfo: MifareInfo? = null
 
-            isMifareUltralight = false
-            isMifareClassic = false
             if (tag.techList.contains(NfcA::class.java.name)) {
                 val aTag = NfcA.get(tag)
                 atqa = aTag.atqa.toHexString()
@@ -677,7 +684,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     tag.techList.contains(MifareClassic::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
                         type = "mifare_classic"
-                        isMifareClassic = true
                         mifareInfo = MifareInfo(
                             mifareClassicGetType(),
                             mifareClassicGetSize(),
@@ -688,7 +694,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     tag.techList.contains(MifareUltralight::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
                         type = "mifare_ultralight"
-                        isMifareUltralight = true
                         mifareInfo = MifareInfo(null,null,null,null,mifareMaxTransceiveLength = getMaxTransceiveLength())
                     }
                     else -> {
@@ -739,6 +744,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 ndefCanMakeReadOnly = ndefTag.canMakeReadOnly()
                 ndefCapacity = ndefTag.maxSize
             }
+
+            tagType = type
 
             result.success(JSONObject(mapOf(
                     "type" to type,
