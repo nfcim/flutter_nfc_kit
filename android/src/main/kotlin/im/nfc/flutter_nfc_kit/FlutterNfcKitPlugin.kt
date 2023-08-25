@@ -404,7 +404,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 blockBytes = mifareClassic.readBlock(blockIndex)
                 if (blockBytes != null) {
                     if (blockBytes.size < 16) {
-                        throw IOException()
+                        throw IOException("block bytes size error")
                     }
                 }
                 if (blockBytes != null) {
