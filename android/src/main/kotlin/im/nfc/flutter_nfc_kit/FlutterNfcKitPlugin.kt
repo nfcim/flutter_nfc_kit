@@ -153,8 +153,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     else -> req as ByteArray
                 }
                 val sendingHex = when (req) {
-                    is String -> req
-                    else -> req.toHexString()
+                    is ByteArray -> req.toHexString()
+                    else -> req
                 }
 
                 thread {
