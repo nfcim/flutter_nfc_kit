@@ -125,6 +125,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         if (ndefTech != null && ndefTech.isConnected) {
                             ndefTech.close()
                         }
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Tag already removed", ex)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Close tag error", ex)
                     }
@@ -164,6 +166,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             is String -> result.success(resp.toHexString())
                             else -> result.success(resp)
                         }
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Transceive Error: $sendingHex", ex)
+                        result.error("503", "Tag already removed", ex.localizedMessage)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Transceive Error: $sendingHex", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
@@ -212,6 +217,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             }
                         }
                         result.success(JSONArray(parsedMessages).toString())
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Read NDEF Error", ex)
+                        result.error("503", "Tag already removed", ex.localizedMessage)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Read NDEF Error", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
@@ -256,6 +264,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         val message: NdefMessage = NdefMessage(records)
                         ndef.writeNdefMessage(message)
                         result.success("")
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Write NDEF Error", ex)
+                        result.error("503", "Tag already removed", ex.localizedMessage)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Write NDEF Error", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
@@ -281,6 +292,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         } else {
                             result.error("500", "Failed to lock NDEF tag", null)
                         }
+                    } catch (ex: SecurityException) {
+                        Log.e(TAG, "Lock NDEF Error", ex)
+                        result.error("503", "Tag already removed", ex.localizedMessage)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Lock NDEF Error", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
