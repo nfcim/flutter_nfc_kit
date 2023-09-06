@@ -146,14 +146,18 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("406", "No tag polled", null)
                     return
                 }
+                val sendingBytes = when (req) {
+                    is String -> req.hexToBytes()
+                    else -> req as ByteArray
+                }
+                val sendingHex = when (req) {
+                    is String -> req
+                    else -> req.toHexString()
+                }
 
                 thread {
                     try {
                         switchTechnology(tagTech, ndefTechnology)
-                        val sendingBytes = when (req) {
-                            is String -> req.hexToBytes()
-                            else -> req as ByteArray
-                        }
                         val timeout = call.argument<Int>("timeout")
                         val resp = tagTech.transceive(sendingBytes, timeout)
                         when (req) {
@@ -161,16 +165,16 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                             else -> result.success(resp)
                         }
                     } catch (ex: IOException) {
-                        Log.e(TAG, "Transceive Error: $req", ex)
+                        Log.e(TAG, "Transceive Error: $sendingHex", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
                     } catch (ex: InvocationTargetException) {
-                        Log.e(TAG, "Transceive Error: $req", ex.cause ?: ex)
+                        Log.e(TAG, "Transceive Error: $sendingHex", ex.cause ?: ex)
                         result.error("500", "Communication error", ex.cause?.localizedMessage)
                     } catch (ex: IllegalArgumentException) {
-                        Log.e(TAG, "Command Error: $req", ex)
+                        Log.e(TAG, "Command Error: $sendingHex", ex)
                         result.error("400", "Command format error", ex.localizedMessage)
                     } catch (ex: NoSuchMethodException) {
-                        Log.e(TAG, "Transceive not supported: $req", ex)
+                        Log.e(TAG, "Transceive not supported: $sendingHex", ex)
                         result.error("405", "Transceive not supported for this type of card", null)
                     }
                 }
