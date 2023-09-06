@@ -123,3 +123,8 @@
 ## 3.3.1
 
 * Downgrade dependency `js` to 0.6.3 to maintain backward compatibility with Flutter 2 (#74)
+
+## 3.3.2
+
+* Upgrade to Flutter 3, bump dependencies, change target SDK of Android to 33
+* Fix multiple issues (#88, #90, #102)

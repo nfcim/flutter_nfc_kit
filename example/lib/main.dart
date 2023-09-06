@@ -114,7 +114,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         });
                       } else if (tag.type == NFCTagType.iso18092) {
                         String result1 =
-                          await FlutterNfcKit.transceive("060080080100");
+                            await FlutterNfcKit.transceive("060080080100");
                         setState(() {
                           _result = '1: $result1\n';
                         });
