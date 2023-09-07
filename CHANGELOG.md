@@ -128,3 +128,7 @@
 
 * Upgrade to Flutter 3, bump dependencies, change target SDK of Android to 33
 * Fix multiple issues (#88, #90, #102)
+
+## 3.3.3
+
+* Fix build script of Android plugin and remove AGP version requirement (#110)
