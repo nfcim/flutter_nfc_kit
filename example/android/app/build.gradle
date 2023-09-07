@@ -1,6 +1,5 @@
 plugins {
-    id 'com.android.application' version '8.1.0' apply false
-    id 'org.jetbrains.kotlin.android' version "$kotlin_version" apply false
+    id 'com.android.application'
 }
 
 def localProperties = new Properties()
@@ -26,8 +25,6 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
@@ -37,8 +34,8 @@ android {
     compileSdkVersion 33
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     sourceSets {
