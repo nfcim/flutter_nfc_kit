@@ -91,6 +91,17 @@ class NFCTag {
   /// Custom probe data returned by WebUSB device (see [FlutterNfcKitWeb] for detail, only on Web)
   final String? webUSBCustomProbeData;
 
+  /// Mifare
+  /// Return the type of this MIFARE Classic compatible tag
+  final int? mifareClassType;
+  /// Return the size of the tag in bytes
+  final int? mifareClassSize;
+  ///  Return the number of MIFARE Classic sectors
+  final int? mifareClassSectorCount;
+  /// Return the total number of MIFARE Classic blocks
+  final int? mifareClassicBlockCount;
+  /// Return max transceive length
+  final int? mifareMaxTransceiveLength;
   NFCTag(
       this.type,
       this.id,
@@ -109,7 +120,13 @@ class NFCTag {
       this.ndefCapacity,
       this.ndefWritable,
       this.ndefCanMakeReadOnly,
-      this.webUSBCustomProbeData);
+      this.webUSBCustomProbeData,
+      this.mifareClassType,
+      this.mifareClassSize,
+      this.mifareClassSectorCount,
+      this.mifareClassicBlockCount,
+      this.mifareMaxTransceiveLength
+      );
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
@@ -327,5 +344,68 @@ class FlutterNfcKit {
   /// **WARNING: IT CANNOT BE UNDONE!**
   static Future<void> makeNdefReadOnly() async {
     return await _channel.invokeMethod('makeNdefReadOnly');
+  }
+
+  static Future<void> setAuthenticateKey({
+    required String authenticateKeyA,
+    String? authenticateKeyB
+  }) async {
+    await _channel.invokeMethod("setAuthenticateKey");
+  }
+
+  /// Read block message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
+  /// There must be a valid session when invoking.
+  /// This would cause any other open TagTechnology to be closed.
+  static Future<String> readBlock({
+    required int blockIndex,
+    String? authenticateKeyA
+  }) async {
+    final data = await _channel.invokeMethod('readBlock', {
+      'blockIndex': blockIndex,
+      'authenticateKeyA': authenticateKeyA
+    });
+    return data as String;
+  }
+
+  /// Read sector message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
+  /// There must be a valid session when invoking.
+  /// This would cause any other open TagTechnology to be closed.
+  static Future<List<String>> readSector({
+    required int sectorIndex,
+    String? authenticateKeyA,
+  }) async {
+    final data = await _channel.invokeMethod('readSector',
+        { 'sectorIndex': sectorIndex,
+          'authenticateKeyA': authenticateKeyA
+        });
+    return List<String>.from(data);
+  }
+
+  /// Read all message for MifareClassic or MifareUltralight.
+  /// There must be a valid session when invoking.
+  /// This would cause any other open TagTechnology to be closed.
+  static Future<List<List<String>>> readAll({String? authenticateKeyA}) async {
+    final data = await _channel.invokeMethod('readAll', {
+      'authenticateKeyA': authenticateKeyA,
+    }) as Map<dynamic, dynamic>;
+    final listOfSectors = <List<String>>[];
+    data.forEach((_, list) => listOfSectors.add(List<String>.from(list)));
+    return listOfSectors;
+  }
+
+
+  /// Write message (String type) to block in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
+  /// There must be a valid session when invoking.
+  /// This would cause any other open TagTechnology to be closed.
+  static Future<void> writeBlock({
+    required int blockIndex,
+    required String message,
+    String? authenticateKeyA
+  }) async {
+     await _channel.invokeMethod('writeBlock', {
+      'blockIndex': blockIndex,
+      'data': message,
+      'authenticateKeyA': authenticateKeyA
+    });
   }
 }

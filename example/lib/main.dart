@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   String _platformVersion = '';
   NFCAvailability _availability = NFCAvailability.not_supported;
   NFCTag? _tag;
-  String? _result, _writeResult;
+  String? _result, _writeResult, _mifareResult;
   late TabController _tabController;
   List<ndef.NDEFRecord>? _records;
 
@@ -104,6 +104,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                       });
                       await FlutterNfcKit.setIosAlertMessage(
                           "Working on it...");
+                      _mifareResult = null;
                       if (tag.standard == "ISO 14443-4 (Type B)") {
                         String result1 =
                             await FlutterNfcKit.transceive("00B0950000");
@@ -121,6 +122,23 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                       } else if (tag.type == NFCTagType.mifare_ultralight ||
                           tag.type == NFCTagType.mifare_classic ||
                           tag.type == NFCTagType.iso15693) {
+                        if (tag.type == NFCTagType.mifare_classic ||
+                            tag.type == NFCTagType.mifare_ultralight) {
+                          List<List<String>> data = await FlutterNfcKit.readAll();
+                          if (data != null) {
+                            StringBuffer result = StringBuffer();
+                            for(int i = 0; i < data.length; i++) {
+                              List<String> sectorData = data[i];
+                              for(int i = 0; i < sectorData.length; i ++) {
+                                result.write(sectorData[i]);
+                                result.write("\n");
+                              }
+                            }
+                            setState(() {
+                              _mifareResult = result.toString();
+                            });
+                          }
+                        }
                         var ndefRecords = await FlutterNfcKit.readNDEFRecords();
                         var ndefString = '';
                         for (int i = 0; i < ndefRecords.length; i++) {
@@ -151,7 +169,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: _tag != null
                         ? Text(
-                            'ID: ${_tag!.id}\nStandard: ${_tag!.standard}\nType: ${_tag!.type}\nATQA: ${_tag!.atqa}\nSAK: ${_tag!.sak}\nHistorical Bytes: ${_tag!.historicalBytes}\nProtocol Info: ${_tag!.protocolInfo}\nApplication Data: ${_tag!.applicationData}\nHigher Layer Response: ${_tag!.hiLayerResponse}\nManufacturer: ${_tag!.manufacturer}\nSystem Code: ${_tag!.systemCode}\nDSF ID: ${_tag!.dsfId}\nNDEF Available: ${_tag!.ndefAvailable}\nNDEF Type: ${_tag!.ndefType}\nNDEF Writable: ${_tag!.ndefWritable}\nNDEF Can Make Read Only: ${_tag!.ndefCanMakeReadOnly}\nNDEF Capacity: ${_tag!.ndefCapacity}\n\n Transceive Result:\n$_result')
+                            'ID: ${_tag!.id}\nStandard: ${_tag!.standard}\nType: ${_tag!.type}\nATQA: ${_tag!.atqa}\nSAK: ${_tag!.sak}\nHistorical Bytes: ${_tag!.historicalBytes}\nProtocol Info: ${_tag!.protocolInfo}\nApplication Data: ${_tag!.applicationData}\nHigher Layer Response: ${_tag!.hiLayerResponse}\nManufacturer: ${_tag!.manufacturer}\nSystem Code: ${_tag!.systemCode}\nDSF ID: ${_tag!.dsfId}\nNDEF Available: ${_tag!.ndefAvailable}\nNDEF Type: ${_tag!.ndefType}\nNDEF Writable: ${_tag!.ndefWritable}\nNDEF Can Make Read Only: ${_tag!.ndefCanMakeReadOnly}\nNDEF Capacity: ${_tag!.ndefCapacity}\nMifareClassicType:${_tag!.mifareClassType}\nMifareClassicSize:${_tag!.mifareClassSize}\nMifareClassicBlockCount:${_tag!.mifareClassicBlockCount}\nMifareClassSectorCount:${_tag!.mifareClassSectorCount}\nMifareMaxTransceiveLength:${_tag!.mifareMaxTransceiveLength}\n\n Transceive Result:\n$_result\n\nBlock Message:\n$_mifareResult')
                         : const Text('No tag polled yet.')),
               ])))),
           Center(

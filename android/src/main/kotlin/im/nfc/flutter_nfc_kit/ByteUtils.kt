@@ -1,5 +1,9 @@
 package im.nfc.flutter_nfc_kit
 
+import android.nfc.tech.MifareClassic
+import android.nfc.tech.MifareUltralight
+import java.io.IOException
+
 object ByteUtils {
     private const val HEX_CHARS = "0123456789ABCDEF"
     private val HEX_CHARS_ARRAY = HEX_CHARS.toCharArray()
