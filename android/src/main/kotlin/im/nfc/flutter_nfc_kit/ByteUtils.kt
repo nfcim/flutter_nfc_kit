@@ -1,8 +1,8 @@
 package im.nfc.flutter_nfc_kit
 
-import android.nfc.tech.MifareClassic
-import android.nfc.tech.MifareUltralight
-import java.io.IOException
+import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
+import im.nfc.flutter_nfc_kit.ByteUtils.toHexString
+
 
 object ByteUtils {
     private const val HEX_CHARS = "0123456789ABCDEF"
@@ -38,5 +38,17 @@ object ByteUtils {
         val firstIndex = (octet and 0xF0) ushr 4
         val secondIndex = octet and 0x0F
         return "${HEX_CHARS_ARRAY[firstIndex]}${HEX_CHARS_ARRAY[secondIndex]}"
+    }
+
+    fun canonicalizeData(data: Any): Pair<ByteArray, String> {
+        val bytes = when (data) {
+            is String -> data.hexToBytes()
+            else -> data as ByteArray
+        }
+        val hex = when (data) {
+            is ByteArray -> data.toHexString()
+            else -> data as String
+        }
+        return Pair(bytes, hex)
     }
 }
