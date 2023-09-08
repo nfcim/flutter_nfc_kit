@@ -4,6 +4,11 @@ pluginManagement {
         google()
         mavenCentral()
     }
+    plugins {
+        id 'com.android.application' version "${AGPVersion}"
+        id 'com.android.library' version "${AGPVersion}"
+        id 'org.jetbrains.kotlin.android' version "${KotlinVersion}"
+    }
 }
 
 include ':app'

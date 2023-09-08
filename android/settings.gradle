@@ -1,1 +1,13 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+    plugins {
+        id 'com.android.library' version "${AGPVersion}"
+        id 'org.jetbrains.kotlin.android' version "${KotlinVersion}"
+    }
+}
+
 rootProject.name = 'flutter_nfc_kit'
