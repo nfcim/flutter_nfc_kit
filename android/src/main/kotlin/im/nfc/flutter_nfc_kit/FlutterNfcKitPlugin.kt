@@ -183,6 +183,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
+            /// NDEF-related methods below
             "readNDEF" -> {
                 if (!ensureNDEF()) return
                 val ndef = ndefTechnology!!
@@ -300,6 +301,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
+            /// MIFARE/NTAG-related methods below
             "authenticateSector" -> {
                 val tagTech = tagTechnology
                 if (tagTech == null || mifareInfo == null || mifareInfo!!.sectorCount == null) {
@@ -341,11 +343,16 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("406", "No Mifare tag polled", null)
                     return
                 }
-                val blockIndex = call.argument<Int>("index")!!
+                val index = call.argument<Int>("index")!!
+                val maxBlock = mifareInfo!!.blockCount
+                if (index !in 0 until maxBlock) {
+                    result.error("400", "Invalid block/page index $index, should be in (0, $maxBlock)", null)
+                    return
+                }
                 thread {
                     try {
                         switchTechnology(tagTech, ndefTechnology)
-                        tagTech.readBlock(mifareInfo!!, blockIndex, result)
+                        tagTech.readBlock(index, result)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Read block error", ex)
                         result.error("500", "Communication error", ex.localizedMessage)
@@ -360,8 +367,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
                 val index = call.argument<Int>("index")!!
-                if (!(0 < index && index < mifareInfo!!.sectorCount!!)) {
-                    result.error("400", "Invalid sector index $index", null)
+                val maxSector = mifareInfo!!.sectorCount!!
+                if (index !in 0 until maxSector) {
+                    result.error("400", "Invalid sector index $index, should be in (0, $maxSector)", null)
                     return
                 }
                 thread {
@@ -381,17 +389,26 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("406", "No Mifare tag polled", null)
                     return
                 }
-                val blockIndex = call.argument<Int>("index")!!
+                val index = call.argument<Int>("index")!!
+                val maxBlock = mifareInfo!!.blockCount
+                if (index !in 0 until maxBlock) {
+                    result.error("400", "Invalid block/page index $index, should be in (0, $maxBlock)", null)
+                    return
+                }
                 val data = call.argument<Any>("data")
                 if (data == null || (data !is String && data !is ByteArray)) {
                     result.error("400", "Bad argument", null)
                     return
                 }
                 val (bytes, _) = canonicalizeData(data)
+                if (bytes.size != mifareInfo!!.blockSize) {
+                    result.error("400", "Invalid data size ${bytes.size}, should be ${mifareInfo!!.blockSize}", null)
+                    return
+                }
                 thread {
                     try {
                         switchTechnology(tagTech, ndefTechnology)
-                        tagTech.writeBlock(mifareInfo!!, blockIndex, bytes, result)
+                        tagTech.writeBlock(index, bytes, result)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Read block error", ex)
                         result.error("500", "Communication error", ex.localizedMessage)

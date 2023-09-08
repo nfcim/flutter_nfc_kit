@@ -31,6 +31,32 @@ enum NFCTagType {
   unknown,
 }
 
+/// Metadata of a MIFARE-compatible tag
+@JsonSerializable()
+class MifareInfo {
+  /// MIFARE type
+  final String type;
+
+  /// Size in bytes
+  final int size;
+
+  /// Size of a block (Classic) / page (Ultralight) in bytes
+  final int blockSize;
+
+  /// Number of blocks (Classic) / pages (Ultralight), -1 if type is unknown
+  final int blockCount;
+
+  /// Number of sectors (Classic only)
+  final int? sectorCount;
+
+  MifareInfo(
+      this.type, this.size, this.blockSize, this.blockCount, this.sectorCount);
+
+  factory MifareInfo.fromJson(Map<String, dynamic> json) =>
+      _$MifareInfoFromJson(json);
+  Map<String, dynamic> toJson() => _$MifareInfoToJson(this);
+}
+
 /// Metadata of the polled NFC tag.
 ///
 /// All fields except [type] and [standard] are in the format of hex string.
@@ -91,17 +117,9 @@ class NFCTag {
   /// Custom probe data returned by WebUSB device (see [FlutterNfcKitWeb] for detail, only on Web)
   final String? webUSBCustomProbeData;
 
-  /// Mifare
-  /// Return the type of this MIFARE Classic compatible tag
-  final int? mifareClassType;
-  /// Return the size of the tag in bytes
-  final int? mifareClassSize;
-  ///  Return the number of MIFARE Classic sectors
-  final int? mifareClassSectorCount;
-  /// Return the total number of MIFARE Classic blocks
-  final int? mifareClassicBlockCount;
-  /// Return max transceive length
-  final int? mifareMaxTransceiveLength;
+  /// Mifare-related information (if available)
+  final MifareInfo? mifareInfo;
+
   NFCTag(
       this.type,
       this.id,
@@ -121,12 +139,7 @@ class NFCTag {
       this.ndefWritable,
       this.ndefCanMakeReadOnly,
       this.webUSBCustomProbeData,
-      this.mifareClassType,
-      this.mifareClassSize,
-      this.mifareClassSectorCount,
-      this.mifareClassicBlockCount,
-      this.mifareMaxTransceiveLength
-      );
+      this.mifareInfo);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
@@ -331,6 +344,7 @@ class FlutterNfcKit {
   }
 
   /// iOS only, change currently displayed NFC reader session alert message with [message].
+  /// 
   /// There must be a valid session when invoking.
   /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
@@ -346,66 +360,59 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('makeNdefReadOnly');
   }
 
-  static Future<void> setAuthenticateKey({
-    required String authenticateKeyA,
-    String? authenticateKeyB
-  }) async {
-    await _channel.invokeMethod("setAuthenticateKey");
-  }
-
-  /// Read block message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
-  /// There must be a valid session when invoking.
-  /// This would cause any other open TagTechnology to be closed.
-  static Future<String> readBlock({
-    required int blockIndex,
-    String? authenticateKeyA
-  }) async {
-    final data = await _channel.invokeMethod('readBlock', {
-      'blockIndex': blockIndex,
-      'authenticateKeyA': authenticateKeyA
-    });
-    return data as String;
-  }
-
-  /// Read sector message in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
-  /// There must be a valid session when invoking.
-  /// This would cause any other open TagTechnology to be closed.
-  static Future<List<String>> readSector({
-    required int sectorIndex,
-    String? authenticateKeyA,
-  }) async {
-    final data = await _channel.invokeMethod('readSector',
-        { 'sectorIndex': sectorIndex,
-          'authenticateKeyA': authenticateKeyA
-        });
-    return List<String>.from(data);
-  }
-
-  /// Read all message for MifareClassic or MifareUltralight.
-  /// There must be a valid session when invoking.
-  /// This would cause any other open TagTechnology to be closed.
-  static Future<List<List<String>>> readAll({String? authenticateKeyA}) async {
-    final data = await _channel.invokeMethod('readAll', {
-      'authenticateKeyA': authenticateKeyA,
-    }) as Map<dynamic, dynamic>;
-    final listOfSectors = <List<String>>[];
-    data.forEach((_, list) => listOfSectors.add(List<String>.from(list)));
-    return listOfSectors;
-  }
-
-
-  /// Write message (String type) to block in given index, if [authenticateKeyA] null, the MifareClassic authenticateKeyA will use default.
-  /// There must be a valid session when invoking.
-  /// This would cause any other open TagTechnology to be closed.
-  static Future<void> writeBlock({
-    required int blockIndex,
-    required String message,
-    String? authenticateKeyA
-  }) async {
-     await _channel.invokeMethod('writeBlock', {
-      'blockIndex': blockIndex,
-      'data': message,
-      'authenticateKeyA': authenticateKeyA
+  /// Authenticate against a sector of MIFARE Classic tag.
+  /// 
+  /// Either one of [keyA] or [keyB] must be provided.
+  /// If both are provided, [keyA] will be used.
+  /// Returns whether authentication succeeds.
+  static Future<bool> authenticateSector<T>(
+    int index, {T? keyA, T? keyB}
+  ) async {
+    assert(T is String || T is Uint8List);
+    return await _channel.invokeMethod('authenticateSector', {
+      'index': index,
+      'keyA': keyA,
+      'keyB': keyB
     });
   }
+
+  /// Read one block (16 bytes) from tag
+  /// 
+  /// There must be a valid session when invoking.
+  /// [index] refers to the block / page index.
+  /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
+  /// For MIFARE Ultralight tags, four consecutive pages will be read.
+  /// Returns data in [Uint8List].
+  static Future<Uint8List> readBlock(int index) async {
+    return await _channel.invokeMethod('readBlock', {
+      'index': index
+    }); 
+  }
+
+  /// Write one block (16B) / page (4B) to MIFARE Classic / Ultralight tag
+  /// 
+  /// There must be a valid session when invoking.
+  /// [index] refers to the block / page index.
+  /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
+  static Future<void> writeBlock<T>(int index, T data) async {
+    assert(T is String || T is Uint8List);
+    await _channel.invokeMethod('writeBlock', {
+      'index': index,
+      'data': data,
+    });
+  }
+
+  /// Read one sector from MIFARE Classic tag
+  /// 
+  /// There must be a valid session when invoking.
+  /// [index] refers to the sector index.
+  /// You must first authenticate against the corresponding sector.
+  /// Note: not all sectors are 64B long, some tags might have 256B sectors.
+  /// Returns data in [Uint8List].
+  static Future<Uint8List> readSector(int index) async {
+    return await _channel.invokeMethod('readSector', {
+      'index': index
+    });
+  }
+
 }

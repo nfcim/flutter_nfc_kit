@@ -6,36 +6,49 @@ part of 'flutter_nfc_kit.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-NFCTag _$NFCTagFromJson(Map<String, dynamic> json) {
-  return NFCTag(
-    _$enumDecode(_$NFCTagTypeEnumMap, json['type']),
-    json['id'] as String,
-    json['standard'] as String,
-    json['atqa'] as String?,
-    json['sak'] as String?,
-    json['historicalBytes'] as String?,
-    json['protocolInfo'] as String?,
-    json['applicationData'] as String?,
-    json['hiLayerResponse'] as String?,
-    json['manufacturer'] as String?,
-    json['systemCode'] as String?,
-    json['dsfId'] as String?,
-    json['ndefAvailable'] as bool?,
-    json['ndefType'] as String?,
-    json['ndefCapacity'] as int?,
-    json['ndefWritable'] as bool?,
-    json['ndefCanMakeReadOnly'] as bool?,
-    json['webUSBCustomProbeData'] as String?,
-    json['mifareClassType'] as int?,
-    json['mifareClassSize'] as int?,
-    json['mifareClassSectorCount'] as int?,
-    json['mifareClassicBlockCount'] as int?,
-    json['mifareMaxTransceiveLength'] as int?,
-  );
-}
+MifareInfo _$MifareInfoFromJson(Map<String, dynamic> json) => MifareInfo(
+      json['type'] as String,
+      json['size'] as int,
+      json['blockSize'] as int,
+      json['blockCount'] as int,
+      json['sectorCount'] as int?,
+    );
+
+Map<String, dynamic> _$MifareInfoToJson(MifareInfo instance) =>
+    <String, dynamic>{
+      'type': instance.type,
+      'size': instance.size,
+      'blockSize': instance.blockSize,
+      'blockCount': instance.blockCount,
+      'sectorCount': instance.sectorCount,
+    };
+
+NFCTag _$NFCTagFromJson(Map<String, dynamic> json) => NFCTag(
+      $enumDecode(_$NFCTagTypeEnumMap, json['type']),
+      json['id'] as String,
+      json['standard'] as String,
+      json['atqa'] as String?,
+      json['sak'] as String?,
+      json['historicalBytes'] as String?,
+      json['protocolInfo'] as String?,
+      json['applicationData'] as String?,
+      json['hiLayerResponse'] as String?,
+      json['manufacturer'] as String?,
+      json['systemCode'] as String?,
+      json['dsfId'] as String?,
+      json['ndefAvailable'] as bool?,
+      json['ndefType'] as String?,
+      json['ndefCapacity'] as int?,
+      json['ndefWritable'] as bool?,
+      json['ndefCanMakeReadOnly'] as bool?,
+      json['webUSBCustomProbeData'] as String?,
+      json['mifareInfo'] == null
+          ? null
+          : MifareInfo.fromJson(json['mifareInfo'] as Map<String, dynamic>),
+    );
 
 Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
-      'type': _$NFCTagTypeEnumMap[instance.type],
+      'type': _$NFCTagTypeEnumMap[instance.type]!,
       'standard': instance.standard,
       'id': instance.id,
       'atqa': instance.atqa,
@@ -53,38 +66,8 @@ Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
       'ndefWritable': instance.ndefWritable,
       'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
       'webUSBCustomProbeData': instance.webUSBCustomProbeData,
-      'mifareClassType': instance.mifareClassType,
-      'mifareClassSize': instance.mifareClassSize,
-      'mifareClassSectorCount': instance.mifareClassSectorCount,
-      'mifareClassicBlockCount': instance.mifareClassicBlockCount,
-      'mifareMaxTransceiveLength': instance.mifareMaxTransceiveLength,
+      'mifareInfo': instance.mifareInfo,
     };
-
-K _$enumDecode<K, V>(
-  Map<K, V> enumValues,
-  Object? source, {
-  K? unknownValue,
-}) {
-  if (source == null) {
-    throw ArgumentError(
-      'A value must be provided. Supported values: '
-      '${enumValues.values.join(', ')}',
-    );
-  }
-
-  return enumValues.entries.singleWhere(
-    (e) => e.value == source,
-    orElse: () {
-      if (unknownValue == null) {
-        throw ArgumentError(
-          '`$source` is not one of the supported values: '
-          '${enumValues.values.join(', ')}',
-        );
-      }
-      return MapEntry(unknownValue, enumValues.values.first);
-    },
-  ).key;
-}
 
 const _$NFCTagTypeEnumMap = {
   NFCTagType.iso7816: 'iso7816',
@@ -98,21 +81,20 @@ const _$NFCTagTypeEnumMap = {
   NFCTagType.unknown: 'unknown',
 };
 
-NDEFRawRecord _$NDEFRawRecordFromJson(Map<String, dynamic> json) {
-  return NDEFRawRecord(
-    json['identifier'] as String,
-    json['payload'] as String,
-    json['type'] as String,
-    _$enumDecode(_$TypeNameFormatEnumMap, json['typeNameFormat']),
-  );
-}
+NDEFRawRecord _$NDEFRawRecordFromJson(Map<String, dynamic> json) =>
+    NDEFRawRecord(
+      json['identifier'] as String,
+      json['payload'] as String,
+      json['type'] as String,
+      $enumDecode(_$TypeNameFormatEnumMap, json['typeNameFormat']),
+    );
 
 Map<String, dynamic> _$NDEFRawRecordToJson(NDEFRawRecord instance) =>
     <String, dynamic>{
       'identifier': instance.identifier,
       'payload': instance.payload,
       'type': instance.type,
-      'typeNameFormat': _$TypeNameFormatEnumMap[instance.typeNameFormat],
+      'typeNameFormat': _$TypeNameFormatEnumMap[instance.typeNameFormat]!,
     };
 
 const _$TypeNameFormatEnumMap = {

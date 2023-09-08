@@ -3,9 +3,7 @@ package im.nfc.flutter_nfc_kit
 import android.nfc.tech.MifareClassic
 import android.nfc.tech.MifareUltralight
 import android.nfc.tech.TagTechnology
-import io.flutter.Log
 import io.flutter.plugin.common.MethodChannel.Result
-import java.io.IOException
 
 
 data class MifareInfo(
@@ -80,13 +78,8 @@ object MifareUtils {
 
     private val TAG = MifareUtils::class.java.name
 
-
     /// read one block (16 bytes)
-    fun TagTechnology.readBlock(mifareInfo: MifareInfo, offset: Int, result: Result){
-        if (!(0 < offset && offset < mifareInfo.blockCount)) {
-            result.error("400", "Invalid block/page offset $offset", null)
-            return
-        }
+    fun TagTechnology.readBlock(offset: Int, result: Result){
         when (this) {
             is MifareClassic -> {
                 val data = readBlock(offset)
@@ -106,35 +99,22 @@ object MifareUtils {
     }
 
     /// write one smallest unit (1 block for Classic, 1 page for Ultralight)
-    fun TagTechnology.writeBlock(mifareInfo: MifareInfo, offset: Int, data: ByteArray, result: Result) {
-        if (!(0 < offset && offset < mifareInfo.blockCount)) {
-            result.error("400", "Invalid block/page offset $offset", null)
-            return
-        }
-        if (data.size != mifareInfo.blockSize) {
-            result.error("400", "Invalid data size ${data.size}, should be ${mifareInfo.blockSize}", null)
-            return
-        }
-        try {
-            when (this) {
-                is MifareClassic -> {
-                    writeBlock(offset, data)
-                    result.success("")
-                    return
-                }
-                is MifareUltralight -> {
-                    writePage(offset, data)
-                    result.success("")
-                    return
-                }
-                else -> {
-                    result.error("405", "Cannot invoke write on non-Mifare card", null)
-                    return
-                }
+    fun TagTechnology.writeBlock(offset: Int, data: ByteArray, result: Result) {
+        when (this) {
+            is MifareClassic -> {
+                writeBlock(offset, data)
+                result.success("")
+                return
             }
-        } catch (ex: IOException) {
-            Log.e(TAG, "Read Error", ex)
-            result.error("500", "Communication error", ex.localizedMessage)
+            is MifareUltralight -> {
+                writePage(offset, data)
+                result.success("")
+                return
+            }
+            else -> {
+                result.error("405", "Cannot invoke write on non-Mifare card", null)
+                return
+            }
         }
     }
 
