@@ -6,7 +6,6 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
-import android.nfc.Tag
 import android.nfc.tech.*
 import android.os.Handler
 import android.os.Looper
@@ -23,6 +22,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 import java.util.*
 import kotlin.concurrent.schedule
@@ -40,7 +40,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     companion object {
         private val TAG = FlutterNfcKitPlugin::class.java.name
-        private var activity: Activity? = null
+        private var activity: WeakReference<Activity> = WeakReference(null)
         private var pollingTimeoutTask: TimerTask? = null
         private var tagTechnology: TagTechnology? = null
         private var ndefTechnology: Ndef? = null
@@ -53,8 +53,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 try {
                     val timeoutMethod = this.javaClass.getMethod("setTimeout", Int::class.java)
                     timeoutMethod.invoke(this, timeout)
-                } catch (ex: Throwable) {
-                }
+                } catch (_: Throwable) {}
             }
             val transceiveMethod = this.javaClass.getMethod("transceive", ByteArray::class.java)
             return transceiveMethod.invoke(this, data) as ByteArray
@@ -72,12 +71,12 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private fun handleMethodCall(call: MethodCall, result: Result) {
 
-        if (activity == null) {
+        if (activity.get() == null) {
             result.error("500", "Cannot call method when not attached to activity", null)
             return
         }
 
-        val nfcAdapter = getDefaultAdapter(activity)
+        val nfcAdapter = getDefaultAdapter(activity.get())
 
         if (nfcAdapter?.isEnabled != true && call.method != "getNFCAvailability") {
             result.error("404", "NFC not available", null)
@@ -141,8 +140,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (ex: IOException) {
                         Log.e(TAG, "Close tag error", ex)
                     }
-                    if (activity != null) {
-                        nfcAdapter.disableReaderMode(activity)
+                    if (activity.get() != null) {
+                        nfcAdapter.disableReaderMode(activity.get())
                     }
                     result.success("")
                 }
@@ -606,8 +605,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {}
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        if (activity != null) return
-        activity = binding.activity
+        activity = WeakReference(binding.activity)
     }
 
     override fun onDetachedFromActivity() {
@@ -615,7 +613,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         pollingTimeoutTask = null
         tagTechnology = null
         ndefTechnology = null
-        activity = null
+        activity.clear()
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {}
@@ -623,6 +621,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     override fun onDetachedFromActivityForConfigChanges() {}
 
     private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, technologies: Int) {
+
+
+
         val mifareClassicGetType  = {
             MifareClassic.get(tagTechnology?.tag).type
         }
@@ -661,13 +662,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
 
         pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
-            if (activity != null) {
-                nfcAdapter.disableReaderMode(activity)
+            if (activity.get() != null) {
+                nfcAdapter.disableReaderMode(activity.get())
             }
             result.error("408", "Polling tag timeout", null)
         }
 
-        nfcAdapter.enableReaderMode(activity, { tag ->
+        nfcAdapter.enableReaderMode(activity.get(), { tag ->
             pollingTimeoutTask?.cancel()
 
             // common fields
