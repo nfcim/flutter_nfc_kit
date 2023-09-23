@@ -445,6 +445,8 @@ func getFlutterError(_ arg: Error) -> FlutterError {
       let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
       let blockNumber = arguments["blockNumber"] as! Int
       let dataBlock = (arguments["dataBlock"] as! FlutterStandardTypedData).data
+     
+      let adjDataBlock = [UInt8](dataBlock);
 
         if case let .iso15693(tag) = tag {
 
