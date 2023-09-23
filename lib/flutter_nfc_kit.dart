@@ -9,6 +9,8 @@ import 'package:ndef/ndef.dart' as ndef;
 import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
 import 'package:json_annotation/json_annotation.dart';
 
+import 'iso15963flags.dart';
+
 part 'flutter_nfc_kit.g.dart';
 
 /// Availability of the NFC reader.
@@ -280,6 +282,36 @@ class FlutterNfcKit {
     });
   }
 
+  /// Sends the Extended Read Single Block command to the tag.
+  ///
+  /// This uses NFCISO15693Tag#extendedReadSingleBlock API on iOS.
+  static Future<Uint8List> extendedReadSingleBlock({
+    required Set<Iso15693RequestFlag> requestFlags,
+    required int blockNumber,
+  }) async {
+    return _channel.invokeMethod('Iso15693extendedReadSingleBlock', {
+      'requestFlags':
+          requestFlags.map((e) => $Iso15693RequestFlagTable[e]).toList(),
+      'blockNumber': blockNumber,
+    }).then((value) => value!);
+  }
+
+  /// Sends the Extended Write Single Block command to the tag.
+  ///
+  /// This uses NFCISO15693Tag#extendedWriteSingleBlock API on iOS.
+  static Future<void> extendedWriteSingleBlock({
+    required Set<Iso15693RequestFlag> requestFlags,
+    required int blockNumber,
+    required Uint8List dataBlock,
+  }) async {
+    return _channel.invokeMethod('Iso15693extendedWriteSingleBlock', {
+      'requestFlags':
+          requestFlags.map((e) => $Iso15693RequestFlagTable[e]).toList(),
+      'blockNumber': blockNumber,
+      'dataBlock': dataBlock,
+    });
+  }
+
   /// Read NDEF records (in decoded format, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
@@ -344,7 +376,7 @@ class FlutterNfcKit {
   }
 
   /// iOS only, change currently displayed NFC reader session alert message with [message].
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
@@ -361,36 +393,30 @@ class FlutterNfcKit {
   }
 
   /// Authenticate against a sector of MIFARE Classic tag.
-  /// 
+  ///
   /// Either one of [keyA] or [keyB] must be provided.
   /// If both are provided, [keyA] will be used.
   /// Returns whether authentication succeeds.
-  static Future<bool> authenticateSector<T>(
-    int index, {T? keyA, T? keyB}
-  ) async {
+  static Future<bool> authenticateSector<T>(int index,
+      {T? keyA, T? keyB}) async {
     assert(T is String || T is Uint8List);
-    return await _channel.invokeMethod('authenticateSector', {
-      'index': index,
-      'keyA': keyA,
-      'keyB': keyB
-    });
+    return await _channel.invokeMethod(
+        'authenticateSector', {'index': index, 'keyA': keyA, 'keyB': keyB});
   }
 
   /// Read one block (16 bytes) from tag
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readBlock(int index) async {
-    return await _channel.invokeMethod('readBlock', {
-      'index': index
-    }); 
+    return await _channel.invokeMethod('readBlock', {'index': index});
   }
 
   /// Write one block (16B) / page (4B) to MIFARE Classic / Ultralight tag
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
@@ -403,16 +429,13 @@ class FlutterNfcKit {
   }
 
   /// Read one sector from MIFARE Classic tag
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// [index] refers to the sector index.
   /// You must first authenticate against the corresponding sector.
   /// Note: not all sectors are 64B long, some tags might have 256B sectors.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readSector(int index) async {
-    return await _channel.invokeMethod('readSector', {
-      'index': index
-    });
+    return await _channel.invokeMethod('readSector', {'index': index});
   }
-
 }
