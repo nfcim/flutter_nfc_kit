@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:ndef/ndef.dart' as ndef;
 import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
+import 'package:ndef/utilities.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'flutter_nfc_kit.g.dart';
