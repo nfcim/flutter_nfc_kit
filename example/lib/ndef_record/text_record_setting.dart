@@ -8,10 +8,10 @@ class NDEFTextRecordSetting extends StatefulWidget {
       : record = record ?? ndef.TextRecord(language: 'en', text: ''),
         super(key: key);
   @override
-  _TextRecordSetting createState() => _TextRecordSetting();
+  _NDEFTextRecordSetting createState() => _NDEFTextRecordSetting();
 }
 
-class _TextRecordSetting extends State<NDEFTextRecordSetting> {
+class _NDEFTextRecordSetting extends State<NDEFTextRecordSetting> {
   GlobalKey _formKey = new GlobalKey<FormState>();
   late TextEditingController _languageController;
   late TextEditingController _textController;
