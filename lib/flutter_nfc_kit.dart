@@ -10,6 +10,8 @@ import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
 import 'package:ndef/utilities.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import 'iso15963flags.dart';
+
 part 'flutter_nfc_kit.g.dart';
 
 /// Availability of the NFC reader.
@@ -281,6 +283,36 @@ class FlutterNfcKit {
     });
   }
 
+  /// Sends the Extended Read Single Block command to the tag.
+  ///
+  /// This uses NFCISO15693Tag#extendedReadSingleBlock API on iOS.
+  static Future<Uint8List> extendedReadSingleBlock({
+    required Set<Iso15693RequestFlag> requestFlags,
+    required int blockNumber,
+  }) async {
+    return _channel.invokeMethod('Iso15693extendedReadSingleBlock', {
+      'requestFlags':
+          requestFlags.map((e) => $Iso15693RequestFlagTable[e]).toList(),
+      'blockNumber': blockNumber,
+    }).then((value) => value!);
+  }
+
+  /// Sends the Extended Write Single Block command to the tag.
+  ///
+  /// This uses NFCISO15693Tag#extendedWriteSingleBlock API on iOS.
+  static Future<void> extendedWriteSingleBlock({
+    required Set<Iso15693RequestFlag> requestFlags,
+    required int blockNumber,
+    required Uint8List dataBlock,
+  }) async {
+    return _channel.invokeMethod('Iso15693extendedWriteSingleBlock', {
+      'requestFlags':
+          requestFlags.map((e) => $Iso15693RequestFlagTable[e]).toList(),
+      'blockNumber': blockNumber,
+      'dataBlock': dataBlock,
+    });
+  }
+
   /// Read NDEF records (in decoded format, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
@@ -385,9 +417,7 @@ class FlutterNfcKit {
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readBlock(int index) async {
-    return await _channel.invokeMethod('readBlock', {
-      'index': index
-    }); 
+    return await _channel.invokeMethod('readBlock', {'index': index});
   }
 
   /// Write one block (16B) / page (4B) to MIFARE Classic / Ultralight tag
