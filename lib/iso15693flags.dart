@@ -1,7 +1,6 @@
 import 'dart:ffi';
 
 class Iso15693RequestFlag {
-
   /// bit 1
   bool dualSubCarriers;
 
@@ -56,31 +55,28 @@ class Iso15693RequestFlag {
     return result as Uint8;
   }
 
-  Iso15693RequestFlag({
-    this.dualSubCarriers = false,
-    this.highDataRate = false,
-    this.inventory = false,
-    this.protocolExtension = false,
-    this.select = false,
-    this.address = false,
-    this.option = false,
-    this.commandSpecificBit8 = false
-  });
+  Iso15693RequestFlag(
+      {this.dualSubCarriers = false,
+      this.highDataRate = false,
+      this.inventory = false,
+      this.protocolExtension = false,
+      this.select = false,
+      this.address = false,
+      this.option = false,
+      this.commandSpecificBit8 = false});
 
   /// decode bits from one byte as specified in ISO15693-3
   factory Iso15693RequestFlag.fromRaw(Uint8 raw) {
     var r = raw as int;
     var f = Iso15693RequestFlag(
-      dualSubCarriers: (r & 0x01) != 0,
-      highDataRate: (r & 0x02) != 0,
-      inventory: (r & 0x04) != 0,
-      protocolExtension: (r & 0x08) != 0,
-      select: (r & 0x10) != 0,
-      address: (r & 0x20) != 0,
-      option: (r & 0x40) != 0,
-      commandSpecificBit8: (r & 0x80) != 0
-    );
+        dualSubCarriers: (r & 0x01) != 0,
+        highDataRate: (r & 0x02) != 0,
+        inventory: (r & 0x04) != 0,
+        protocolExtension: (r & 0x08) != 0,
+        select: (r & 0x10) != 0,
+        address: (r & 0x20) != 0,
+        option: (r & 0x40) != 0,
+        commandSpecificBit8: (r & 0x80) != 0);
     return f;
   }
-
 }

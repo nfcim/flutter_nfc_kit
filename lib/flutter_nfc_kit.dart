@@ -383,7 +383,9 @@ class FlutterNfcKit {
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
-  static Future<Uint8List> readBlock(int index, {Iso15693RequestFlag? iso15693Flags, bool iso15693ExtendedMode = false}) async {
+  static Future<Uint8List> readBlock(int index,
+      {Iso15693RequestFlag? iso15693Flags,
+      bool iso15693ExtendedMode = false}) async {
     var flags = iso15693Flags ?? Iso15693RequestFlag();
     return await _channel.invokeMethod('readBlock', {
       'index': index,
@@ -400,7 +402,9 @@ class FlutterNfcKit {
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
-  static Future<void> writeBlock<T>(int index, T data, {Iso15693RequestFlag? iso15693Flags, bool iso15693ExtendedMode = false}) async {
+  static Future<void> writeBlock<T>(int index, T data,
+      {Iso15693RequestFlag? iso15693Flags,
+      bool iso15693ExtendedMode = false}) async {
     assert(T is String || T is Uint8List);
     var flags = iso15693Flags ?? Iso15693RequestFlag();
     await _channel.invokeMethod('writeBlock', {
