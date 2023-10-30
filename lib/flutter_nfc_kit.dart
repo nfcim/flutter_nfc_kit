@@ -194,7 +194,7 @@ class FlutterNfcKit {
   static const int TRANSCEIVE_TIMEOUT = 5 * 1000;
 
   /// Default timeout for [poll] (in milliseconds)
-  static const int POLL_TIIMEOUT = 20 * 1000;
+  static const int POLL_TIMEOUT = 20 * 1000;
 
   static const MethodChannel _channel = MethodChannel('flutter_nfc_kit');
 
@@ -218,7 +218,7 @@ class FlutterNfcKit {
   /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
   /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
   ///
-  /// The four boolean flags [readIso14443A], [readIso14443B], [readIso18092], [readIso15693] controls the NFC technology that would be tried.
+  /// The four boolean flags [readIso14443A], [readIso14443B], [readIso18092], [readIso15693] control the NFC technology that would be tried.
   /// On iOS, setting any of [readIso14443A] and [readIso14443B] will enable `iso14443` in `pollingOption`.
   ///
   /// On Web, all parameters are ignored except [timeout] and [probeWebUSBMagic].
@@ -254,7 +254,7 @@ class FlutterNfcKit {
     if (!androidCheckNDEF) technologies |= 0x80;
     if (!androidPlatformSound) technologies |= 0x100;
     final String data = await _channel.invokeMethod('poll', {
-      'timeout': timeout?.inMilliseconds ?? POLL_TIIMEOUT,
+      'timeout': timeout?.inMilliseconds ?? POLL_TIMEOUT,
       'iosAlertMessage': iosAlertMessage,
       'iosMultipleTagMessage': iosMultipleTagMessage,
       'technologies': technologies,
