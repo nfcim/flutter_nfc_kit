@@ -72,10 +72,9 @@ class WebUSB {
   static Future<String> poll(int timeout, bool probeMagic) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
-      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(
-          filters: [
-            _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)
-          ]));
+      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(filters: [
+        _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)
+      ]));
       dynamic device = await promiseToFuture(devicePromise);
       try {
         await promiseToFuture(callMethod(device, 'open', List.empty()))

@@ -9,9 +9,9 @@ import 'package:logging/logging.dart';
 import 'package:ndef/ndef.dart' as ndef;
 import 'package:ndef/utilities.dart';
 
-import 'record-setting/raw_record_setting.dart';
-import 'record-setting/text_record_setting.dart';
-import 'record-setting/uri_record_setting.dart';
+import 'ndef_record/raw_record_setting.dart';
+import 'ndef_record/text_record_setting.dart';
+import 'ndef_record/uri_record_setting.dart';
 
 void main() {
   Logger.root.level = Level.ALL; // defaults to Level.INFO
@@ -214,7 +214,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                           final result = await Navigator.push(
                                               context, MaterialPageRoute(
                                                   builder: (context) {
-                                            return TextRecordSetting();
+                                            return NDEFTextRecordSetting();
                                           }));
                                           if (result != null) {
                                             if (result is ndef.TextRecord) {
@@ -232,7 +232,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                           final result = await Navigator.push(
                                               context, MaterialPageRoute(
                                                   builder: (context) {
-                                            return UriRecordSetting();
+                                            return NDEFUriRecordSetting();
                                           }));
                                           if (result != null) {
                                             if (result is ndef.UriRecord) {

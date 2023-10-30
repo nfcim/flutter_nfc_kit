@@ -376,7 +376,7 @@ class FlutterNfcKit {
   }
 
   /// iOS only, change currently displayed NFC reader session alert message with [message].
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
@@ -393,23 +393,19 @@ class FlutterNfcKit {
   }
 
   /// Authenticate against a sector of MIFARE Classic tag.
-  /// 
+  ///
   /// Either one of [keyA] or [keyB] must be provided.
   /// If both are provided, [keyA] will be used.
   /// Returns whether authentication succeeds.
-  static Future<bool> authenticateSector<T>(
-    int index, {T? keyA, T? keyB}
-  ) async {
+  static Future<bool> authenticateSector<T>(int index,
+      {T? keyA, T? keyB}) async {
     assert(T is String || T is Uint8List);
-    return await _channel.invokeMethod('authenticateSector', {
-      'index': index,
-      'keyA': keyA,
-      'keyB': keyB
-    });
+    return await _channel.invokeMethod(
+        'authenticateSector', {'index': index, 'keyA': keyA, 'keyB': keyB});
   }
 
   /// Read one block (16 bytes) from tag
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
@@ -420,7 +416,7 @@ class FlutterNfcKit {
   }
 
   /// Write one block (16B) / page (4B) to MIFARE Classic / Ultralight tag
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
@@ -433,16 +429,13 @@ class FlutterNfcKit {
   }
 
   /// Read one sector from MIFARE Classic tag
-  /// 
+  ///
   /// There must be a valid session when invoking.
   /// [index] refers to the sector index.
   /// You must first authenticate against the corresponding sector.
   /// Note: not all sectors are 64B long, some tags might have 256B sectors.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readSector(int index) async {
-    return await _channel.invokeMethod('readSector', {
-      'index': index
-    });
+    return await _channel.invokeMethod('readSector', {'index': index});
   }
-
 }

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:ndef/ndef.dart' as ndef;
 
-class UriRecordSetting extends StatefulWidget {
+class NDEFUriRecordSetting extends StatefulWidget {
   final ndef.UriRecord record;
-  UriRecordSetting({Key? key, ndef.UriRecord? record})
+  NDEFUriRecordSetting({Key? key, ndef.UriRecord? record})
       : record = record ?? ndef.UriRecord(prefix: '', content: ''),
         super(key: key);
   @override
-  _UriRecordSetting createState() => _UriRecordSetting();
+  _NDEFUriRecordSetting createState() => _NDEFUriRecordSetting();
 }
 
-class _UriRecordSetting extends State<UriRecordSetting> {
+class _NDEFUriRecordSetting extends State<NDEFUriRecordSetting> {
   GlobalKey _formKey = new GlobalKey<FormState>();
   late TextEditingController _contentController;
   String? _dropButtonValue;
