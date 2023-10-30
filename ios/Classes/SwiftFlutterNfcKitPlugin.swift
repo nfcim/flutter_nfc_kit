@@ -161,8 +161,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "readBlock" {
             let arguments = call.arguments as! [String : Any?]
-            let blockNumber = arguments["index"] as! Int
-            
+
             if case let .iso15693(tag) = tag {
                 let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
@@ -174,8 +173,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     }
                 }
                 if !extendedMode {
+                    let blockNumber = arguments["index"] as! UInt8
                     tag.readSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, completionHandler: handler)
                 } else {
+                    let blockNumber = arguments["index"] as! Int
                     tag.extendedReadSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, completionHandler: handler)
                 }
             } else {
@@ -183,9 +184,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "writeBlock" {
             let arguments = call.arguments as! [String : Any?]
-            let blockNumber = arguments["index"] as! Int
             let data = (arguments["data"] as! FlutterStandardTypedData).data
-                        
+
             if case let .iso15693(tag) = tag {
                 let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
@@ -197,8 +197,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     }
                 }
                 if !extendedMode {
+                    let blockNumber = arguments["index"] as! UInt8
                     tag.writeSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, dataBlock: data, completionHandler: handler)
                 } else {
+                    let blockNumber = arguments["index"] as! Int
                     tag.extendedWriteSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, dataBlock: data, completionHandler: handler)
                 }
             } else {
