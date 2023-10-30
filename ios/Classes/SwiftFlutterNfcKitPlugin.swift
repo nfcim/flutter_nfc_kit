@@ -181,8 +181,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             let blockNumber = arguments["blockNumber"] as! Int
             let dataBlock = (arguments["dataBlock"] as! FlutterStandardTypedData).data
             
-            let adjDataBlock = [UInt8](dataBlock);
-            
             if case let .iso15693(tag) = tag {
                 tag.extendedWriteSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber, dataBlock: dataBlock) { error in
                     if let error = error {
