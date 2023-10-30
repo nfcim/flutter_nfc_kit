@@ -22,9 +22,12 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-    - uses: subosito/flutter-action@v1
+    - uses: subosito/flutter-action@v2
       with:
         channel: 'stable' # or: 'dev' or 'beta'
+    - run: dart pub get
+    - run: dart format --output=none --set-exit-if-changed .
+    - run: dart analyze
     - run: flutter pub get
       working-directory: example/
     #- run: flutter test
