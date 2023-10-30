@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -177,7 +176,7 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
   /// Convert an [ndef.NDEFRecord] to encoded [NDEFRawRecord]
   NDEFRawRecord toRaw() {
     return NDEFRawRecord(id?.toHexString() ?? '', payload?.toHexString() ?? '',
-        type?.toHexString() ?? '', this.tnf);
+        type?.toHexString() ?? '', tnf);
   }
 
   /// Convert an [NDEFRawRecord] to decoded [ndef.NDEFRecord].
@@ -197,7 +196,7 @@ class FlutterNfcKit {
   /// Default timeout for [poll] (in milliseconds)
   static const int POLL_TIIMEOUT = 20 * 1000;
 
-  static const MethodChannel _channel = const MethodChannel('flutter_nfc_kit');
+  static const MethodChannel _channel = MethodChannel('flutter_nfc_kit');
 
   /// get the availablility of NFC reader on this device
   static Future<NFCAvailability> get nfcAvailability async {

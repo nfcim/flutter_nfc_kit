@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:logging/logging.dart';
 import 'package:ndef/ndef.dart' as ndef;
+import 'package:ndef/utilities.dart';
 
 import 'record-setting/raw_record_setting.dart';
 import 'record-setting/text_record_setting.dart';

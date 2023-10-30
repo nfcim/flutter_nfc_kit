@@ -5,7 +5,6 @@ import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html show window;
 import 'dart:js_util';
-import 'dart:typed_data';
 import 'package:convert/convert.dart';
 
 import 'package:flutter/services.dart';
@@ -36,10 +35,11 @@ class FlutterNfcKitWeb {
   Future<dynamic> handleMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'getNFCAvailability':
-        if (hasProperty(html.window.navigator, 'usb'))
+        if (hasProperty(html.window.navigator, 'usb')) {
           return 'available';
-        else
+        } else {
           return 'not_supported';
+        }
 
       case 'poll':
         int timeout = call.arguments["timeout"];
