@@ -376,7 +376,7 @@ class FlutterNfcKit {
 
   /// Read one unit of data (specified below) from:
   /// * MIFARE Classic / Ultralight tag: one 16B block / page (Android only)
-  /// * ISO 15693 Tag: one 4B block (iOS only)
+  /// * ISO 15693 tag: one 4B block (iOS only)
   ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
@@ -397,7 +397,7 @@ class FlutterNfcKit {
   /// Write one unit of data (specified below) to:
   /// * MIFARE Classic tag: one 16B block (Android only)
   /// * MIFARE Ultralight tag: one 4B page (Android only)
-  /// * ISO 15693 Tag: one 4B block (iOS only)
+  /// * ISO 15693 tag: one 4B block (iOS only)
   ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.

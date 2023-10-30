@@ -11,11 +11,15 @@ This plugin's functionalities include:
   * ISO 14443 Type A & Type B (NFC-A / NFC-B / MIFARE Classic / MIFARE Plus / MIFARE Ultralight / MIFARE DESFire)
   * ISO 18092 (NFC-F / FeliCa)
   * ISO 15963 (NFC-V)
-* transceive commands with tags / cards complying with:
+* R/W block / page / sector level data of tags complying with:
+  * MIFARE Classic / Ultralight (Android only)
+  * ISO 15693 (iOS only)
+* transceive raw commands with tags / cards complying with:
   * ISO 7816 Smart Cards (layer 4, in APDUs)
   * other device-supported technologies (layer 3, in raw commands, see documentation for platform-specific supportability)
 
-Note that due to API limitations not all operations are supported on both platforms.
+Note that due to API limitations, not all operations are supported on all platforms.
+**You are welcome to submit PRs to add support for any standard-specific operations.**
 
 This library uses [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding.
 
