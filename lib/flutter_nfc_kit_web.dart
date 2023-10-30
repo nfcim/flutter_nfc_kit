@@ -5,7 +5,6 @@ import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html show window;
 import 'dart:js_util';
-import 'dart:typed_data';
 import 'package:convert/convert.dart';
 
 import 'package:flutter/services.dart';
