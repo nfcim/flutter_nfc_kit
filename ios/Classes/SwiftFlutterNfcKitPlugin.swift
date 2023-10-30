@@ -159,40 +159,50 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             } else {
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
-        } else if call.method == "Iso15693extendedReadSingleBlock" {
+        } else if call.method == "readBlock" {
             let arguments = call.arguments as! [String : Any?]
-            let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
-            let blockNumber = arguments["blockNumber"] as! Int
+            let blockNumber = arguments["index"] as! Int
             
             if case let .iso15693(tag) = tag {
-                tag.extendedReadSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber) { dataBlock, error in
+                let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
+                let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
+                let handler = { (dataBlock: Data, error: Error?) in
                     if let error = error {
                         result(self.wrapFlutterError(error))
                     } else {
                         result(dataBlock)
                     }
                 }
+                if !extendedMode {
+                    tag.readSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, completionHandler: handler)
+                } else {
+                    tag.extendedReadSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, completionHandler: handler)
+                }
             } else {
-                result(FlutterError(code: "405", message: "ISO15693 Extended Read Single Block not supported on this type of card", details: nil))
+                result(FlutterError(code: "405", message: "readBlock not supported on this type of card", details: nil))
             }
-        } else if call.method == "Iso15693extendedWriteSingleBlock" {
+        } else if call.method == "writeBlock" {
             let arguments = call.arguments as! [String : Any?]
-            let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
-            let blockNumber = arguments["blockNumber"] as! Int
-            let dataBlock = (arguments["dataBlock"] as! FlutterStandardTypedData).data
-            
-            let adjDataBlock = [UInt8](dataBlock);
-            
+            let blockNumber = arguments["index"] as! Int
+            let data = (arguments["data"] as! FlutterStandardTypedData).data
+                        
             if case let .iso15693(tag) = tag {
-                tag.extendedWriteSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber, dataBlock: dataBlock) { error in
+                let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
+                let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
+                let handler = { (error: Error?) in
                     if let error = error {
                         result(self.wrapFlutterError(error))
                     } else {
                         result(nil)
                     }
                 }
+                if !extendedMode {
+                    tag.writeSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, dataBlock: data, completionHandler: handler)
+                } else {
+                    tag.extendedWriteSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, dataBlock: data, completionHandler: handler)
+                }
             } else {
-                result(FlutterError(code: "405", message: "ISO15693 Extended Write Single Block not supported on this type of card", details: nil))
+                result(FlutterError(code: "405", message: "writeBlock not supported on this type of card", details: nil))
             }
         } else if call.method == "readNDEF" {
             if tag != nil {
@@ -412,18 +422,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         result = nil
         session = nil
         tag = nil
-    }
-    
-    @available(iOS 13.0, *)
-    func getRequestFlags(_ arg: [String]) -> RequestFlag {
-        var flag = RequestFlag()
-        if arg.contains("address") { flag.insert(RequestFlag.address) }
-        if arg.contains("dualSubCarriers") { flag.insert(RequestFlag.dualSubCarriers) }
-        if arg.contains("highDataRate") { flag.insert(RequestFlag.highDataRate) }
-        if arg.contains("option") { flag.insert(RequestFlag.option) }
-        if arg.contains("protocolExtension") { flag.insert(RequestFlag.protocolExtension) }
-        if arg.contains("select") { flag.insert(RequestFlag.select) }
-        return flag
     }
     
     func wrapFlutterError(_ arg: Error) -> FlutterError {

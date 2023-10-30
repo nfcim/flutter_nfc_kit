@@ -9,7 +9,7 @@ import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
 import 'package:ndef/utilities.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import 'iso15963flags.dart';
+import 'iso15693flags.dart';
 
 part 'flutter_nfc_kit.g.dart';
 
@@ -282,36 +282,6 @@ class FlutterNfcKit {
     });
   }
 
-  /// Sends the Extended Read Single Block command to the tag.
-  ///
-  /// This uses NFCISO15693Tag#extendedReadSingleBlock API on iOS.
-  static Future<Uint8List> extendedReadSingleBlock({
-    required Set<Iso15693RequestFlag> requestFlags,
-    required int blockNumber,
-  }) async {
-    return _channel.invokeMethod('Iso15693extendedReadSingleBlock', {
-      'requestFlags':
-          requestFlags.map((e) => $Iso15693RequestFlagTable[e]).toList(),
-      'blockNumber': blockNumber,
-    }).then((value) => value!);
-  }
-
-  /// Sends the Extended Write Single Block command to the tag.
-  ///
-  /// This uses NFCISO15693Tag#extendedWriteSingleBlock API on iOS.
-  static Future<void> extendedWriteSingleBlock({
-    required Set<Iso15693RequestFlag> requestFlags,
-    required int blockNumber,
-    required Uint8List dataBlock,
-  }) async {
-    return _channel.invokeMethod('Iso15693extendedWriteSingleBlock', {
-      'requestFlags':
-          requestFlags.map((e) => $Iso15693RequestFlagTable[e]).toList(),
-      'blockNumber': blockNumber,
-      'dataBlock': dataBlock,
-    });
-  }
-
   /// Read NDEF records (in decoded format, Android & iOS only).
   ///
   /// There must be a valid session when invoking.
@@ -392,7 +362,7 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('makeNdefReadOnly');
   }
 
-  /// Authenticate against a sector of MIFARE Classic tag.
+  /// Authenticate against a sector of MIFARE Classic tag (Android only).
   ///
   /// Either one of [keyA] or [keyB] must be provided.
   /// If both are provided, [keyA] will be used.
@@ -404,31 +374,44 @@ class FlutterNfcKit {
         'authenticateSector', {'index': index, 'keyA': keyA, 'keyB': keyB});
   }
 
-  /// Read one block (16 bytes) from tag
+  /// Read one unit of data (specified below) from:
+  /// * MIFARE Classic / Ultralight tag: one 16B block / page (Android only)
+  /// * ISO 15693 Tag: one 4B block (iOS only)
   ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
-  static Future<Uint8List> readBlock(int index) async {
-    return await _channel.invokeMethod('readBlock', {'index': index});
+  static Future<Uint8List> readBlock(int index, {Iso15693RequestFlag? iso15693Flags, bool iso15693ExtendedMode = false}) async {
+    var flags = iso15693Flags ?? Iso15693RequestFlag();
+    return await _channel.invokeMethod('readBlock', {
+      'index': index,
+      'iso15693Flags': flags.encode(),
+      'iso15693ExtendedMode': iso15693ExtendedMode,
+    });
   }
 
-  /// Write one block (16B) / page (4B) to MIFARE Classic / Ultralight tag
+  /// Write one unit of data (specified below) to:
+  /// * MIFARE Classic tag: one 16B block (Android only)
+  /// * MIFARE Ultralight tag: one 4B page (Android only)
+  /// * ISO 15693 Tag: one 4B block (iOS only)
   ///
   /// There must be a valid session when invoking.
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
-  static Future<void> writeBlock<T>(int index, T data) async {
+  static Future<void> writeBlock<T>(int index, T data, {Iso15693RequestFlag? iso15693Flags, bool iso15693ExtendedMode = false}) async {
     assert(T is String || T is Uint8List);
+    var flags = iso15693Flags ?? Iso15693RequestFlag();
     await _channel.invokeMethod('writeBlock', {
       'index': index,
       'data': data,
+      'iso15693Flags': flags.encode(),
+      'iso15693ExtendedMode': iso15693ExtendedMode,
     });
   }
 
-  /// Read one sector from MIFARE Classic tag
+  /// Read one sector from MIFARE Classic tag (Android Only)
   ///
   /// There must be a valid session when invoking.
   /// [index] refers to the sector index.
