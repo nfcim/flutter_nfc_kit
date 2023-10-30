@@ -8,7 +8,7 @@ extension Data {
         let rawValue: Int
         static let upperCase = HexEncodingOptions(rawValue: 1 << 0)
     }
-
+    
     func hexEncodedString(options: HexEncodingOptions = [.upperCase]) -> String {
         let format = options.contains(.upperCase) ? "%02hhX" : "%02hhx"
         return map { String(format: format, $0) }.joined()
@@ -35,13 +35,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     var result: FlutterResult?
     var tag: NFCTag?
     var multipleTagMessage: String?
-
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_nfc_kit", binaryMessenger: registrar.messenger())
         let instance = SwiftFlutterNfcKitPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
-
+    
     // from FlutterPlugin
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         if call.method == "getNFCAvailability" {
@@ -90,14 +90,14 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     default:
                         data = nil
                     }
-
+                    
                     switch tag {
                     case let .iso7816(tag):
                         var apdu: NFCISO7816APDU?
                         if data != nil {
                             apdu = NFCISO7816APDU(data: data!)
                         }
-
+                        
                         if apdu != nil {
                             tag.sendCommand(apdu: apdu!, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
                                 if let error = error {
@@ -160,25 +160,40 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
         } else if call.method == "Iso15693extendedReadSingleBlock" {
-            // var nfcvTag: NFCISO15693Tag? 
-            // switch tag {
-            //     case let .iso15693(tag):
-            //         nfcvTag = tag
-            //     default: 
-            //         nfcvTag = nil
-                
-            // }
-
-            // if nfcvTag == nil {
-            //    result(FlutterError(code: "666", message: "NDEF not supported on this type of card", details: nil))
-
-            // } else {
-                handleIso15693ExtendedReadSingleBlock(call.arguments as! [String : Any?], result: result)
-            // }
-             
+            let arguments = call.arguments as! [String : Any?]
+            let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
+            let blockNumber = arguments["blockNumber"] as! Int
             
+            if case let .iso15693(tag) = tag {
+                tag.extendedReadSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber) { dataBlock, error in
+                    if let error = error {
+                        result(self.wrapFlutterError(error))
+                    } else {
+                        result(dataBlock)
+                    }
+                }
+            } else {
+                result(FlutterError(code: "405", message: "ISO15693 Extended Read Single Block not supported on this type of card", details: nil))
+            }
         } else if call.method == "Iso15693extendedWriteSingleBlock" {
-            handleIso15693ExtendedWriteSingleBlock(call.arguments as! [String : Any?], result: result)
+            let arguments = call.arguments as! [String : Any?]
+            let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
+            let blockNumber = arguments["blockNumber"] as! Int
+            let dataBlock = (arguments["dataBlock"] as! FlutterStandardTypedData).data
+            
+            let adjDataBlock = [UInt8](dataBlock);
+            
+            if case let .iso15693(tag) = tag {
+                tag.extendedWriteSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber, dataBlock: dataBlock) { error in
+                    if let error = error {
+                        result(self.wrapFlutterError(error))
+                    } else {
+                        result(nil)
+                    }
+                }
+            } else {
+                result(FlutterError(code: "405", message: "ISO15693 Extended Write Single Block not supported on this type of card", details: nil))
+            }
         } else if call.method == "readNDEF" {
             if tag != nil {
                 var ndefTag: NFCNDEFTag?
@@ -203,10 +218,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             result(FlutterError(code: "500", message: "Read NDEF error", details: error.localizedDescription))
                         } else if let msg = msg {
                             var records: [[String: Any]] = []
-
+                            
                             for record in msg.records {
                                 var entry: [String: Any] = [:]
-
+                                
                                 entry["identifier"] = record.identifier.hexEncodedString()
                                 entry["payload"] = record.payload.hexEncodedString()
                                 entry["type"] = record.type.hexEncodedString()
@@ -226,10 +241,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                 default:
                                     entry["typeNameFormat"] = "unknown"
                                 }
-
+                                
                                 records.append(entry)
                             }
-
+                            
                             let jsonData = try! JSONSerialization.data(withJSONObject: records)
                             let jsonString = String(data: jsonData, encoding: .utf8)
                             result(jsonString)
@@ -289,7 +304,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                 payload: dataWithHexString(hex: record["payload"] as! String)
                             ))
                         }
-
+                        
                         ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
                             if let error = error {
                                 result(FlutterError(code: "500", message: "Write NDEF error", details: error.localizedDescription))
@@ -309,12 +324,12 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         } else if call.method == "finish" {
             self.result?(FlutterError(code: "406", message: "Session not active", details: nil))
             self.result = nil
-
+            
             if let session = session {
                 let arguments = call.arguments as! [String: Any?]
                 let alertMessage = arguments["iosAlertMessage"] as? String
                 let errorMessage = arguments["iosErrorMessage"] as? String
-
+                
                 if let errorMessage = errorMessage {
                     session.invalidate(errorMessage: errorMessage)
                 } else {
@@ -325,7 +340,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                 }
                 self.session = nil
             }
-
+            
             tag = nil
             result(nil)
         } else if call.method == "setIosAlertMessage" {
@@ -371,10 +386,10 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result(FlutterMethodNotImplemented)
         }
     }
-
+    
     // from NFCTagReaderSessionDelegate
     public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
-
+    
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
         guard result != nil else { return; }
@@ -398,71 +413,25 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         session = nil
         tag = nil
     }
-
-
-
-@available(iOS 13.0, *)
-func getRequestFlags(_ arg: [String]) -> RequestFlag {
-  var flag = RequestFlag()
-  if arg.contains("address") { flag.insert(RequestFlag.address) }
-  if arg.contains("dualSubCarriers") { flag.insert(RequestFlag.dualSubCarriers) }
-  if arg.contains("highDataRate") { flag.insert(RequestFlag.highDataRate) }
-  if arg.contains("option") { flag.insert(RequestFlag.option) }
-  if arg.contains("protocolExtension") { flag.insert(RequestFlag.protocolExtension) }
-  if arg.contains("select") { flag.insert(RequestFlag.select) }
-  return flag
-}
-
-func getFlutterError(_ arg: Error) -> FlutterError {
-  return FlutterError(code: "\((arg as NSError).code)", message:arg.localizedDescription, details: nil)
-}
-
-//Call to method 'getFlutterError' in closure requires explicit use of 'self' to make capture semantics explicit
-///Users/yuriy/dev/flutter_nfc_kit/ios/Classes/SwiftFlutterNfcKitPlugin.swift:428:23
-
-
-  @available(iOS 13.0, *)
-  private func handleIso15693ExtendedReadSingleBlock(_ arguments: [String : Any?], result: @escaping FlutterResult) {
-      let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
-      let blockNumber = arguments["blockNumber"] as! Int
-
-        if case let .iso15693(tag) = tag {
-            tag.extendedReadSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber) { dataBlock, error in
-                if let error = error {
-                result(self.getFlutterError(error))
-                } else {
-                result(dataBlock)
-                }
-            }
-        }
-
-  }
-
-
-
-  @available(iOS 13.0, *)
-  private func handleIso15693ExtendedWriteSingleBlock(_ arguments: [String : Any?], result: @escaping FlutterResult) {
-      let requestFlags = getRequestFlags(arguments["requestFlags"] as! [String])
-      let blockNumber = arguments["blockNumber"] as! Int
-      let dataBlock = (arguments["dataBlock"] as! FlutterStandardTypedData).data
-     
-      let adjDataBlock = [UInt8](dataBlock);
-
-        if case let .iso15693(tag) = tag {
-
-            tag.extendedWriteSingleBlock(requestFlags: requestFlags, blockNumber: blockNumber, dataBlock: dataBlock) { error in
-                if let error = error {
-                result(self.getFlutterError(error))
-                } else {
-                result(nil)
-                }
-            }
-        }
-  }
-
-
-
-
+    
+    @available(iOS 13.0, *)
+    func getRequestFlags(_ arg: [String]) -> RequestFlag {
+        var flag = RequestFlag()
+        if arg.contains("address") { flag.insert(RequestFlag.address) }
+        if arg.contains("dualSubCarriers") { flag.insert(RequestFlag.dualSubCarriers) }
+        if arg.contains("highDataRate") { flag.insert(RequestFlag.highDataRate) }
+        if arg.contains("option") { flag.insert(RequestFlag.option) }
+        if arg.contains("protocolExtension") { flag.insert(RequestFlag.protocolExtension) }
+        if arg.contains("select") { flag.insert(RequestFlag.select) }
+        return flag
+    }
+    
+    func wrapFlutterError(_ arg: Error) -> FlutterError {
+        return FlutterError(code: "\((arg as NSError).code)",
+                            message: arg.localizedDescription,
+                            details: nil)
+    }
+    
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         if tags.count > 1 {
@@ -476,9 +445,9 @@ func getFlutterError(_ arg: Error) -> FlutterError {
             }
             return
         }
-
+        
         let firstTag = tags.first!
-
+        
         var result: [String: Any] = [:]
         // default NDEF status
         result["ndefAvailable"] = false
@@ -487,7 +456,7 @@ func getFlutterError(_ arg: Error) -> FlutterError {
         // fake NDEF results
         result["ndefType"] = ""
         result["ndefCanMakeReadOnly"] = false
-
+        
         switch firstTag {
         case let .iso7816(tag):
             result["type"] = "iso7816"
@@ -533,7 +502,7 @@ func getFlutterError(_ arg: Error) -> FlutterError {
             result["type"] = "unknown"
             result["standard"] = "unknown"
         }
-
+        
         session.connect(to: firstTag, completionHandler: { (error: Error?) in
             if let error = error {
                 self.result?(FlutterError(code: "500", message: "Error connecting to card", details: error.localizedDescription))
@@ -541,7 +510,7 @@ func getFlutterError(_ arg: Error) -> FlutterError {
                 return
             }
             self.tag = firstTag
-
+            
             var ndefTag: NFCNDEFTag?
             switch self.tag {
             case let .iso7816(tag):
@@ -555,7 +524,7 @@ func getFlutterError(_ arg: Error) -> FlutterError {
             default:
                 ndefTag = nil
             }
-
+            
             if ndefTag != nil {
                 ndefTag!.queryNDEFStatus(completionHandler: { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
                     if error == nil {
