@@ -12,17 +12,17 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  json_annotation: ^4.0.1
-  ndef: ^0.3.1
-  convert: ^3.0.1
-  logging: ^1.0.2
-  js: ^0.6.3
+  json_annotation: ^4.8.1
+  ndef: ^0.3.3
+  convert: ^3.1.1
+  logging: ^1.2.0
+  js: ^0.6.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   lints: ^3.0.0
-  build_runner: ^2.1.0
+  build_runner: ^2.4.6
   json_serializable: ^6.7.1
 
 flutter:
