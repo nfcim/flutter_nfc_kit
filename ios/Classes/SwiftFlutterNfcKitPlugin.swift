@@ -91,7 +91,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         result(FlutterError(code: "400", message: "No data specified", details: nil))
                         return
                     }
-
+                    
                     if data.count == 0 {
                         result(FlutterError(code: "400", message: "Empty data specified", details: nil))
                         return
@@ -99,7 +99,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     
                     switch tag {
                     case let .iso7816(tag):
-                        var apdu: NFCISO7816APDU? = NFCISO7816APDU(data: data)
+                        let apdu: NFCISO7816APDU? = NFCISO7816APDU(data: data)
                         if apdu == nil {
                             result(FlutterError(code: "400", message: "Command format error", details: nil))
                             return
@@ -117,7 +117,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                                 }
                             }
                         }
-
+                        
                     case let .feliCa(tag):
                         if data.count < 2 {
                             result(FlutterError(code: "400", message: "feliCa command format error", details: nil))
@@ -148,31 +148,32 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             }
                         }
                     case let .iso15693(tag):
-                        if #available(iOS 14, *) {
-                            result(FlutterError(code: "405", message: "Transceive for iso15693 not supported on iOS < 14.0", details: nil))
-                            return
-                        }
                         if data.count < 2 {
                             result(FlutterError(code: "400", message: "iso15693 command format error", details: nil))
                             return
                         }
-                        // format: flag, command, [parameter, data]
-                        tag.sendRequest(requestFlags: Int(data[0]), commandCode: Int(data[1]), data: data.advanced(by: 2)) { (res: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
-                            switch (res) {
-                            case let .failure(err):
-                                result(FlutterError(code: "500", message: "Communication error", details: err.localizedDescription))
-                            case let .success((flags, data)):
-                                var response = Data()
-                                response.append(flags.rawValue)
-                                if data != nil {
-                                    response.append(data)
-                                }
-                                if req is String {
-                                    result(response.hexEncodedString())
-                                } else {
-                                    result(response)
+                        if #available(iOS 14, *) {
+                            // format: flag, command, [parameter, data]
+                            tag.sendRequest(requestFlags: Int(data[0]), commandCode: Int(data[1]), data: data.advanced(by: 2)) { (res: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
+                                switch (res) {
+                                case let .failure(err):
+                                    result(FlutterError(code: "500", message: "Communication error", details: err.localizedDescription))
+                                case let .success((flags, data)):
+                                    var response = Data()
+                                    response.append(flags.rawValue)
+                                    if data != nil {
+                                        response.append(data!)
+                                    }
+                                    if req is String {
+                                        result(response.hexEncodedString())
+                                    } else {
+                                        result(response)
+                                    }
                                 }
                             }
+                        } else {
+                            result(FlutterError(code: "405", message: "Transceive for iso15693 not supported on iOS < 14.0", details: nil))
+                            return
                         }
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
