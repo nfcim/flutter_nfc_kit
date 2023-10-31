@@ -47,9 +47,7 @@ Make sure you understand the statement above and the protocol before using this 
 
 ## Usage
 
-Simple example: <example/example.md>.
-
-Example application: <example/lib>.
+We provide [simple code example](example/example.md) and a [example application](example/lib).
 
 Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for more information.
 
