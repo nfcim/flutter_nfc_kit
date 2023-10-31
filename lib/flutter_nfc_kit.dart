@@ -506,4 +506,84 @@ class FlutterNfcKit {
   static Future<Uint8List> readSector(int index) async {
     return await _channel.invokeMethod('readSector', {'index': index});
   }
+
+  static Future<T> NTAGGetVersion<T>({Duration? timeout}) async {
+    Uint8List command = Uint8List.fromList([0x60]);
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
+
+  static Future<T> NTAGRead<T>(int addr, {Duration? timeout}) async {
+    Uint8List command = Uint8List.fromList([0x30, addr]);
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
+
+  static Future<T> NTAGFastRead<T>(int startAddr, int endAddr, {Duration? timeout}) async {
+    Uint8List command = Uint8List.fromList([0x3A, startAddr, endAddr]);
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
+
+  static Future<T> NTAGWrite<T>(int addr, T data, {Duration? timeout}) async {
+    assert(data is String || data is Uint8List);
+    Uint8List originCommand = Uint8List.fromList([0x2A, addr]);
+    if (data is String) {
+      String dataStr = data;
+      List<int> dataArray = originCommand;
+      for (int i = 0; i < data.length; i++) {
+        dataArray.add(dataStr.codeUnitAt(i));
+      }
+      originCommand = Uint8List.fromList(dataArray);
+    } else {
+      originCommand.add(data as int);
+    }
+    Uint8List command = originCommand;
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
+
+  static Future<T> NTAGREADCNT<T>({Duration? timeout}) async {
+    Uint8List command = Uint8List.fromList([0x39, 0x02]);
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
+
+  static Future<T> NTAGREADSIG<T>({Duration? timeout}) async {
+    Uint8List command = Uint8List.fromList([0x3C, 0x00]);
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
+
+  static Future<T> NTAGWRITESIG<T>(int addr, T data, {Duration? timeout}) async {
+    assert(data is String || data is Uint8List);
+    Uint8List originCommand = Uint8List.fromList([0x9A, addr]);
+    if (data is String) {
+      String dataStr = data;
+      List<int> dataArray = originCommand;
+      for (int i = 0; i < data.length; i++) {
+        dataArray.add(dataStr.codeUnitAt(i));
+      }
+      originCommand = Uint8List.fromList(dataArray);
+    } else {
+      originCommand.add(data as int);
+    }
+    Uint8List command = originCommand;
+    return await _channel.invokeMethod('transceive', {
+      'data': command,
+      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
+    });
+  }
 }
