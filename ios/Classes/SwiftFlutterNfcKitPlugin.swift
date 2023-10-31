@@ -81,102 +81,98 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             if tag != nil {
                 let req = (call.arguments as? [String: Any?])?["data"]
                 if req != nil, req is String || req is FlutterStandardTypedData {
-                    var data: Data?
+                    var data: Data
                     switch req {
                     case let hexReq as String:
                         data = dataWithHexString(hex: hexReq)
                     case let binReq as FlutterStandardTypedData:
                         data = binReq.data
                     default:
-                        data = nil
+                        result(FlutterError(code: "400", message: "No data specified", details: nil))
+                        return
+                    }
+
+                    if data.count == 0 {
+                        result(FlutterError(code: "400", message: "Empty data specified", details: nil))
+                        return
                     }
                     
                     switch tag {
                     case let .iso7816(tag):
-                        var apdu: NFCISO7816APDU?
-                        if data != nil {
-                            apdu = NFCISO7816APDU(data: data!)
-                        }
-                        
-                        if apdu != nil {
-                            tag.sendCommand(apdu: apdu!, completionHandler: { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
-                                if let error = error {
-                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
-                                } else {
-                                    var response = response
-                                    response.append(contentsOf: [sw1, sw2])
-                                    if req is String {
-                                        result(response.hexEncodedString())
-                                    } else {
-                                        result(response)
-                                    }
-                                }
-                            })
-                        } else {
+                        var apdu: NFCISO7816APDU? = NFCISO7816APDU(data: data)
+                        if apdu == nil {
                             result(FlutterError(code: "400", message: "Command format error", details: nil))
+                            return
                         }
-                    case let .feliCa(tag):
-                        if data != nil {
-                            // the first byte in data is length
-                            // and iOS will add it for us
-                            // so skip it
-                            tag.sendFeliCaCommand(commandPacket: data!.advanced(by: 1), completionHandler: { (response: Data, error: Error?) in
-                                if let error = error {
-                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                        tag.sendCommand(apdu: apdu!) { (response: Data, sw1: UInt8, sw2: UInt8, error: Error?) in
+                            if let error = error {
+                                result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                            } else {
+                                var response = response
+                                response.append(contentsOf: [sw1, sw2])
+                                if req is String {
+                                    result(response.hexEncodedString())
                                 } else {
-                                    if req is String {
-                                        result(response.hexEncodedString())
-                                    } else {
-                                        result(response)
-                                    }
+                                    result(response)
                                 }
-                            })
-                        } else {
-                            result(FlutterError(code: "400", message: "No felica command specified", details: nil))
+                            }
+                        }
+
+                    case let .feliCa(tag):
+                        if data.count < 2 {
+                            result(FlutterError(code: "400", message: "feliCa command format error", details: nil))
+                            return
+                        }
+                        // the first byte in data is length, and iOS will add it for us, so skip it
+                        tag.sendFeliCaCommand(commandPacket: data.advanced(by: 1)) { (response: Data, error: Error?) in
+                            if let error = error {
+                                result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                            } else {
+                                if req is String {
+                                    result(response.hexEncodedString())
+                                } else {
+                                    result(response)
+                                }
+                            }
                         }
                     case let .miFare(tag):
-                        if data != nil {
-                            tag.sendMiFareCommand(commandPacket: data!, completionHandler: { (response: Data, error: Error?) in
-                                if let error = error {
-                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                        tag.sendMiFareCommand(commandPacket: data) { (response: Data, error: Error?) in
+                            if let error = error {
+                                result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                            } else {
+                                if req is String {
+                                    result(response.hexEncodedString())
                                 } else {
-                                    if req is String {
-                                        result(response.hexEncodedString())
-                                    } else {
-                                        result(response)
-                                    }
+                                    result(response)
                                 }
-                            })
-                        } else {
-                            result(FlutterError(code: "400", message: "No mifare command specified", details: nil))
+                            }
                         }
                     case let .iso15693(tag):
-                        if data != nil {
-                            if #available(iOS 14, *) {
-                                // format: flag, command, [parameter, data]
-                                tag.sendRequest(requestFlags: Int(data![0]), commandCode: Int(data![1]), data: data!.advanced(by: 2)) { (res: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
-                                    switch (res) {
-                                    case let .failure(err):
-                                        result(FlutterError(code: "500", message: "Communication error", details: err.localizedDescription))
-                                    case let .success((flags, data)):
-                                        var response = Data()
-                                        response.append(flags.rawValue)
-                                        if data != nil {
-                                            response.append(data!)
-                                        }
-                                        
-                                        if req is String {
-                                            result(response.hexEncodedString())
-                                        } else {
-                                            result(response)
-                                        }
-                                    }
+                        if #available(iOS 14, *) {
+                            result(FlutterError(code: "405", message: "Transceive for iso15693 not supported on iOS < 14.0", details: nil))
+                            return
+                        }
+                        if data.count < 2 {
+                            result(FlutterError(code: "400", message: "iso15693 command format error", details: nil))
+                            return
+                        }
+                        // format: flag, command, [parameter, data]
+                        tag.sendRequest(requestFlags: Int(data[0]), commandCode: Int(data[1]), data: data.advanced(by: 2)) { (res: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
+                            switch (res) {
+                            case let .failure(err):
+                                result(FlutterError(code: "500", message: "Communication error", details: err.localizedDescription))
+                            case let .success((flags, data)):
+                                var response = Data()
+                                response.append(flags.rawValue)
+                                if data != nil {
+                                    response.append(data)
                                 }
-                            } else {
-                                result(FlutterError(code: "405", message: "Transceive not supported on iOS version", details: nil))
+                                if req is String {
+                                    result(response.hexEncodedString())
+                                } else {
+                                    result(response)
+                                }
                             }
-                        } else {
-                            result(FlutterError(code: "400", message: "No iso15693 command specified", details: nil))
                         }
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
@@ -248,7 +244,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     ndefTag = nil
                 }
                 if ndefTag != nil {
-                    ndefTag!.readNDEF(completionHandler: { (msg: NFCNDEFMessage?, error: Error?) in
+                    ndefTag!.readNDEF() { (msg: NFCNDEFMessage?, error: Error?) in
                         if let nfcError = error as? NFCReaderError, nfcError.errorCode == 403  {
                             // NDEF tag does not contain any NDEF message
                             result("[]")
@@ -289,7 +285,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         } else {
                             result(FlutterError(code: "500", message: "Impossible branch reached", details: nil))
                         }
-                    })
+                    }
                 } else {
                     result(FlutterError(code: "405", message: "NDEF not supported on this type of card", details: nil))
                 }
@@ -343,13 +339,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                             ))
                         }
                         
-                        ndefTag!.writeNDEF(NFCNDEFMessage(records: records), completionHandler: { (error: Error?) in
+                        ndefTag!.writeNDEF(NFCNDEFMessage(records: records)) { (error: Error?) in
                             if let error = error {
                                 result(FlutterError(code: "500", message: "Write NDEF error", details: error.localizedDescription))
                             } else {
                                 result(nil)
                             }
-                        })
+                        }
                     } else {
                         result(FlutterError(code: "400", message: "Bad argument", details: nil))
                     }
@@ -406,13 +402,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     ndefTag = nil
                 }
                 if ndefTag != nil {
-                    ndefTag!.writeLock(completionHandler: { (error: Error?) in
+                    ndefTag!.writeLock() { (error: Error?) in
                         if let error = error {
                             result(FlutterError(code: "500", message: "Lock NDEF error", details: error.localizedDescription))
                         } else {
                             result(nil)
                         }
-                    })
+                    }
                 } else {
                     result(FlutterError(code: "405", message: "NDEF not supported on this type of card", details: nil))
                 }
@@ -523,7 +519,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             result["standard"] = "unknown"
         }
         
-        session.connect(to: firstTag, completionHandler: { (error: Error?) in
+        session.connect(to: firstTag) { (error: Error?) in
             if let error = error {
                 self.result?(FlutterError(code: "500", message: "Error connecting to card", details: error.localizedDescription))
                 self.result = nil
@@ -546,7 +542,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
             
             if ndefTag != nil {
-                ndefTag!.queryNDEFStatus(completionHandler: { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
+                ndefTag!.queryNDEFStatus() { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
                     if error == nil {
                         if status != NFCNDEFStatus.notSupported {
                             result["ndefAvailable"] = true
@@ -562,13 +558,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                     let jsonString = String(data: jsonData, encoding: .utf8)
                     self.result?(jsonString)
                     self.result = nil
-                })
+                }
             } else {
                 let jsonData = try! JSONSerialization.data(withJSONObject: result)
                 let jsonString = String(data: jsonData, encoding: .utf8)
                 self.result?(jsonString)
                 self.result = nil
             }
-        })
+        }
     }
 }
