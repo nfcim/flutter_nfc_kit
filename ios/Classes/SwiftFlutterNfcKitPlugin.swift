@@ -152,23 +152,28 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         }
                     case let .iso15693(tag):
                         if data != nil {
-                            // format: flag, command, [parameter, data]
-                            tag.sendRequest(requestFlags: data![0], commandCode: data![1], data: data!.advanced(by: 2)) { (result: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
-                                switch (result):
-                                case .failure(error):
-                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
-                                case .success((flags, data)):
-                                    var response = Data()
-                                    response.append(flags.rawValue)
-                                    if data != nil {
-                                        response.append(data!)
-                                    }
-                                    if req is String {
-                                        result(response.hexEncodedString())
-                                    } else {
-                                        result(response)
+                            if #available(iOS 14, *) {
+                                // format: flag, command, [parameter, data]
+                                tag.sendRequest(requestFlags: Int(data![0]), commandCode: Int(data![1]), data: data!.advanced(by: 2)) { (res: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
+                                    switch (res) {
+                                    case let .failure(err):
+                                        result(FlutterError(code: "500", message: "Communication error", details: err.localizedDescription))
+                                    case let .success((flags, data)):
+                                        var response = Data()
+                                        response.append(flags.rawValue)
+                                        if data != nil {
+                                            response.append(data!)
+                                        }
+                                        
+                                        if req is String {
+                                            result(response.hexEncodedString())
+                                        } else {
+                                            result(response)
+                                        }
                                     }
                                 }
+                            } else {
+                                result(FlutterError(code: "405", message: "Transceive not supported on iOS version", details: nil))
                             }
                         } else {
                             result(FlutterError(code: "400", message: "No iso15693 command specified", details: nil))
@@ -184,7 +189,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             }
         } else if call.method == "readBlock" {
             let arguments = call.arguments as! [String : Any?]
-
             if case let .iso15693(tag) = tag {
                 let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
@@ -208,7 +212,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         } else if call.method == "writeBlock" {
             let arguments = call.arguments as! [String : Any?]
             let data = (arguments["data"] as! FlutterStandardTypedData).data
-
             if case let .iso15693(tag) = tag {
                 let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
