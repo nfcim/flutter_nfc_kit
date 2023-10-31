@@ -163,7 +163,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             let arguments = call.arguments as! [String : Any?]
 
             if case let .iso15693(tag) = tag {
-                let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
+                let rawFlags = (arguments["iso15693Flag"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
                 let handler = { (dataBlock: Data, error: Error?) in
                     if let error = error {
@@ -187,7 +187,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             let data = (arguments["data"] as! FlutterStandardTypedData).data
 
             if case let .iso15693(tag) = tag {
-                let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
+                let rawFlags = (arguments["iso15693Flag"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
                 let handler = { (error: Error?) in
                     if let error = error {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi' show Uint8;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -8,8 +9,6 @@ import 'package:ndef/ndef.dart' as ndef;
 import 'package:ndef/ndef.dart' show TypeNameFormat; // for generated file
 import 'package:ndef/utilities.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'iso15693flags.dart';
 
 part 'flutter_nfc_kit.g.dart';
 
@@ -162,7 +161,7 @@ class NDEFRawRecord {
   final String type;
 
   /// type name format (see [ndef](https://pub.dev/packages/ndef) package for detail)
-  final ndef.TypeNameFormat typeNameFormat;
+  final TypeNameFormat typeNameFormat;
 
   NDEFRawRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
 
@@ -187,6 +186,90 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
         id: raw.identifier == "" ? null : raw.identifier.toBytes());
   }
 }
+
+
+/// Request flag for ISO 15693 Tags
+class Iso15693RequestFlag {
+  /// bit 1
+  bool dualSubCarriers;
+
+  /// bit 2
+  bool highDataRate;
+
+  /// bit 3
+  bool inventory;
+
+  /// bit 4
+  bool protocolExtension;
+
+  /// bit 5
+  bool select;
+
+  /// bit 6
+  bool address;
+
+  /// bit 7
+  bool option;
+
+  /// bit 8
+  bool commandSpecificBit8;
+
+  /// encode bits to one byte as specified in ISO15693-3
+  Uint8 encode() {
+    var result = 0;
+    if (dualSubCarriers) {
+      result |= 0x01;
+    }
+    if (highDataRate) {
+      result |= 0x02;
+    }
+    if (inventory) {
+      result |= 0x04;
+    }
+    if (protocolExtension) {
+      result |= 0x08;
+    }
+    if (select) {
+      result |= 0x10;
+    }
+    if (address) {
+      result |= 0x20;
+    }
+    if (option) {
+      result |= 0x40;
+    }
+    if (commandSpecificBit8) {
+      result |= 0x80;
+    }
+    return result as Uint8;
+  }
+
+  Iso15693RequestFlag(
+      {this.dualSubCarriers = false,
+      this.highDataRate = false,
+      this.inventory = false,
+      this.protocolExtension = false,
+      this.select = false,
+      this.address = false,
+      this.option = false,
+      this.commandSpecificBit8 = false});
+
+  /// decode bits from one byte as specified in ISO15693-3
+  factory Iso15693RequestFlag.fromRaw(Uint8 raw) {
+    var r = raw as int;
+    var f = Iso15693RequestFlag(
+        dualSubCarriers: (r & 0x01) != 0,
+        highDataRate: (r & 0x02) != 0,
+        inventory: (r & 0x04) != 0,
+        protocolExtension: (r & 0x08) != 0,
+        select: (r & 0x10) != 0,
+        address: (r & 0x20) != 0,
+        option: (r & 0x40) != 0,
+        commandSpecificBit8: (r & 0x80) != 0);
+    return f;
+  }
+}
+
 
 /// Main class of NFC Kit
 class FlutterNfcKit {
@@ -384,12 +467,12 @@ class FlutterNfcKit {
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readBlock(int index,
-      {Iso15693RequestFlag? iso15693Flags,
+      {Iso15693RequestFlag? iso15693Flag,
       bool iso15693ExtendedMode = false}) async {
-    var flags = iso15693Flags ?? Iso15693RequestFlag();
+    var flag = iso15693Flag ?? Iso15693RequestFlag();
     return await _channel.invokeMethod('readBlock', {
       'index': index,
-      'iso15693Flags': flags.encode(),
+      'iso15693Flag': flag.encode(),
       'iso15693ExtendedMode': iso15693ExtendedMode,
     });
   }
@@ -403,14 +486,14 @@ class FlutterNfcKit {
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
   static Future<void> writeBlock<T>(int index, T data,
-      {Iso15693RequestFlag? iso15693Flags,
+      {Iso15693RequestFlag? iso15693Flag,
       bool iso15693ExtendedMode = false}) async {
     assert(T is String || T is Uint8List);
-    var flags = iso15693Flags ?? Iso15693RequestFlag();
+    var flag = iso15693Flag ?? Iso15693RequestFlag();
     await _channel.invokeMethod('writeBlock', {
       'index': index,
       'data': data,
-      'iso15693Flags': flags.encode(),
+      'iso15693Flag': flag.encode(),
       'iso15693ExtendedMode': iso15693ExtendedMode,
     });
   }

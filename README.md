@@ -47,76 +47,9 @@ Make sure you understand the statement above and the protocol before using this 
 
 ## Usage
 
-Simple example:
+Simple example: <example/example.md>.
 
-```dart
-import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
-import 'package:flutter_nfc_kit/iso15963flags.dart';
-import 'package:ndef/ndef.dart' as ndef;
-
-var availability = await FlutterNfcKit.nfcAvailability;
-if (availability != NFCAvailability.available) {
-    // oh-no
-}
-
-// timeout only works on Android, while the latter two messages are only for iOS
-var tag = await FlutterNfcKit.poll(timeout: Duration(seconds: 10),
-  iosMultipleTagMessage: "Multiple tags found!", iosAlertMessage: "Scan your tag");
-
-print(jsonEncode(tag));
-if (tag.type == NFCTagType.iso7816) {
-    var result = await FlutterNfcKit.transceive("00B0950000", Duration(seconds: 5)); // timeout is still Android-only, persist until next change
-    print(result);
-}
-// iOS only: set alert message on-the-fly
-// this will persist until finish()
-await FlutterNfcKit.setIosAlertMessage("hi there!");
-
-// read NDEF records if available
-if (tag.ndefAvailable) {
-  /// decoded NDEF records (see [ndef.NDEFRecord] for details)
-  /// `UriRecord: id=(empty) typeNameFormat=TypeNameFormat.nfcWellKnown type=U uri=https://github.com/nfcim/ndef`
-  for (var record in await FlutterNfcKit.readNDEFRecords(cached: false)) {
-    print(record.toString());
-  }
-  /// raw NDEF records (data in hex string)
-  /// `{identifier: "", payload: "00010203", type: "0001", typeNameFormat: "nfcWellKnown"}`
-  for (var record in await FlutterNfcKit.readNDEFRawRecords(cached: false)) {
-    print(jsonEncode(record).toString());
-  }
-}
-
-// write NDEF records if applicable
-if (tag.ndefWritable) {
-  // decoded NDEF records
-  await FlutterNfcKit.writeNDEFRecords([new ndef.UriRecord.fromUriString("https://github.com/nfcim/flutter_nfc_kit")]);
-  // raw NDEF records
-  await FlutterNfcKit.writeNDEFRawRecords([new NDEFRawRecord("00", "0001", "0002", "0003", ndef.TypeNameFormat.unknown)]);
-}
-
-// Transceive ISO15693 commands (iOS only)
-final Set<Iso15693RequestFlag> flags = {Iso15693RequestFlag.highDataRate};
-// Transceive ISO15693 0x31 command
-await FlutterNfcKit.extendedWriteSingleBlock(
-  requestFlags: flags,
-  blockNumber: 0,
-  dataBlock: [0x06, 0x16, 0x00, 0x00],
-);
-
-// Transceive ISO15693 0x30 command
-Uint8List chunk = await FlutterNfcKit.extendedReadSingleBlock(
-  requestFlags: flags, blockNumber: 64);
-
-
-// Call finish() only once
-await FlutterNfcKit.finish();
-// iOS only: show alert/error message on finish
-await FlutterNfcKit.finish(iosAlertMessage: "Success");
-// or
-await FlutterNfcKit.finish(iosErrorMessage: "Failed");
-```
-
-A more complicated example can be seen in `example` dir.
+Example application: <example/lib>.
 
 Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for more information.
 
