@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:ndef/ndef.dart' as ndef;
+import 'package:ndef/utilities.dart';
 
 class NDEFRecordSetting extends StatefulWidget {
   final ndef.NDEFRecord record;

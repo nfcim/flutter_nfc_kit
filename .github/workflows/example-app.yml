@@ -17,14 +17,17 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: actions/setup-java@v2
       with:
         distribution: 'temurin'
         java-version: '17'
-    - uses: subosito/flutter-action@v1
+    - uses: subosito/flutter-action@v2
       with:
         channel: 'stable' # or: 'dev' or 'beta'
+    - run: dart pub get
+    - run: dart format --output=none --set-exit-if-changed .
+    - run: dart analyze
     - run: flutter pub get
       working-directory: example/
     #- run: flutter test

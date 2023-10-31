@@ -72,10 +72,9 @@ class WebUSB {
   static Future<String> poll(int timeout, bool probeMagic) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
-      var devicePromise = _USB.requestDevice(new _USBDeviceRequestOptions(
-          filters: [
-            new _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)
-          ]));
+      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(filters: [
+        _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)
+      ]));
       dynamic device = await promiseToFuture(devicePromise);
       try {
         await promiseToFuture(callMethod(device, 'open', List.empty()))
@@ -98,7 +97,7 @@ class WebUSB {
         try {
           // PROBE request
           var promise = callMethod(_device, 'controlTransferIn', [
-            new _USBControlTransferParameters(
+            _USBControlTransferParameters(
                 requestType: 'vendor',
                 recipient: 'interface',
                 request: 0xff,
@@ -147,7 +146,7 @@ class WebUSB {
   static Future<Uint8List> _doTransceive(Uint8List capdu) async {
     // send a command (CMD)
     var promise = callMethod(_device, 'controlTransferOut', [
-      new _USBControlTransferParameters(
+      _USBControlTransferParameters(
           requestType: 'vendor',
           recipient: 'interface',
           request: 0,
@@ -159,7 +158,7 @@ class WebUSB {
     // wait for execution to finish (STAT)
     while (true) {
       promise = callMethod(_device, 'controlTransferIn', [
-        new _USBControlTransferParameters(
+        _USBControlTransferParameters(
             requestType: 'vendor',
             recipient: 'interface',
             request: 2,
@@ -184,7 +183,7 @@ class WebUSB {
     }
     // get the response (RESP)
     promise = callMethod(_device, 'controlTransferIn', [
-      new _USBControlTransferParameters(
+      _USBControlTransferParameters(
           requestType: 'vendor',
           recipient: 'interface',
           request: 1,
@@ -221,7 +220,7 @@ class WebUSB {
       throw PlatformException(code: "408", message: "Transceive timeout");
     } on PlatformException catch (e) {
       log.severe("Transceive error", e);
-      throw e;
+      rethrow;
     } on Exception catch (e) {
       log.severe("Transceive error", e);
       throw PlatformException(

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:ndef/ndef.dart' as ndef;
 
-class TextRecordSetting extends StatefulWidget {
+class NDEFTextRecordSetting extends StatefulWidget {
   final ndef.TextRecord record;
-  TextRecordSetting({Key? key, ndef.TextRecord? record})
+  NDEFTextRecordSetting({Key? key, ndef.TextRecord? record})
       : record = record ?? ndef.TextRecord(language: 'en', text: ''),
         super(key: key);
   @override
-  _TextRecordSetting createState() => _TextRecordSetting();
+  _NDEFTextRecordSetting createState() => _NDEFTextRecordSetting();
 }
 
-class _TextRecordSetting extends State<TextRecordSetting> {
+class _NDEFTextRecordSetting extends State<NDEFTextRecordSetting> {
   GlobalKey _formKey = new GlobalKey<FormState>();
   late TextEditingController _languageController;
   late TextEditingController _textController;
