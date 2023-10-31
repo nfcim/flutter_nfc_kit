@@ -188,7 +188,7 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
 }
 
 /// Request flag for ISO 15693 Tags
-class Iso15693RequestFlag {
+class Iso15693RequestFlags {
   /// bit 1
   bool dualSubCarriers;
 
@@ -243,7 +243,7 @@ class Iso15693RequestFlag {
     return result as Uint8;
   }
 
-  Iso15693RequestFlag(
+  Iso15693RequestFlags(
       {this.dualSubCarriers = false,
       this.highDataRate = false,
       this.inventory = false,
@@ -254,9 +254,9 @@ class Iso15693RequestFlag {
       this.commandSpecificBit8 = false});
 
   /// decode bits from one byte as specified in ISO15693-3
-  factory Iso15693RequestFlag.fromRaw(Uint8 raw) {
+  factory Iso15693RequestFlags.fromRaw(Uint8 raw) {
     var r = raw as int;
-    var f = Iso15693RequestFlag(
+    var f = Iso15693RequestFlags(
         dualSubCarriers: (r & 0x01) != 0,
         highDataRate: (r & 0x02) != 0,
         inventory: (r & 0x04) != 0,
@@ -465,12 +465,12 @@ class FlutterNfcKit {
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readBlock(int index,
-      {Iso15693RequestFlag? iso15693Flag,
+      {Iso15693RequestFlags? iso15693Flags,
       bool iso15693ExtendedMode = false}) async {
-    var flag = iso15693Flag ?? Iso15693RequestFlag();
+    var flags = iso15693Flags ?? Iso15693RequestFlags();
     return await _channel.invokeMethod('readBlock', {
       'index': index,
-      'iso15693Flag': flag.encode(),
+      'iso15693Flags': flags.encode(),
       'iso15693ExtendedMode': iso15693ExtendedMode,
     });
   }
@@ -484,14 +484,14 @@ class FlutterNfcKit {
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
   static Future<void> writeBlock<T>(int index, T data,
-      {Iso15693RequestFlag? iso15693Flag,
+      {Iso15693RequestFlags? iso15693Flags,
       bool iso15693ExtendedMode = false}) async {
     assert(T is String || T is Uint8List);
-    var flag = iso15693Flag ?? Iso15693RequestFlag();
+    var flags = iso15693Flags ?? Iso15693RequestFlags();
     await _channel.invokeMethod('writeBlock', {
       'index': index,
       'data': data,
-      'iso15693Flag': flag.encode(),
+      'iso15693Flags': flags.encode(),
       'iso15693ExtendedMode': iso15693ExtendedMode,
     });
   }

@@ -150,6 +150,29 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         } else {
                             result(FlutterError(code: "400", message: "No mifare command specified", details: nil))
                         }
+                    case let .iso15693(tag):
+                        if data != nil {
+                            // format: flag, command, [parameter, data]
+                            tag.sendRequest(requestFlags: data![0], commandCode: data![1], data: data!.advanced(by: 2)) { (result: Result<(NFCISO15693ResponseFlag, Data?), Error>) in
+                                switch (result):
+                                case .failure(error):
+                                    result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
+                                case .success((flags, data)):
+                                    var response = Data()
+                                    response.append(flags.rawValue)
+                                    if data != nil {
+                                        response.append(data!)
+                                    }
+                                    if req is String {
+                                        result(response.hexEncodedString())
+                                    } else {
+                                        result(response)
+                                    }
+                                }
+                            }
+                        } else {
+                            result(FlutterError(code: "400", message: "No iso15693 command specified", details: nil))
+                        }
                     default:
                         result(FlutterError(code: "405", message: "Transceive not supported on this type of card", details: nil))
                     }
@@ -163,11 +186,11 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             let arguments = call.arguments as! [String : Any?]
 
             if case let .iso15693(tag) = tag {
-                let rawFlags = (arguments["iso15693Flag"] as? UInt8) ?? 0
+                let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
                 let handler = { (dataBlock: Data, error: Error?) in
                     if let error = error {
-                        result(self.wrapFlutterError(error))
+                        result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
                     } else {
                         result(dataBlock)
                     }
@@ -187,11 +210,11 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             let data = (arguments["data"] as! FlutterStandardTypedData).data
 
             if case let .iso15693(tag) = tag {
-                let rawFlags = (arguments["iso15693Flag"] as? UInt8) ?? 0
+                let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
                 let extendedMode = (arguments["iso15693ExtendedMode"] as? Bool) ?? false
                 let handler = { (error: Error?) in
                     if let error = error {
-                        result(self.wrapFlutterError(error))
+                        result(FlutterError(code: "500", message: "Communication error", details: error.localizedDescription))
                     } else {
                         result(nil)
                     }
@@ -424,12 +447,6 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         result = nil
         session = nil
         tag = nil
-    }
-    
-    func wrapFlutterError(_ arg: Error) -> FlutterError {
-        return FlutterError(code: "\((arg as NSError).code)",
-                            message: arg.localizedDescription,
-                            details: nil)
     }
     
     // from NFCTagReaderSessionDelegate

@@ -139,3 +139,9 @@
 * Add support for reading / write ISO 15693 tags on iOS (merged #117, partially fixes #68)
 * Fix compiling issues (#123)
 * Other minor fixes (#114, #115)
+
+## 3.4.1
+
+* Fix & split examples to example/ dir
+* Publish examples to pub.dev
+* Support transceiving of raw ISO15693 commands on iOS
