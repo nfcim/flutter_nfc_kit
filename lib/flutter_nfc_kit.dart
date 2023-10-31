@@ -187,7 +187,6 @@ extension NDEFRecordConvert on ndef.NDEFRecord {
   }
 }
 
-
 /// Request flag for ISO 15693 Tags
 class Iso15693RequestFlag {
   /// bit 1
@@ -269,7 +268,6 @@ class Iso15693RequestFlag {
     return f;
   }
 }
-
 
 /// Main class of NFC Kit
 class FlutterNfcKit {

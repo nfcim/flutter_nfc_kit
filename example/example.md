@@ -5,7 +5,6 @@
 ```dart
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:ndef/ndef.dart' as ndef;
-import 'package:ndef/utilities.dart';
 
 var availability = await FlutterNfcKit.nfcAvailability;
 if (availability != NFCAvailability.available) {
@@ -59,7 +58,7 @@ if (tag.type == NFCTagType.iso15693) {
 }
 
 if (tag.type == NFCType.mifare_classic) {
-  await FlutterNfcKit.authenticateSector(0, keyA: "FFFFFFFFFFFF".toBytes());
+  await FlutterNfcKit.authenticateSector(0, keyA: "FFFFFFFFFFFF");
   var data = await FlutterNfcKit.readSector(0); // read one sector, or
   var data = await FlutterNfcKit.readBlock(0); // read one block
 }
