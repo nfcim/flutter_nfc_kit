@@ -581,13 +581,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
             if (mifareInfo != null) {
                 with(mifareInfo!!) {
-                    jsonResult.put("mifareInfo", mapOf(
+                    jsonResult.put("mifareInfo", JSONObject(mapOf(
                         "type" to typeStr,
                         "size" to size,
                         "blockSize" to blockSize,
                         "blockCount" to blockCount,
                         "sectorCount" to sectorCount
-                    ))
+                    )))
                 }
             }
 
