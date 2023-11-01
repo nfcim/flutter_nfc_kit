@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi' show Uint8;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -214,7 +213,7 @@ class Iso15693RequestFlags {
   bool commandSpecificBit8;
 
   /// encode bits to one byte as specified in ISO15693-3
-  Uint8 encode() {
+  int encode() {
     var result = 0;
     if (dualSubCarriers) {
       result |= 0x01;
@@ -240,7 +239,7 @@ class Iso15693RequestFlags {
     if (commandSpecificBit8) {
       result |= 0x80;
     }
-    return result as Uint8;
+    return result;
   }
 
   Iso15693RequestFlags(
@@ -254,8 +253,8 @@ class Iso15693RequestFlags {
       this.commandSpecificBit8 = false});
 
   /// decode bits from one byte as specified in ISO15693-3
-  factory Iso15693RequestFlags.fromRaw(Uint8 raw) {
-    var r = raw as int;
+  factory Iso15693RequestFlags.fromRaw(int r) {
+    assert(r >= 0 && r <= 0xFF, "raw flags must be in range [0, 255]");
     var f = Iso15693RequestFlags(
         dualSubCarriers: (r & 0x01) != 0,
         highDataRate: (r & 0x02) != 0,
