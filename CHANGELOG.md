@@ -142,6 +142,12 @@
 
 ## 3.4.1
 
+**This version is *deprecated* due to a bug in Mifare tag handling. Please upgrade to 3.4.2.**
+
 * Fix & split examples to example/ dir
 * Publish examples to pub.dev
 * Support transceiving of raw ISO15693 commands on iOS
+
+## 3.4.2
+
+* Fix polling error on Mifare tags (#126, #128, #129, #133)
