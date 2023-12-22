@@ -508,9 +508,8 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         case let .feliCa(tag):
             result["type"] = "iso18092"
             result["standard"] = "ISO 18092 (FeliCa)"
-            result["id"] = "unknown"
+            result["id"] = tag.currentIDm.hexEncodedString()
             result["systemCode"] = tag.currentSystemCode.hexEncodedString()
-            result["manufacturer"] = tag.currentIDm.hexEncodedString()
         case let .iso15693(tag):
             result["type"] = "iso15693"
             result["standard"] = "ISO 15693"
@@ -557,10 +556,27 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
                         result["ndefCapacity"] = capacity
                     }
                     // ignore error, just return with ndef disabled
-                    let jsonData = try! JSONSerialization.data(withJSONObject: result)
-                    let jsonString = String(data: jsonData, encoding: .utf8)
-                    self.result?(jsonString)
-                    self.result = nil
+                    switch self.tag {
+                    case let .feliCa(tag):
+                        tag.polling(systemCode: tag.currentSystemCode, requestCode: .noRequest, timeSlot: .max16) { (pmm: Data, _: Data, error: Error?) in
+                            if let error = error {
+                                self.result?(FlutterError(code: "500", message: "Communication error on connect", details: error.localizedDescription))
+                                self.result = nil
+                            } else {
+                                result["manufacturer"] = pmm.hexEncodedString()
+
+                                let jsonData = try! JSONSerialization.data(withJSONObject: result)
+                                let jsonString = String(data: jsonData, encoding: .utf8)
+                                self.result?(jsonString)
+                                self.result = nil
+                            }
+                        }
+                    default:
+                        let jsonData = try! JSONSerialization.data(withJSONObject: result)
+                        let jsonString = String(data: jsonData, encoding: .utf8)
+                        self.result?(jsonString)
+                        self.result = nil
+                    }
                 }
             } else {
                 let jsonData = try! JSONSerialization.data(withJSONObject: result)
