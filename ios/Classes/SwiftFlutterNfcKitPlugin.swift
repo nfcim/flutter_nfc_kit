@@ -508,6 +508,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         case let .feliCa(tag):
             result["type"] = "iso18092"
             result["standard"] = "ISO 18092 (FeliCa)"
+            result["id"] = "unknown"
             result["systemCode"] = tag.currentSystemCode.hexEncodedString()
             result["manufacturer"] = tag.currentIDm.hexEncodedString()
         case let .iso15693(tag):
@@ -518,6 +519,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
         default:
             result["type"] = "unknown"
             result["standard"] = "unknown"
+            result["id"] = "unknown"
         }
         
         session.connect(to: firstTag) { (error: Error?) in
