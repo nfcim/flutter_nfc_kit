@@ -69,7 +69,7 @@ class NFCTag {
   /// The standard that the tag complies with (can be `unknown`)
   final String standard;
 
-  /// Tag ID
+  /// Tag ID (can be `unknown`)
   final String id;
 
   /// ATQA (Type A only, Android only)
