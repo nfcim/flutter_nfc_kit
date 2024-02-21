@@ -50,6 +50,13 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
             } else {
                 result("not_supported")
             }
+        } else if call.method == "restartPolling" {
+            if let session = session {
+                self.result = result
+                session.restartPolling()
+            } else {
+                result(FlutterError(code: "404", message: "No active session", details: nil))
+            }
         } else if call.method == "poll" {
             if session != nil {
                 result(FlutterError(code: "406", message: "Cannot invoke poll in a active session", details: nil))
