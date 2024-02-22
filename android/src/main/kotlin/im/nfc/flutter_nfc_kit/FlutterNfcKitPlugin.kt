@@ -43,6 +43,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var ndefTechnology: Ndef? = null
         private var mifareInfo: MifareInfo? = null
 
+        private var onUserCancelled: (() -> Unit)? = null
+
         private fun TagTechnology.transceive(data: ByteArray, timeout: Int?): ByteArray {
             if (timeout != null) {
                 try {
@@ -119,7 +121,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             "finish" -> {
-                pollingTimeoutTask?.cancel()
+                val isPolling = pollingTimeoutTask?.cancel()
+                if (isPolling == true) {
+                    onUserCancelled?.invoke()
+                }
                 thread {
                     try {
                         val tagTech = tagTechnology
@@ -427,7 +432,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onDetachedFromActivity() {
-        pollingTimeoutTask?.cancel()
+        val isPolling = pollingTimeoutTask?.cancel()
+        if (isPolling == true) {
+            onUserCancelled?.invoke()
+        }
         pollingTimeoutTask = null
         tagTechnology = null
         ndefTechnology = null
@@ -444,7 +452,16 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             if (activity.get() != null) {
                 nfcAdapter.disableReaderMode(activity.get())
             }
+            onUserCancelled = null
             result.error("408", "Polling tag timeout", null)
+        }
+
+        onUserCancelled = {
+            if (activity.get() != null) {
+                nfcAdapter.disableReaderMode(activity.get())
+            }
+            onUserCancelled = null
+            result.error("600", "User cancelled", null)
         }
 
         nfcAdapter.enableReaderMode(activity.get(), { tag ->
