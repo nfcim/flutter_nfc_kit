@@ -45,7 +45,7 @@ android {
 
     defaultConfig {
         applicationId "im.nfc.flutter_nfc_kit_example"
-        minSdkVersion 19
+        minSdkVersion 23
         targetSdkVersion 34
         compileSdkVersion 34
         versionCode flutterVersionCode.toInteger()
