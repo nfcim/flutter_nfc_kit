@@ -151,3 +151,15 @@
 ## 3.4.2
 
 * Fix polling error on Mifare tags (#126, #128, #129, #133)
+
+## 3.5.0
+
+* Some FeliCa improvements by @shiwano:
+  * Fix missing `id` field in FeliCa card reading on iOS (#140)
+  * Set the IDm to the `id` and the PMm to the `manufacturer` on iOS (#140)
+* Add `iosRestartPolling` method by @rostopira (#151)
+* Fix type assertion in `authenticateSector` (fix #148)
+* Refine exception handling in Android plugin (fix #91 and #149)
+* Bump multiple dependencies:
+  * Android plugin / example app: Java 17, AGP 7.4.2, Kotlin 1.9.23, minSdkVersion 26 (fix #127, #144)
+  * `js` library: 0.7.1
