@@ -31,11 +31,11 @@ android {
 
     namespace 'im.nfc.flutter_nfc_kit.example'
 
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     sourceSets {
@@ -46,8 +46,8 @@ android {
     defaultConfig {
         applicationId "im.nfc.flutter_nfc_kit_example"
         minSdkVersion 19
-        targetSdkVersion 33
-        compileSdkVersion 33
+        targetSdkVersion 34
+        compileSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

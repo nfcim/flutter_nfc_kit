@@ -451,7 +451,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             result.error("408", "Polling tag timeout", null)
         }
 
-        val pollHandler: NfcAdapter.ReaderCallback = { tag ->
+        val pollHandler = NfcAdapter.ReaderCallback { tag ->
             pollingTimeoutTask?.cancel()
 
             // common fields
