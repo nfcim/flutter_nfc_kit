@@ -69,7 +69,7 @@ class NFCTag {
   /// The standard that the tag complies with (can be `unknown`)
   final String standard;
 
-  /// Tag ID
+  /// Tag ID (can be `unknown`)
   final String id;
 
   /// ATQA (Type A only, Android only)
@@ -342,6 +342,13 @@ class FlutterNfcKit {
     });
     return NFCTag.fromJson(jsonDecode(data));
   }
+
+  /// Works only on iOS
+  /// Calls NFCTagReaderSession.restartPolling()
+  /// Call this if you have received "Tag connection lost" exception
+  /// This will allow to reconnect to tag without closing system popup
+  static Future<void> iosRestartPolling() async =>
+      await _channel.invokeMethod("restartPolling");
 
   /// Transceive data with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
   /// The [capdu] can be either of type Uint8List or hex string.
