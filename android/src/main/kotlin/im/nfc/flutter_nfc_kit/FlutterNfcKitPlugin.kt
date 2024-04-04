@@ -441,13 +441,17 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, technologies: Int) {
 
         pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
-            if (activity.get() != null) {
-                nfcAdapter.disableReaderMode(activity.get())
+            try {
+                if (activity.get() != null) {
+                    nfcAdapter.disableReaderMode(activity.get())
+                }
+            } catch (ex: Exception) {
+                Log.w(TAG, "Cannot disable reader mode", ex)
             }
             result.error("408", "Polling tag timeout", null)
         }
 
-        nfcAdapter.enableReaderMode(activity.get(), { tag ->
+        val pollHandler: NfcAdapter.ReaderCallback = { tag ->
             pollingTimeoutTask?.cancel()
 
             // common fields
@@ -592,8 +596,14 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             result.success(jsonResult.toString())
+        }
 
-        }, technologies, null)
+        try {
+            nfcAdapter.enableReaderMode(activity.get(), pollHandler, technologies, null)
+        } catch (ex: Exception) {
+            Log.e(TAG, "Cannot enable reader mode", ex)
+            result.error("500", "Cannot enable reader mode", ex.localizedMessage)
+        }
     }
 
     private class MethodResultWrapper(result: Result) : Result {
