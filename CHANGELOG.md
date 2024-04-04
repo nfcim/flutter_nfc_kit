@@ -161,5 +161,5 @@
 * Fix type assertion in `authenticateSector` (fix #148)
 * Refine exception handling in Android plugin (fix #91 and #149)
 * Bump multiple dependencies:
-  * Android plugin / example app: Java 17, AGP 7.4.2, Kotlin 1.9.23, minSdkVersion 26 (fix #127, #144)
+  * Android plugin / example app: Java 17, AGP 7.4.2, Kotlin 1.9.23, minSdkVersion 26 (fix #127, #144, #145)
   * `js` library: 0.7.1
