@@ -11,11 +11,6 @@ jobs:
       fail-fast: false
       matrix:
         variant: [debug, release]
-        include:
-          - variant: debug
-            artifact-path: build/app/outputs/apk/app-debug.apk
-          - variant: release
-            artifact-path: build/app/outputs/flutter-apk/app-release.apk
 
     steps:
     - uses: actions/checkout@v4
@@ -33,9 +28,10 @@ jobs:
     - run: flutter pub get
       working-directory: example/
     #- run: flutter test
-    - run: flutter build apk --debug --verbose
+    - run: flutter build apk --${{ matrix.variant }} --verbose
       working-directory: example/
     - uses: actions/upload-artifact@v4
       with:
         name: example-apk-${{ matrix.variant }}
-        path: example/${{ matrix.artifact-path }}
+        path: example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
+
