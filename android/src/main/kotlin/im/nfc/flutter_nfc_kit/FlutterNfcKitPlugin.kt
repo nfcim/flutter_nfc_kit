@@ -318,6 +318,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 thread {
                     try {
                         val tag = tagTech as MifareClassic
+                        switchTechnology(tagTech, ndefTechnology)
                         // key A takes precedence if present
                         val success = if (keyA != null) {
                             val (key, _) = canonicalizeData(keyA)
