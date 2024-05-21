@@ -489,7 +489,7 @@ class FlutterNfcKit {
   static Future<void> writeBlock<T>(int index, T data,
       {Iso15693RequestFlags? iso15693Flags,
       bool iso15693ExtendedMode = false}) async {
-    assert(T is String || T is Uint8List);
+    assert(data is String || data is Uint8List);
     var flags = iso15693Flags ?? Iso15693RequestFlags();
     await _channel.invokeMethod('writeBlock', {
       'index': index,
