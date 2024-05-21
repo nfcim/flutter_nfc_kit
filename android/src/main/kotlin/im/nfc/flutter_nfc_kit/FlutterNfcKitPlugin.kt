@@ -309,8 +309,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
                 val index = call.argument<Int>("index")!!
-                if (!(0 < index && index < mifareInfo!!.sectorCount!!)) {
-                    result.error("400", "Invalid sector index $index", null)
+                val maxSector = mifareInfo!!.sectorCount!!
+                if (index !in 0 until maxSector) {
+                    result.error("400", "Invalid sector index $index, should be in (0, $maxSector)", null)
                     return
                 }
                 val keyA = call.argument<Any>("keyA")
