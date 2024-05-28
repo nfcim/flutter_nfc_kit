@@ -170,3 +170,9 @@
   * Fix type checking assertions of arguments
   * Add missing call to `connect` in Android plugin
 * Add instruction on resolving `js` dependency conflict in README
+
+## 3.5.2
+
+* Some MiFare Classic fixes by @knthm:
+  * allow authentication of sector 0 (#157)
+  * fix data type check in `writeBlock` (#161)
