@@ -8,6 +8,7 @@ import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
 import android.nfc.tech.*
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import im.nfc.flutter_nfc_kit.ByteUtils.canonicalizeData
 import im.nfc.flutter_nfc_kit.ByteUtils.hexToBytes
@@ -30,7 +31,6 @@ import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationTargetException
 import java.util.*
 import kotlin.concurrent.schedule
-import kotlin.concurrent.thread
 
 
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -43,6 +43,9 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         private var ndefTechnology: Ndef? = null
         private var mifareInfo: MifareInfo? = null
 
+        private lateinit var nfcHandlerThread: HandlerThread
+        private lateinit var nfcHandler: Handler
+
         private fun TagTechnology.transceive(data: ByteArray, timeout: Int?): ByteArray {
             if (timeout != null) {
                 try {
@@ -53,11 +56,25 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             val transceiveMethod = this.javaClass.getMethod("transceive", ByteArray::class.java)
             return transceiveMethod.invoke(this, data) as ByteArray
         }
+
+        private fun runOnNfcThread(result: Result, fn: () -> Unit) {
+            if (!nfcHandler.post(fn)) {
+                result.error("500", "Failed to post job to NFC Handler thread.", null)
+            }
+        }
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        nfcHandlerThread = HandlerThread("NfcHandlerThread")
+        nfcHandlerThread.start()
+        nfcHandler = Handler(nfcHandlerThread.looper)
+
         val channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_nfc_kit")
         channel.setMethodCallHandler(this)
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        nfcHandlerThread.quitSafely()
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -113,14 +130,14 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val timeout = call.argument<Int>("timeout")!!
                 // technology and option bits are set in Dart code
                 val technologies = call.argument<Int>("technologies")!!
-                thread {
+                runOnNfcThread(result) {
                     pollTag(nfcAdapter, result, timeout, technologies)
                 }
             }
 
             "finish" -> {
                 pollingTimeoutTask?.cancel()
-                thread {
+                runOnNfcThread(result) {
                     try {
                         val tagTech = tagTechnology
                         if (tagTech != null && tagTech.isConnected) {
@@ -155,7 +172,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 val (sendingBytes, sendingHex) = canonicalizeData(data)
 
-                thread {
+                runOnNfcThread(result) {
                     try {
                         switchTechnology(tagTech, ndefTechnology)
                         val timeout = call.argument<Int>("timeout")
@@ -187,7 +204,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             "readNDEF" -> {
                 if (!ensureNDEF()) return
                 val ndef = ndefTechnology!!
-                thread {
+                runOnNfcThread(result) {
                     try {
                         switchTechnology(ndef, tagTechnology)
                         // read NDEF message
@@ -236,7 +253,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("405", "Tag not writable", null)
                     return
                 }
-                thread {
+                runOnNfcThread(result) {
                     try {
                         switchTechnology(ndef, tagTechnology)
                         // generate NDEF message
@@ -283,7 +300,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("405", "Tag not writable", null)
                     return
                 }
-                thread {
+                runOnNfcThread(result) {
                     try {
                         switchTechnology(ndef, tagTechnology)
                         if (ndef.makeReadOnly()) {
@@ -316,22 +333,22 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 val keyA = call.argument<Any>("keyA")
                 val keyB = call.argument<Any>("keyB")
-                thread {
+                runOnNfcThread(result) {
                     try {
                         val tag = tagTech as MifareClassic
                         switchTechnology(tagTech, ndefTechnology)
                         // key A takes precedence if present
-                        val success = if (keyA != null) {
+                        if (keyA != null) {
                             val (key, _) = canonicalizeData(keyA)
-                            tag.authenticateSectorWithKeyA(index, key)
+                            val authStatus = tag.authenticateSectorWithKeyA(index, key)
+                            result.success(authStatus)
                         } else if (keyB != null) {
                             val (key, _) = canonicalizeData(keyB)
-                            tag.authenticateSectorWithKeyB(index, key)
+                            val authStatus = tag.authenticateSectorWithKeyB(index, key)
+                            result.success(authStatus)
                         } else {
                             result.error("400", "No keys provided", null)
-                            return@thread
                         }
-                        result.success(success)
                     } catch (ex: IOException) {
                         Log.e(TAG, "Authenticate block error", ex)
                         result.error("500", "Authentication error", ex.localizedMessage)
@@ -351,7 +368,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("400", "Invalid block/page index $index, should be in (0, $maxBlock)", null)
                     return
                 }
-                thread {
+                runOnNfcThread(result) {
                     try {
                         switchTechnology(tagTech, ndefTechnology)
                         tagTech.readBlock(index, result)
@@ -374,7 +391,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("400", "Invalid sector index $index, should be in (0, $maxSector)", null)
                     return
                 }
-                thread {
+                runOnNfcThread(result) {
                     try {
                         val tag = tagTech as MifareClassic
                         switchTechnology(tagTech, ndefTechnology)
@@ -407,7 +424,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     result.error("400", "Invalid data size ${bytes.size}, should be ${mifareInfo!!.blockSize}", null)
                     return
                 }
-                thread {
+                runOnNfcThread(result) {
                     try {
                         switchTechnology(tagTech, ndefTechnology)
                         tagTech.writeBlock(index, bytes, result)
@@ -420,9 +437,6 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
         }
     }
-
-
-    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {}
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = WeakReference(binding.activity)
