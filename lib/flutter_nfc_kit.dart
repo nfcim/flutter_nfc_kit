@@ -49,11 +49,10 @@ class MifareInfo {
   /// Number of sectors (Classic only)
   final int? sectorCount;
 
-  MifareInfo(
-      this.type, this.size, this.blockSize, this.blockCount, this.sectorCount);
+  MifareInfo(this.type, this.size, this.blockSize, this.blockCount, this.sectorCount);
 
-  factory MifareInfo.fromJson(Map<String, dynamic> json) =>
-      _$MifareInfoFromJson(json);
+  factory MifareInfo.fromJson(Map<String, dynamic> json) => _$MifareInfoFromJson(json);
+
   Map<String, dynamic> toJson() => _$MifareInfoToJson(this);
 }
 
@@ -142,6 +141,7 @@ class NFCTag {
       this.mifareInfo);
 
   factory NFCTag.fromJson(Map<String, dynamic> json) => _$NFCTagFromJson(json);
+
   Map<String, dynamic> toJson() => _$NFCTagToJson(this);
 }
 
@@ -164,8 +164,8 @@ class NDEFRawRecord {
 
   NDEFRawRecord(this.identifier, this.payload, this.type, this.typeNameFormat);
 
-  factory NDEFRawRecord.fromJson(Map<String, dynamic> json) =>
-      _$NDEFRawRecordFromJson(json);
+  factory NDEFRawRecord.fromJson(Map<String, dynamic> json) => _$NDEFRawRecordFromJson(json);
+
   Map<String, dynamic> toJson() => _$NDEFRawRecordToJson(this);
 }
 
@@ -173,15 +173,13 @@ class NDEFRawRecord {
 extension NDEFRecordConvert on ndef.NDEFRecord {
   /// Convert an [ndef.NDEFRecord] to encoded [NDEFRawRecord]
   NDEFRawRecord toRaw() {
-    return NDEFRawRecord(id?.toHexString() ?? '', payload?.toHexString() ?? '',
-        type?.toHexString() ?? '', tnf);
+    return NDEFRawRecord(id?.toHexString() ?? '', payload?.toHexString() ?? '', type?.toHexString() ?? '', tnf);
   }
 
   /// Convert an [NDEFRawRecord] to decoded [ndef.NDEFRecord].
   /// Use `NDEFRecordConvert.fromRaw` to invoke.
   static ndef.NDEFRecord fromRaw(NDEFRawRecord raw) {
-    return ndef.decodePartialNdefMessage(
-        raw.typeNameFormat, raw.type.toBytes(), raw.payload.toBytes(),
+    return ndef.decodePartialNdefMessage(raw.typeNameFormat, raw.type.toBytes(), raw.payload.toBytes(),
         id: raw.identifier == "" ? null : raw.identifier.toBytes());
   }
 }
@@ -273,6 +271,44 @@ class FlutterNfcKit {
   /// Default timeout for [transceive] (in milliseconds)
   static const int TRANSCEIVE_TIMEOUT = 5 * 1000;
 
+  static const _tagEventChannel = EventChannel('tagEventChannel');
+
+  static Stream<NFCTag> tags({
+    Duration? timeout,
+    bool androidPlatformSound = true,
+    bool androidCheckNDEF = true,
+    String iosAlertMessage = "Hold your iPhone near the card",
+    String iosMultipleTagMessage = "More than one tags are detected, please leave only one tag and try again.",
+    bool readIso14443A = true,
+    bool readIso14443B = true,
+    bool readIso18092 = false,
+    bool readIso15693 = true,
+    bool probeWebUSBMagic = false,
+  }) {
+    if(Platform.isAndroid) {
+      int technologies = 0x0;
+      // hardcoded bits, corresponding to flags in android.nfc.NfcAdapter
+      if (readIso14443A) technologies |= 0x1;
+      if (readIso14443B) technologies |= 0x2;
+      if (readIso18092) technologies |= 0x4;
+      if (readIso15693) technologies |= 0x8;
+      // iOS can safely ignore these option bits
+      if (!androidCheckNDEF) technologies |= 0x80;
+      if (!androidPlatformSound) technologies |= 0x100;
+      return _tagEventChannel
+          .receiveBroadcastStream({
+        'timeout': timeout?.inMilliseconds ?? POLL_TIMEOUT,
+        'iosAlertMessage': iosAlertMessage,
+        'iosMultipleTagMessage': iosMultipleTagMessage,
+        'technologies': technologies,
+        'probeWebUSBMagic': probeWebUSBMagic,
+      })
+          .map((event) => NFCTag.fromJson(jsonDecode(event)));
+    } else {
+      throw "${Platform.operatingSystem} is not supported";
+    }
+  }
+
   /// Default timeout for [poll] (in milliseconds)
   static const int POLL_TIMEOUT = 20 * 1000;
 
@@ -280,10 +316,8 @@ class FlutterNfcKit {
 
   /// get the availablility of NFC reader on this device
   static Future<NFCAvailability> get nfcAvailability async {
-    final String availability =
-        await _channel.invokeMethod('getNFCAvailability');
-    return NFCAvailability.values
-        .firstWhere((it) => it.toString() == "NFCAvailability.$availability");
+    final String availability = await _channel.invokeMethod('getNFCAvailability');
+    return NFCAvailability.values.firstWhere((it) => it.toString() == "NFCAvailability.$availability");
   }
 
   /// Try to poll a NFC tag from reader.
@@ -311,8 +345,7 @@ class FlutterNfcKit {
     bool androidPlatformSound = true,
     bool androidCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
-    String iosMultipleTagMessage =
-        "More than one tags are detected, please leave only one tag and try again.",
+    String iosMultipleTagMessage = "More than one tags are detected, please leave only one tag and try again.",
     bool readIso14443A = true,
     bool readIso14443B = true,
     bool readIso18092 = false,
@@ -343,8 +376,7 @@ class FlutterNfcKit {
   /// Calls NFCTagReaderSession.restartPolling()
   /// Call this if you have received "Tag connection lost" exception
   /// This will allow to reconnect to tag without closing system popup
-  static Future<void> iosRestartPolling() async =>
-      await _channel.invokeMethod("restartPolling");
+  static Future<void> iosRestartPolling() async => await _channel.invokeMethod("restartPolling");
 
   /// Transceive data with the card / tag in the format of APDU (iso7816) or raw commands (other technologies).
   /// The [capdu] can be either of type Uint8List or hex string.
@@ -359,10 +391,8 @@ class FlutterNfcKit {
   /// Timeout is reset to default value when [finish] is called, and could be changed by multiple calls to [transceive].
   static Future<T> transceive<T>(T capdu, {Duration? timeout}) async {
     assert(capdu is String || capdu is Uint8List);
-    return await _channel.invokeMethod('transceive', {
-      'data': capdu,
-      'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT
-    });
+    return await _channel
+        .invokeMethod('transceive', {'data': capdu, 'timeout': timeout?.inMilliseconds ?? TRANSCEIVE_TIMEOUT});
   }
 
   /// Read NDEF records (in decoded format, Android & iOS only).
@@ -372,9 +402,7 @@ class FlutterNfcKit {
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// See [ndef](https://pub.dev/packages/ndef) for usage of [ndef.NDEFRecord].
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool? cached}) async {
-    return (await readNDEFRawRecords(cached: cached))
-        .map((r) => NDEFRecordConvert.fromRaw(r))
-        .toList();
+    return (await readNDEFRawRecords(cached: cached)).map((r) => NDEFRecordConvert.fromRaw(r)).toList();
   }
 
   /// Read NDEF records (in raw data, Android & iOS only).
@@ -384,11 +412,8 @@ class FlutterNfcKit {
   /// On Android, this would cause any other open TagTechnology to be closed.
   /// Please use [readNDEFRecords] if you want decoded NDEF records
   static Future<List<NDEFRawRecord>> readNDEFRawRecords({bool? cached}) async {
-    final String data =
-        await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
-    return (jsonDecode(data) as List<dynamic>)
-        .map((object) => NDEFRawRecord.fromJson(object))
-        .toList();
+    final String data = await _channel.invokeMethod('readNDEF', {'cached': cached ?? false});
+    return (jsonDecode(data) as List<dynamic>).map((object) => NDEFRawRecord.fromJson(object)).toList();
   }
 
   /// Write NDEF records (in decoded format, Android & iOS only).
@@ -417,10 +442,7 @@ class FlutterNfcKit {
   /// On iOS, use [iosAlertMessage] to indicate success or [iosErrorMessage] to indicate failure.
   /// If both parameters are set, [iosErrorMessage] will be used.
   /// On Web, set [closeWebUSB] to `true` to end the session, so that user can choose a different device in next [poll].
-  static Future<void> finish(
-      {String? iosAlertMessage,
-      String? iosErrorMessage,
-      bool? closeWebUSB}) async {
+  static Future<void> finish({String? iosAlertMessage, String? iosErrorMessage, bool? closeWebUSB}) async {
     return await _channel.invokeMethod('finish', {
       'iosErrorMessage': iosErrorMessage,
       'iosAlertMessage': iosAlertMessage,
@@ -450,12 +472,9 @@ class FlutterNfcKit {
   /// Either one of [keyA] or [keyB] must be provided.
   /// If both are provided, [keyA] will be used.
   /// Returns whether authentication succeeds.
-  static Future<bool> authenticateSector<T>(int index,
-      {T? keyA, T? keyB}) async {
-    assert((keyA is String || keyA is Uint8List) ||
-        (keyB is String || keyB is Uint8List));
-    return await _channel.invokeMethod(
-        'authenticateSector', {'index': index, 'keyA': keyA, 'keyB': keyB});
+  static Future<bool> authenticateSector<T>(int index, {T? keyA, T? keyB}) async {
+    assert((keyA is String || keyA is Uint8List) || (keyB is String || keyB is Uint8List));
+    return await _channel.invokeMethod('authenticateSector', {'index': index, 'keyA': keyA, 'keyB': keyB});
   }
 
   /// Read one unit of data (specified below) from:
@@ -468,8 +487,7 @@ class FlutterNfcKit {
   /// For MIFARE Ultralight tags, four consecutive pages will be read.
   /// Returns data in [Uint8List].
   static Future<Uint8List> readBlock(int index,
-      {Iso15693RequestFlags? iso15693Flags,
-      bool iso15693ExtendedMode = false}) async {
+      {Iso15693RequestFlags? iso15693Flags, bool iso15693ExtendedMode = false}) async {
     var flags = iso15693Flags ?? Iso15693RequestFlags();
     return await _channel.invokeMethod('readBlock', {
       'index': index,
@@ -487,8 +505,7 @@ class FlutterNfcKit {
   /// [index] refers to the block / page index.
   /// For MIFARE Classic tags, you must first authenticate against the corresponding sector.
   static Future<void> writeBlock<T>(int index, T data,
-      {Iso15693RequestFlags? iso15693Flags,
-      bool iso15693ExtendedMode = false}) async {
+      {Iso15693RequestFlags? iso15693Flags, bool iso15693ExtendedMode = false}) async {
     assert(data is String || data is Uint8List);
     var flags = iso15693Flags ?? Iso15693RequestFlags();
     await _channel.invokeMethod('writeBlock', {
