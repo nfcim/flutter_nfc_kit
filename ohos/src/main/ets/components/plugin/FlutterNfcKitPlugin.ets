@@ -5,19 +5,46 @@ import {
   MethodCallHandler,
   MethodChannel,
   MethodResult,
-} from '@ohos/flutter_ohos';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { tag } from '@kit.ConnectivityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
-import { abilityAccessCtrl, bundleManager, PermissionRequestResult } from '@kit.AbilityKit';
+} from "@ohos/flutter_ohos";
+import { BusinessError } from "@kit.BasicServicesKit";
+import { tag } from "@kit.ConnectivityKit";
+import { hilog } from "@kit.PerformanceAnalysisKit";
+import { abilityAccessCtrl, bundleManager, PermissionRequestResult } from "@kit.AbilityKit";
+
+interface NFCTag {
+  type: string;
+  standard: string;
+  id: string;
+}
+
+function toHexString(arr: number[]): string {
+  let res = "";
+  for (let num of arr) {
+    let part = num.toString(16);
+    if (part.length === 1) {
+      part = "0" + part;
+    }
+    res += part;
+  }
+  return res;
+}
+
+function fromHexString(s: string): number[] {
+  let res: number[] = [];
+  for (let i = 0;i < s.length;i += 2) {
+    res.push(parseInt(s.substring(i, i+2), 16));
+  }
+  return res;
+}
 
 /** FlutterNfcKitPlugin **/
 export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHandler {
   private channel: MethodChannel | null = null;
   private tagInfo: tag.TagInfo | null = null;
+  private tag: tag.TagSession | null = null;
 
   constructor() {
-    hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Plugin constructed');
+    hilog.info(0x0000, "FlutterNfcKitPlugin", "Plugin constructed");
   }
 
   getUniqueClassName(): string {
@@ -25,25 +52,29 @@ export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHan
   }
 
   onAttachedToEngine(binding: FlutterPluginBinding): void {
-    hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Plugin attached');
+    hilog.info(0x0000, "FlutterNfcKitPlugin", "Plugin attached");
     this.channel = new MethodChannel(binding.getBinaryMessenger(), "flutter_nfc_kit");
     this.channel.setMethodCallHandler(this)
   }
 
   onDetachedFromEngine(binding: FlutterPluginBinding): void {
-    hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Plugin detached');
+    hilog.info(0x0000, "FlutterNfcKitPlugin", "Plugin detached");
     if (this.channel != null) {
       this.channel.setMethodCallHandler(null)
     }
   }
 
   onMethodCall(call: MethodCall, result: MethodResult): void {
-    hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Plugin got method call: %{public}s', JSON.stringify(call));
-
+    hilog.info(0x0000, "FlutterNfcKitPlugin", "Plugin got method call: %{public}s", JSON.stringify(call));
     try {
+      let elementName: bundleManager.ElementName = {
+        bundleName: getContext().applicationInfo.name,
+        abilityName: "EntryAbility" // TODO: do not hardcode
+      };
+
       if (call.method == "getNFCAvailability") {
         // https://developer.huawei.com/consumer/cn/doc/harmonyos-references-V5/js-apis-nfccontroller-V5#nfccontrollerisnfcavailabledeprecated
-        const isNFCAvailable = canIUse('SystemCapability.Communication.NFC.Core');
+        const isNFCAvailable = canIUse("SystemCapability.Communication.NFC.Core");
         if (isNFCAvailable) {
           result.success("available");
         } else {
@@ -51,53 +82,78 @@ export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHan
         }
       } else if (call.method == "poll") {
         const atManager: abilityAccessCtrl.AtManager = abilityAccessCtrl.createAtManager();
-        atManager.requestPermissionsFromUser(getContext(), ['ohos.permission.NFC_TAG']).then((data: PermissionRequestResult) => {
-          hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Request nfc permission done: data=%{public}s', JSON.stringify(data));
+        atManager.requestPermissionsFromUser(getContext(), ["ohos.permission.NFC_TAG"]).then((data: PermissionRequestResult) => {
+          hilog.info(0x0000, "FlutterNfcKitPlugin", "Request nfc permission done: data=%{public}s", JSON.stringify(data));
           // poll for tag
           // https://developer.huawei.com/consumer/cn/doc/harmonyos-references-V5/js-apis-nfctag-V5#tagon11
           // TODO: compute discTech from args
           let discTech : number[] = [tag.NFC_A, tag.NFC_B];
 
-          let elementName : bundleManager.ElementName = {
-            bundleName: getContext().applicationInfo.name,
-            abilityName: "EntryAbility" // TODO: do not hardcode
-          };
-
-          tag.on('readerMode', elementName, discTech, (err: BusinessError, tagInfo: tag.TagInfo) => {
-            hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Got tag: err=%{public}s, tagInfo=%{public}s', JSON.stringify(err), JSON.stringify(tagInfo));
+          tag.on("readerMode", elementName, discTech, (err: BusinessError, tagInfo: tag.TagInfo) => {
+            hilog.info(0x0000, "FlutterNfcKitPlugin", "Got tag: err=%{public}s, tagInfo=%{public}s", JSON.stringify(err), JSON.stringify(tagInfo));
             if (err) {
               result.error("500", "Failed to poll", err);
             } else {
               this.tagInfo = tagInfo;
-              result.success(JSON.stringify({
-                type: 'unknown',
-                standard: 'TODO',
-                id: 'TODO',
-                atqa: 'TODO',
-                sak: 'TODO',
-                historicalBytes: 'TODO',
-                hiLayerResponse: 'TODO',
-                protocolInfo: 'TODO',
-                applicationData: 'TODO',
-                manufacturer: 'TODO',
-                systemCode: 'TODO',
-                dsfId: 'TODO',
-                ndefAvailable: false,
-                ndefCapacity: 0,
-                ndefWritable: false,
-                ndefCanMakeReadOnly: false
-              }));
+
+              let res: NFCTag = {
+                type: "unknown",
+                standard: "unknown",
+                id: toHexString(tagInfo.uid),
+              };
+
+              if (tagInfo.technology.includes(tag.NFC_A)) {
+                let aTag = tag.getNfcA(tagInfo);
+                if (tagInfo.technology.includes(tag.ISO_DEP)) {
+                  let isoDepTag = tag.getIsoDep(tagInfo);
+                  this.tag = isoDepTag;
+                  res.type = "iso7816";
+                  res.standard = "ISO 14443-4 (Type A)";
+                } else {
+                  this.tag = aTag;
+                  res.type = "unknown";
+                  res.standard = "ISO 14443-3 (Type A)";
+                }
+              } else if (tagInfo.technology.includes(tag.NFC_B)) {
+                let bTag = tag.getNfcB(tagInfo);
+                if (tagInfo.technology.includes(tag.ISO_DEP)) {
+                  let isoDepTag = tag.getIsoDep(tagInfo);
+                  this.tag = isoDepTag;
+                  res.type = "iso7816";
+                  res.standard = "ISO 14443-4 (Type B)";
+                } else {
+                  this.tag = bTag;
+                  res.type = "unknown";
+                  res.standard = "ISO 14443-3 (Type B)";
+                }
+              } else {
+                // TODO: more types
+              }
+              result.success(JSON.stringify(res));
             }
           });
         }).catch((err: BusinessError) => {
-          hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Failed to request nfc permission: err=%{public}s', JSON.stringify(err));
+          hilog.info(0x0000, "FlutterNfcKitPlugin", "Failed to request nfc permission: err=%{public}s", JSON.stringify(err));
           result.error("500", "Permission denied", err);
         });
+      } else if (call.method == "transceive") {
+        let tx: string = call.argument("data");
+        this.tag!.connect();
+        this.tag!.transmit(fromHexString(tx)).then((rx) => {
+          result.success(toHexString(rx));
+        }).catch((err: BusinessError) => {
+          hilog.info(0x0000, "FlutterNfcKitPlugin", "Failed to transceive: err=%{public}s", JSON.stringify(err));
+          result.error("500", "Transceive failed", err);
+        });
+      } else if (call.method == "finish") {
+        // turn off reader mode
+        tag.off("readerMode", elementName, (err: BusinessError, tagInfo: tag.TagInfo) => {});
+        result.success("");
       } else {
         result.notImplemented();
       }
     } catch (e) {
-      hilog.info(0x0000, 'FlutterNfcKitPlugin', 'Got error: %{public}s', (e as BusinessError).message);
+      hilog.info(0x0000, "FlutterNfcKitPlugin", "Got error: %{public}s", (e as BusinessError).message);
       result.error("500", "Got unexpected exception", e);
     }
   }
