@@ -20,6 +20,7 @@ import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -36,15 +37,17 @@ import kotlin.concurrent.schedule
 class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     companion object {
+        private val TAG_EVENT_CHANNEL = "tagEventChannel"
         private val TAG = FlutterNfcKitPlugin::class.java.name
         private var activity: WeakReference<Activity> = WeakReference(null)
         private var pollingTimeoutTask: TimerTask? = null
-        private var tagTechnology: TagTechnology? = null
-        private var ndefTechnology: Ndef? = null
-        private var mifareInfo: MifareInfo? = null
+        var tagTechnology: TagTechnology? = null
+        var ndefTechnology: Ndef? = null
+        var mifareInfo: MifareInfo? = null
 
         private lateinit var nfcHandlerThread: HandlerThread
         private lateinit var nfcHandler: Handler
+        private lateinit var tagEventHandler: EventChannel
 
         private fun TagTechnology.transceive(data: ByteArray, timeout: Int?): ByteArray {
             if (timeout != null) {
@@ -88,6 +91,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
         val channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_nfc_kit")
         channel.setMethodCallHandler(this)
+
+        tagEventHandler = EventChannel(flutterPluginBinding.binaryMessenger, TAG_EVENT_CHANNEL)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -385,6 +390,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = WeakReference(binding.activity)
+        tagEventHandler.setStreamHandler(TagEventHandler(activity))
     }
 
     override fun onDetachedFromActivity() {

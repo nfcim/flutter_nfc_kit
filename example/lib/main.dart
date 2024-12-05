@@ -33,6 +33,8 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   String? _result, _writeResult, _mifareResult;
   late TabController _tabController;
   List<ndef.NDEFRecord>? _records;
+  Stream<NFCTag>? _stream;
+  StreamSubscription<NFCTag>? _streamSubscription;
 
   @override
   void dispose() {
@@ -145,6 +147,63 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     await FlutterNfcKit.finish(iosAlertMessage: "Finished!");
                   },
                   child: Text('Start polling'),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      if(_stream != null) {
+                        _streamSubscription?.cancel();
+                        setState(() {
+                          _stream = null;
+                        });
+                        return;
+                      }
+                      setState(() {
+                        _stream = FlutterNfcKit.tags();
+                      });
+                      _streamSubscription = _stream!.listen((tag) {
+                        _tag = tag;
+                        _mifareResult = null;
+                        if (tag.standard == "ISO 14443-4 (Type B)") {
+                          FlutterNfcKit.transceive("00B0950000").then((result1) {
+                            FlutterNfcKit.transceive(
+                                "00A4040009A00000000386980701").then((result2) {
+                              setState(() {
+                                _result = '1: $result1\n2: $result2\n';
+                              });
+                            });
+                          });
+                        } else if (tag.type == NFCTagType.iso18092) {
+                          FlutterNfcKit.transceive("060080080100").then((result1) {
+                            setState(() {
+                              _result = '1: $result1\n';
+                            });
+                          });
+                        } else if (tag.ndefAvailable ?? false) {
+                          FlutterNfcKit.readNDEFRecords().then((ndefRecords) {
+                            var ndefString = '';
+                            for (int i = 0; i < ndefRecords.length; i++) {
+                              ndefString += '${i + 1}: ${ndefRecords[i]}\n';
+                            }
+                            setState(() {
+                              _result = ndefString;
+                            });
+                          });
+                        } else if (tag.type == NFCTagType.webusb) {
+                          FlutterNfcKit.transceive(
+                              "00A4040006D27600012401").then((r) {
+                            print(r);
+                          });
+                        }
+                      });
+                    } catch (e) {
+                      setState(() {
+                        _result = 'error: $e';
+                      });
+                    }
+                  },
+                  child: Text(_stream != null ? 'Stop Streaming' : 'Start Streaming'),
                 ),
                 const SizedBox(height: 10),
                 Padding(
