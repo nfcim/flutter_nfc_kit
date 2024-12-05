@@ -5,5 +5,7 @@
   "main": "",
   "author": "",
   "license": "",
-  "dependencies": {}
+  "dependencies": {
+    "flutter_nfc_kit": "file:../har/flutter_nfc_kit.har"
+  }
 }

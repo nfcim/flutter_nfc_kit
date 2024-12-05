@@ -33,6 +33,9 @@ flutter:
         pluginClass: FlutterNfcKitPlugin
       ios:
         pluginClass: FlutterNfcKitPlugin
+      ohos:
+        pluginClass: FlutterNfcKitPlugin
+        package: im.nfc.flutter_nfc_kit
       web:
         pluginClass: FlutterNfcKitWeb
         fileName: flutter_nfc_kit_web.dart

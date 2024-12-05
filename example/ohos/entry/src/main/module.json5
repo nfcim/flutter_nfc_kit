@@ -21,6 +21,18 @@
     "deviceTypes": [
       "phone"
     ],
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.NFC_TAG",
+        "reason": "$string:EntryAbility_nfc_tag_permission",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "inuse"
+        }
+      }
+    ],
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
@@ -45,9 +57,6 @@
           }
         ]
       }
-    ],
-    "requestPermissions": [
-      {"name" :  "ohos.permission.INTERNET"},
     ]
   }
 }

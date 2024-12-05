@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "flutter_nfc_kit",
+    "type": "har",
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ]
+  }
+}
