@@ -176,3 +176,14 @@
 * Some MiFare Classic fixes by @knthm:
   * allow authentication of sector 0 (#157)
   * fix data type check in `writeBlock` (#161)
+
+## 3.6.0
+
+* Remove annoying dependency on `js` library, replace with `dart:js_interop`
+* Contributions on Android plugin from @knthm:
+  * Dedicated handler thread for IO operations (#167)
+  * More elegant exception handling (#169)
+* Bump tool versions & dependencies of Android plugin and example app:
+  * Related issues / PRs: #179 #184, #186, #187
+  * Now using Java 17, Gradle 8.9, MinSDKVer 26, AGP 8.7, Kotlin 2.1.0
+* Bump dependencies of iOS plugin (minimum is now iOS 12.0)
