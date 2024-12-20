@@ -3,7 +3,7 @@
 /// Library that inter-ops with JavaScript on WebUSB APIs.
 ///
 /// Note: you should **NEVER use this library directly**, but instead use the [FlutterNfcKit] class in your project.
-library webusb_interop;
+library;
 
 import 'dart:convert';
 import 'dart:js_util';

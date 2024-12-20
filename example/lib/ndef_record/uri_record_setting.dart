@@ -4,9 +4,8 @@ import 'package:ndef/ndef.dart' as ndef;
 
 class NDEFUriRecordSetting extends StatefulWidget {
   final ndef.UriRecord record;
-  NDEFUriRecordSetting({Key? key, ndef.UriRecord? record})
-      : record = record ?? ndef.UriRecord(prefix: '', content: ''),
-        super(key: key);
+  NDEFUriRecordSetting({super.key, ndef.UriRecord? record})
+      : record = record ?? ndef.UriRecord(prefix: '', content: '');
   @override
   State createState() => _NDEFUriRecordSetting();
 }
@@ -49,7 +48,7 @@ class _NDEFUriRecordSetting extends State<NDEFUriRecordSetting> {
                               }).toList(),
                               onChanged: (value) {
                                 setState(() {
-                                  _dropButtonValue = value as String?;
+                                  _dropButtonValue = value;
                                 });
                               },
                             ),

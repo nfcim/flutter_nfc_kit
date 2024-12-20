@@ -4,9 +4,8 @@ import 'package:ndef/ndef.dart' as ndef;
 
 class NDEFTextRecordSetting extends StatefulWidget {
   final ndef.TextRecord record;
-  NDEFTextRecordSetting({Key? key, ndef.TextRecord? record})
-      : record = record ?? ndef.TextRecord(language: 'en', text: ''),
-        super(key: key);
+  NDEFTextRecordSetting({super.key, ndef.TextRecord? record})
+      : record = record ?? ndef.TextRecord(language: 'en', text: '');
   @override
   State createState() => _NDEFTextRecordSetting();
 }

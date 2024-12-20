@@ -20,7 +20,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  lints: ^4.0.0
+  lints: ^5.1.1
   build_runner: ^2.4.9
   json_serializable: ^6.7.1
 

@@ -5,9 +5,8 @@ import 'package:ndef/utilities.dart';
 
 class NDEFRecordSetting extends StatefulWidget {
   final ndef.NDEFRecord record;
-  NDEFRecordSetting({Key? key, ndef.NDEFRecord? record})
-      : record = record ?? ndef.NDEFRecord(),
-        super(key: key);
+  NDEFRecordSetting({super.key, ndef.NDEFRecord? record})
+      : record = record ?? ndef.NDEFRecord();
   @override
   State createState() => _NDEFRecordSetting();
 }
