@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'nfc.im' => 'nfsee@nfc.im' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'flutter_nfc_kit/Sources/flutter_nfc_kit/**/*.swift'
   s.dependency 'Flutter'
   s.weak_frameworks = ['CoreNFC']
   s.platform = :ios, '13.0'

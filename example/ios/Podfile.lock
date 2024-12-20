@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_nfc_kit: 965c98c3fa68f5609f1cc89abb968fe1b8ffdbaa
+  flutter_nfc_kit: 7a9a03f5ddd92ad95c470aa4b120cd123f4d4be7
 
 PODFILE CHECKSUM: c4c93c5f6502fe2754f48404d3594bf779584011
 
