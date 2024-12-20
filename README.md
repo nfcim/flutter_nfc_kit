@@ -23,20 +23,18 @@ Note that due to API limitations, not all operations are supported on all platfo
 
 This library uses [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding.
 
-## Dependency issue of `js` package
-
-Since v3.5.0, `flutter_nfc_kit` depends on `js: ^0.7.1`. This might lead to a conflict with other packages that depend on `js: ^0.6.4`. If you do not use this plugin in a web environment, you can safely add the following to your `pubspec.yaml` to resolve the conflict:
-
-```yaml
-dependency_overrides:
-  js: "^0.6.4"
-```
-
 ## Setup
 
-Thank [nfc_manager](https://pub.dev/packages/nfc_manager) plugin for these instructions.
-
 ### Android
+
+We have the following minimum version requirements for Android plugin:
+
+* Gradle 8.9
+* Java 17 (for compiling, see [Gradle doc](https://docs.gradle.org/current/userguide/toolchains.html))
+* Android SDK 26
+* Android Gradle Plugin 8.7
+
+To use this plugin on Android, you also need to:
 
 * Add [android.permission.NFC](https://developer.android.com/reference/android/Manifest.permission.html#NFC) to your `AndroidManifest.xml`.
 
