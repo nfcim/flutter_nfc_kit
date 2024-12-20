@@ -182,6 +182,7 @@
 This is a release candidate for 3.6.0. Please test it and report any issues.
 
 * Remove annoying dependency on `js` library, replace with `dart:js_interop`
+* Remove dependency on `dart:io`
 * Contributions on Android plugin from @knthm:
   * Dedicated handler thread for IO operations (#167)
   * More elegant exception handling (#169)
