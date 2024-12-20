@@ -9,10 +9,10 @@ import 'dart:convert';
 import 'dart:js_util';
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:js_interop';
 
 import 'package:convert/convert.dart';
 import 'package:flutter/services.dart';
-import 'package:js/js.dart';
 import 'package:logging/logging.dart';
 
 final log = Logger('FlutterNFCKit:WebUSB');
