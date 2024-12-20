@@ -177,7 +177,9 @@
   * allow authentication of sector 0 (#157)
   * fix data type check in `writeBlock` (#161)
 
-## 3.6.0
+## 3.6.0-rc.1
+
+This is a release candidate for 3.6.0. Please test it and report any issues.
 
 * Remove annoying dependency on `js` library, replace with `dart:js_interop`
 * Contributions on Android plugin from @knthm:
