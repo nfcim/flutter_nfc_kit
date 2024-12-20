@@ -15,9 +15,11 @@ group 'im.nfc.flutter_nfc_kit'
 
 android {
 
-    namespace 'im.nfc.flutter_nfc_kit'
+    if (project.android.hasProperty("namespace")) {
+        namespace 'im.nfc.flutter_nfc_kit'
+    }
 
-    compileSdkVersion 34
+    compileSdk 35
     
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -33,6 +35,7 @@ android {
     }
     defaultConfig {
         minSdkVersion 26
+        targetSdk flutter.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lintOptions {
@@ -41,7 +44,4 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KotlinVersion"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$KotlinVersion"
-    implementation 'androidx.core:core-ktx:1.12.0'
 }
