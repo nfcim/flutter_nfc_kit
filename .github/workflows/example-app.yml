@@ -33,5 +33,6 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: example-apk-${{ matrix.variant }}
-        path: example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
-
+        path: |
+          example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
+          example/build/reports/*
