@@ -9,11 +9,11 @@ class NDEFRecordSetting extends StatefulWidget {
       : record = record ?? ndef.NDEFRecord(),
         super(key: key);
   @override
-  _NDEFRecordSetting createState() => _NDEFRecordSetting();
+  State createState() => _NDEFRecordSetting();
 }
 
 class _NDEFRecordSetting extends State<NDEFRecordSetting> {
-  GlobalKey _formKey = new GlobalKey<FormState>();
+  final GlobalKey _formKey = GlobalKey<FormState>();
   late TextEditingController _identifierController;
   late TextEditingController _payloadController;
   late TextEditingController _typeController;
@@ -25,25 +25,25 @@ class _NDEFRecordSetting extends State<NDEFRecordSetting> {
 
     if (widget.record.id == null) {
       _identifierController =
-          new TextEditingController.fromValue(TextEditingValue(text: ""));
+          TextEditingController.fromValue(TextEditingValue(text: ""));
     } else {
-      _identifierController = new TextEditingController.fromValue(
+      _identifierController = TextEditingController.fromValue(
           TextEditingValue(text: widget.record.id!.toHexString()));
     }
     if (widget.record.payload == null) {
       _payloadController =
-          new TextEditingController.fromValue(TextEditingValue(text: ""));
+          TextEditingController.fromValue(TextEditingValue(text: ""));
     } else {
-      _payloadController = new TextEditingController.fromValue(
+      _payloadController = TextEditingController.fromValue(
           TextEditingValue(text: widget.record.payload!.toHexString()));
     }
     if (widget.record.encodedType == null &&
         widget.record.decodedType == null) {
       // bug in ndef package (fixed in newest version)
       _typeController =
-          new TextEditingController.fromValue(TextEditingValue(text: ""));
+          TextEditingController.fromValue(TextEditingValue(text: ""));
     } else {
-      _typeController = new TextEditingController.fromValue(
+      _typeController = TextEditingController.fromValue(
           TextEditingValue(text: widget.record.type!.toHexString()));
     }
     _dropButtonValue = ndef.TypeNameFormat.values.indexOf(widget.record.tnf);

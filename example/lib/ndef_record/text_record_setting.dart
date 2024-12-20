@@ -8,11 +8,11 @@ class NDEFTextRecordSetting extends StatefulWidget {
       : record = record ?? ndef.TextRecord(language: 'en', text: ''),
         super(key: key);
   @override
-  _NDEFTextRecordSetting createState() => _NDEFTextRecordSetting();
+  State createState() => _NDEFTextRecordSetting();
 }
 
 class _NDEFTextRecordSetting extends State<NDEFTextRecordSetting> {
-  GlobalKey _formKey = new GlobalKey<FormState>();
+  final GlobalKey _formKey = GlobalKey<FormState>();
   late TextEditingController _languageController;
   late TextEditingController _textController;
   late int _dropButtonValue;
@@ -21,9 +21,9 @@ class _NDEFTextRecordSetting extends State<NDEFTextRecordSetting> {
   initState() {
     super.initState();
 
-    _languageController = new TextEditingController.fromValue(
+    _languageController = TextEditingController.fromValue(
         TextEditingValue(text: widget.record.language!));
-    _textController = new TextEditingController.fromValue(
+    _textController = TextEditingController.fromValue(
         TextEditingValue(text: widget.record.text!));
     _dropButtonValue = ndef.TextEncoding.values.indexOf(widget.record.encoding);
   }
