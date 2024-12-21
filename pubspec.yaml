@@ -15,14 +15,14 @@ dependencies:
   json_annotation: ^4.8.1
   ndef: ^0.3.3
   convert: ^3.1.1
-  logging: ^1.0.0
+  logging: ^1.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  lints: ^5.1.1
-  build_runner: ^2.4.9
-  json_serializable: ^6.7.1
+  lints: ^2.0.1
+  build_runner: ^2.3.3
+  json_serializable: ^6.6.2
 
 flutter:
   plugin:
