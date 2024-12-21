@@ -38,7 +38,7 @@ To use this plugin on Android, you also need to:
 
 * Add [android.permission.NFC](https://developer.android.com/reference/android/Manifest.permission.html#NFC) to your `AndroidManifest.xml`.
 
-To receive NFC tag events even when your app is in the foreground, you can set up tag event stream support:
+By default, to ensure the consistency of cross-platform interactions, we recommend to use the `poll` method to read NFC tags. However, to receive NFC tag events even when your app is in the foreground, you can set up tag event stream support:
 
 1. Create a custom Activity that extends `FlutterActivity` in your Android project:
 
