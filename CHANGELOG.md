@@ -196,4 +196,6 @@ This is a release candidate for 3.6.0. Please test it and report any issues.
 
 This is a release candidate for 3.6.0. Please test it and report any issues.
 
+* All 3.6.0-rc.2 changes are included
+* Fix WebUSB interop on Web
 * Add support for foreground polling on Android (#16, #179)
