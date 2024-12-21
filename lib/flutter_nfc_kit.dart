@@ -281,6 +281,9 @@ class FlutterNfcKit {
       EventChannel('flutter_nfc_kit/event');
 
   /// Stream of NFC tag events. Each event is a [NFCTag] object.
+  /// 
+  /// This is only supported on Android.
+  /// On other platforms, this stream will always be empty.
   static Stream<NFCTag> get tagStream {
     return _tagEventChannel.receiveBroadcastStream().map((dynamic event) {
       final Map<String, dynamic> json = jsonDecode(event as String);
@@ -349,10 +352,11 @@ class FlutterNfcKit {
     return NFCTag.fromJson(jsonDecode(data));
   }
 
-  /// Works only on iOS
-  /// Calls NFCTagReaderSession.restartPolling()
-  /// Call this if you have received "Tag connection lost" exception
-  /// This will allow to reconnect to tag without closing system popup
+  /// Works only on iOS.
+  /// 
+  /// Calls `NFCTagReaderSession.restartPolling()`.  
+  /// Call this if you have received "Tag connection lost" exception.  
+  /// This will allow to reconnect to tag without closing system popup.
   static Future<void> iosRestartPolling() async =>
       await _channel.invokeMethod("restartPolling");
 
@@ -420,7 +424,7 @@ class FlutterNfcKit {
     return await _channel.invokeMethod('writeNDEF', {'data': data});
   }
 
-  /// Finish current session.
+  /// Finish current session in polling mode.
   ///
   /// You must invoke it before start a new session.
   ///

@@ -38,61 +38,6 @@ To use this plugin on Android, you also need to:
 
 * Add [android.permission.NFC](https://developer.android.com/reference/android/Manifest.permission.html#NFC) to your `AndroidManifest.xml`.
 
-By default, to ensure the consistency of cross-platform interactions, we recommend to use the `poll` method to read NFC tags. However, to receive NFC tag events even when your app is in the foreground, you can set up tag event stream support:
-
-1. Create a custom Activity that extends `FlutterActivity` in your Android project:
-
-```kotlin
-package your.package.name
-
-import android.app.PendingIntent
-import android.content.Intent
-import android.nfc.NfcAdapter
-import android.nfc.Tag
-import io.flutter.embedding.android.FlutterActivity
-import im.nfc.flutter_nfc_kit.FlutterNfcKitPlugin
-
-class MainActivity : FlutterActivity() {
-    override fun onResume() {
-        super.onResume()
-        val adapter: NfcAdapter? = NfcAdapter.getDefaultAdapter(this)
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE
-        )
-        // See https://developer.android.com/reference/android/nfc/NfcAdapter#enableForegroundDispatch(android.app.Activity,%20android.app.PendingIntent,%20android.content.IntentFilter[],%20java.lang.String[][]) for details 
-        adapter?.enableForegroundDispatch(this, pendingIntent, null, null)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        val adapter: NfcAdapter? = NfcAdapter.getDefaultAdapter(this)
-        adapter?.disableForegroundDispatch(this)
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)?.apply(FlutterNfcKitPlugin::handleTag)
-    }
-}
-```
-
-2. Update your `AndroidManifest.xml` to use this activity instead of the default Flutter activity.
-
-3. In your Flutter code, listen to the tag event stream:
-
-```dart
-@override
-void initState() {
-  super.initState();
-  // Listen to NFC tag events
-  FlutterNfcKit.tagStream.listen((tag) {
-    print('Tag detected: ${tag.id}');
-    // Process the tag
-  });
-}
-```
-
-This will allow your app to receive NFC tag events through a stream, which is useful for scenarios where you need continuous tag reading or want to handle tags even when your app is in the foreground but not actively polling.
-
 ### iOS
 
 This plugin now supports Swift package manager, and requires iOS 13+.
@@ -118,3 +63,7 @@ Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for
 ### Error codes
 
 We use error codes with similar meaning as HTTP status code. Brief explanation and error cause in string (if available) will also be returned when an error occurs.
+
+### Operation Mode
+
+We provide two operation modes: polling (default) and event streaming. Both can give the same `NFCTag` object. Please see [example](example/example.md) for more details.
