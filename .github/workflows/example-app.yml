@@ -36,3 +36,21 @@ jobs:
         path: |
           example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
           example/build/reports/*
+
+  build-ios:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [debug, release]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        cache: true
+    - run: flutter pub get
+      working-directory: example/
+    - run: flutter build ios --${{ matrix.variant }} --verbose --no-codesign
+      working-directory: example/
