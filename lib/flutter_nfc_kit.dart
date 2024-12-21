@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -433,7 +432,7 @@ class FlutterNfcKit {
   /// There must be a valid session when invoking.
   /// On Android, call to this function does nothing.
   static Future<void> setIosAlertMessage(String message) async {
-    if (!kIsWeb && Platform.isIOS) {
+    if (!kIsWeb) {
       return await _channel.invokeMethod('setIosAlertMessage', message);
     }
   }

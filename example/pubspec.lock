@@ -79,12 +79,12 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_nfc_kit:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       path: ".."
       relative: true
     source: path
-    version: "3.5.2"
+    version: "3.6.0-rc.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -112,7 +112,7 @@ packages:
     source: hosted
     version: "4.8.1"
   logging:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: logging
       sha256: "623a88c9594aa774443aa3eb2d41807a48486b5613e67599fb4c41c0ad47c340"
@@ -144,7 +144,7 @@ packages:
     source: hosted
     version: "1.8.0"
   ndef:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: ndef
       sha256: "634d2b5c6f2c186e953218bac9905f3f5e1824b15e30bd1ed6e03a91cdbc7293"
@@ -245,5 +245,5 @@ packages:
     source: hosted
     version: "2.1.4"
 sdks:
-  dart: ">=2.19.0 <3.0.0"
-  flutter: ">=2.0.0"
+  dart: ">=2.19.6 <3.0.0"
+  flutter: ">=3.0.0"

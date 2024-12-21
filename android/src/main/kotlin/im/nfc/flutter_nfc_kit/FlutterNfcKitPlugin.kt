@@ -380,6 +380,8 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
             }
 
+            // do nothing, just for compatibility
+            "setIosAlertMessage" -> { result.success("") }
         }
     }
 

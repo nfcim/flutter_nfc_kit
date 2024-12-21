@@ -17,7 +17,7 @@ jobs:
     - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
     - uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
@@ -33,5 +33,6 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: example-apk-${{ matrix.variant }}
-        path: example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
-
+        path: |
+          example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
+          example/build/reports/*

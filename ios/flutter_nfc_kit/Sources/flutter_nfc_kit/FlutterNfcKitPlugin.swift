@@ -30,7 +30,7 @@ func dataWithHexString(hex: String) -> Data {
     return data
 }
 
-public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDelegate {
+public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDelegate {
     var session: NFCTagReaderSession?
     var result: FlutterResult?
     var tag: NFCTag?
@@ -38,7 +38,7 @@ public class SwiftFlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSess
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_nfc_kit", binaryMessenger: registrar.messenger())
-        let instance = SwiftFlutterNfcKitPlugin()
+        let instance = FlutterNfcKitPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
