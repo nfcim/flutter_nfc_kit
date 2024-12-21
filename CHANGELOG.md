@@ -177,10 +177,11 @@
   * allow authentication of sector 0 (#157)
   * fix data type check in `writeBlock` (#161)
 
-## 3.6.0-rc.1
+## 3.6.0-rc.2
 
 This is a release candidate for 3.6.0. Please test it and report any issues.
 
+* Requires Dart 3.6+ and Flutter 3.24+
 * Remove annoying dependency on `js` library, replace with `dart:js_interop`
 * Remove dependency on `dart:io`
 * Contributions on Android plugin from @knthm:
@@ -189,4 +190,4 @@ This is a release candidate for 3.6.0. Please test it and report any issues.
 * Bump tool versions & dependencies of Android plugin and example app:
   * Related issues / PRs: #179 #184, #186, #187
   * Now requiring Java 17, Gradle 8.9, MinSDKVer 26, AGP 8.7, Kotlin 2.1.0
-* Bump dependencies of iOS plugin (minimum is now iOS 12.0)
+* Add Swift package manager support for iOS plugin, bump dependencies
