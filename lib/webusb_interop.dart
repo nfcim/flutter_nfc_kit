@@ -23,6 +23,7 @@ const int USB_CLASS_CODE_VENDOR_SPECIFIC = 0xFF;
 @JS('navigator.usb')
 extension type _USB._(JSObject _) implements JSObject {
   external static JSObject requestDevice(_USBDeviceRequestOptions options);
+  external static set ondisconnect(JSFunction value);
 }
 
 @JS()
@@ -60,6 +61,11 @@ class WebUSB {
     return _device != null && getProperty(_device, 'opened');
   }
 
+  static void _onDisconnect() {
+    _device = null;
+    log.info('device is disconnected from WebUSB API');
+  }
+
   static const USB_PROBE_MAGIC = '_NFC_IM_';
 
   /// Try to poll a WebUSB device according to our protocol.
@@ -76,6 +82,7 @@ class WebUSB {
                 promiseToFuture(callMethod(device, 'claimInterface', [1])))
             .timeout(Duration(milliseconds: timeout));
         _device = device;
+        _USB.ondisconnect = _onDisconnect.toJS;
         log.info("WebUSB device opened", _device);
       } on TimeoutException catch (_) {
         log.severe("Polling tag timeout");
