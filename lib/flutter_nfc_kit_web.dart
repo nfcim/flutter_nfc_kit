@@ -20,7 +20,7 @@ import 'package:flutter_nfc_kit/webusb_interop.dart';
 class FlutterNfcKitWeb {
   static void registerWith(Registrar registrar) {
     final MethodChannel channel = MethodChannel(
-      'flutter_nfc_kit',
+      'flutter_nfc_kit/method',
       const StandardMethodCodec(),
       registrar,
     );
