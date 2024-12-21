@@ -25,6 +25,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)?.apply(FlutterNfcKitPlugin::handleTag)
+        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        tag?.apply(FlutterNfcKitPlugin::handleTag)
     }
 }
