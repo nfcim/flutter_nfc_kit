@@ -21,27 +21,27 @@ final log = Logger('FlutterNFCKit:WebUSB');
 const int USB_CLASS_CODE_VENDOR_SPECIFIC = 0xFF;
 
 @JS('navigator.usb')
-class _USB {
-  external static dynamic requestDevice(_USBDeviceRequestOptions options);
-  // ignore: unused_field
-  external static Function ondisconnect;
+extension type _USB._(JSObject _) implements JSObject {
+  external static JSObject requestDevice(_USBDeviceRequestOptions options);
+  external static set ondisconnect(JSFunction value);
 }
 
 @JS()
 @anonymous
-class _USBDeviceRequestOptions {
-  external factory _USBDeviceRequestOptions({List<_USBDeviceFilter> filters});
+extension type _USBDeviceRequestOptions._(JSObject _) implements JSObject {
+  external factory _USBDeviceRequestOptions(
+      {JSArray<_USBDeviceFilter> filters});
 }
 
 @JS()
 @anonymous
-class _USBDeviceFilter {
+extension type _USBDeviceFilter._(JSObject _) implements JSObject {
   external factory _USBDeviceFilter({int classCode});
 }
 
 @JS()
 @anonymous
-class _USBControlTransferParameters {
+extension type _USBControlTransferParameters._(JSObject _) implements JSObject {
   external factory _USBControlTransferParameters(
       {String requestType,
       String recipient,
@@ -61,7 +61,7 @@ class WebUSB {
     return _device != null && getProperty(_device, 'opened');
   }
 
-  static void _onDisconnect(event) {
+  static void _onDisconnect() {
     _device = null;
     log.info('device is disconnected from WebUSB API');
   }
@@ -72,9 +72,9 @@ class WebUSB {
   static Future<String> poll(int timeout, bool probeMagic) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
-      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(filters: [
-        _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)
-      ]));
+      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(
+          filters: [_USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)]
+              .toJS));
       dynamic device = await promiseToFuture(devicePromise);
       try {
         await promiseToFuture(callMethod(device, 'open', List.empty()))
@@ -82,7 +82,7 @@ class WebUSB {
                 promiseToFuture(callMethod(device, 'claimInterface', [1])))
             .timeout(Duration(milliseconds: timeout));
         _device = device;
-        _USB.ondisconnect = allowInterop(_onDisconnect);
+        _USB.ondisconnect = _onDisconnect.toJS;
         log.info("WebUSB device opened", _device);
       } on TimeoutException catch (_) {
         log.severe("Polling tag timeout");

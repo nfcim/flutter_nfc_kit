@@ -63,3 +63,7 @@ Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for
 ### Error codes
 
 We use error codes with similar meaning as HTTP status code. Brief explanation and error cause in string (if available) will also be returned when an error occurs.
+
+### Operation Mode
+
+We provide two operation modes: polling (default) and event streaming. Both can give the same `NFCTag` object. Please see [example](example/example.md) for more details.
