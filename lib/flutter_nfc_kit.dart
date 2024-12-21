@@ -281,7 +281,7 @@ class FlutterNfcKit {
       EventChannel('flutter_nfc_kit/event');
 
   /// Stream of NFC tag events. Each event is a [NFCTag] object.
-  /// 
+  ///
   /// This is only supported on Android.
   /// On other platforms, this stream will always be empty.
   static Stream<NFCTag> get tagStream {
@@ -353,9 +353,9 @@ class FlutterNfcKit {
   }
 
   /// Works only on iOS.
-  /// 
-  /// Calls `NFCTagReaderSession.restartPolling()`.  
-  /// Call this if you have received "Tag connection lost" exception.  
+  ///
+  /// Calls `NFCTagReaderSession.restartPolling()`.
+  /// Call this if you have received "Tag connection lost" exception.
   /// This will allow to reconnect to tag without closing system popup.
   static Future<void> iosRestartPolling() async =>
       await _channel.invokeMethod("restartPolling");
