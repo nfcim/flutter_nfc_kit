@@ -52,6 +52,12 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
     initPlatformState();
     _tabController = TabController(length: 2, vsync: this);
     _records = [];
+    FlutterNfcKit.tagStream.listen((tag) {
+      setState(() {
+        _tag = tag;
+        print(_tag);
+      });
+    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.

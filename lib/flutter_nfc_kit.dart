@@ -275,7 +275,17 @@ class FlutterNfcKit {
   /// Default timeout for [poll] (in milliseconds)
   static const int POLL_TIMEOUT = 20 * 1000;
 
-  static const MethodChannel _channel = MethodChannel('flutter_nfc_kit');
+  static const MethodChannel _channel = MethodChannel('flutter_nfc_kit/method');
+
+  static const EventChannel _tagEventChannel = EventChannel('flutter_nfc_kit/event');
+
+  /// Stream of NFC tag events. Each event is a [NFCTag] object.
+  static Stream<NFCTag> get tagStream {
+    return _tagEventChannel.receiveBroadcastStream().map((dynamic event) {
+      final Map<String, dynamic> json = jsonDecode(event as String);
+      return NFCTag.fromJson(json);
+    });
+  }
 
   /// get the availablility of NFC reader on this device
   static Future<NFCAvailability> get nfcAvailability async {
