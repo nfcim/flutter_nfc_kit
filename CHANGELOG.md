@@ -191,3 +191,9 @@ This is a release candidate for 3.6.0. Please test it and report any issues.
   * Related issues / PRs: #179 #184, #186, #187
   * Now requiring Java 17, Gradle 8.9, MinSDKVer 26, AGP 8.7, Kotlin 2.1.0
 * Add Swift package manager support for iOS plugin, bump dependencies
+
+## 3.6.0-rc.3
+
+This is a release candidate for 3.6.0. Please test it and report any issues.
+
+* Add support for foreground polling on Android (#16, #179)
