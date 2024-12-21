@@ -277,7 +277,8 @@ class FlutterNfcKit {
 
   static const MethodChannel _channel = MethodChannel('flutter_nfc_kit/method');
 
-  static const EventChannel _tagEventChannel = EventChannel('flutter_nfc_kit/event');
+  static const EventChannel _tagEventChannel =
+      EventChannel('flutter_nfc_kit/event');
 
   /// Stream of NFC tag events. Each event is a [NFCTag] object.
   static Stream<NFCTag> get tagStream {
