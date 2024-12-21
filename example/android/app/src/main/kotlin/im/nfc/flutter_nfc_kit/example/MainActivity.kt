@@ -14,6 +14,7 @@ class MainActivity : FlutterActivity() {
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
             this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE
         )
+        // Read the docs for reading specific technologies
         adapter?.enableForegroundDispatch(this, pendingIntent, null, null)
     }
 
@@ -24,7 +25,6 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-        FlutterNfcKitPlugin.handleTag(tag!!)
+        intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)?.apply(FlutterNfcKitPlugin::handleTag)
     }
 }

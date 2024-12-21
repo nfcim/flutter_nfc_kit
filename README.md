@@ -70,10 +70,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-        if (tag != null) {
-            FlutterNfcKitPlugin.handleTag(tag)
-        }
+        intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)?.apply(FlutterNfcKitPlugin::handleTag)
     }
 }
 ```
