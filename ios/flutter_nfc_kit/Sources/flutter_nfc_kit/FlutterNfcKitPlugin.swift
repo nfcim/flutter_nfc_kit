@@ -37,7 +37,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     var multipleTagMessage: String?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "flutter_nfc_kit", binaryMessenger: registrar.messenger())
+        let channel = FlutterMethodChannel(name: "flutter_nfc_kit/method", binaryMessenger: registrar.messenger())
         let instance = FlutterNfcKitPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }

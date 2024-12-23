@@ -177,7 +177,7 @@
   * allow authentication of sector 0 (#157)
   * fix data type check in `writeBlock` (#161)
 
-## 3.6.0-rc.2
+## 3.6.0-rc.4
 
 This is a release candidate for 3.6.0. Please test it and report any issues.
 
@@ -191,11 +191,5 @@ This is a release candidate for 3.6.0. Please test it and report any issues.
   * Related issues / PRs: #179 #184, #186, #187
   * Now requiring Java 17, Gradle 8.9, MinSDKVer 26, AGP 8.7, Kotlin 2.1.0
 * Add Swift package manager support for iOS plugin, bump dependencies
-
-## 3.6.0-rc.3
-
-This is a release candidate for 3.6.0. Please test it and report any issues.
-
-* All 3.6.0-rc.2 changes are included
-* Fix WebUSB interop on Web
+* Fix WebUSB interop on Web, add onDisconnect callback
 * Add support for foreground polling on Android (#16, #179)
