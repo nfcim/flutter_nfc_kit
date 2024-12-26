@@ -177,7 +177,7 @@
   * allow authentication of sector 0 (#157)
   * fix data type check in `writeBlock` (#161)
 
-## 3.6.0-rc.4
+## 3.6.0-rc.5
 
 This is a release candidate for 3.6.0. Please test it and report any issues.
 
