@@ -35,7 +35,6 @@ android {
     }
     defaultConfig {
         minSdkVersion 26
-        targetSdk flutter.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lintOptions {
