@@ -53,7 +53,7 @@ export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHan
 
   onAttachedToEngine(binding: FlutterPluginBinding): void {
     hilog.info(0x0000, "FlutterNfcKitPlugin", "Plugin attached");
-    this.channel = new MethodChannel(binding.getBinaryMessenger(), "flutter_nfc_kit");
+    this.channel = new MethodChannel(binding.getBinaryMessenger(), "flutter_nfc_kit/method");
     this.channel.setMethodCallHandler(this)
   }
 
@@ -76,8 +76,10 @@ export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHan
         // https://developer.huawei.com/consumer/cn/doc/harmonyos-references-V5/js-apis-nfccontroller-V5#nfccontrollerisnfcavailabledeprecated
         const isNFCAvailable = canIUse("SystemCapability.Communication.NFC.Core");
         if (isNFCAvailable) {
+          hilog.info(0x0000, "FlutterNfcKitPlugin", "NFC is available");
           result.success("available");
         } else {
+          hilog.info(0x0000, "FlutterNfcKitPlugin", "NFC is not available");
           result.success("not_supported");
         }
       } else if (call.method == "poll") {

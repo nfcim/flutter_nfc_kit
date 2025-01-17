@@ -22,18 +22,6 @@
           ]
         }
       ]
-    },
-    {
-      "name": "flutter_nfc_kit",
-      "srcPath": "../../ohos",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
     }
   ]
 }
