@@ -1,5 +1,8 @@
 name: Publish to pub.dev
 
+env:
+  FLUTTER_VERSION: 3.24.5
+
 on:
   push:
     tags:
@@ -14,9 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v3
         with:
-          channel: 'stable'
+          channel: stable
+          version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - name: Install dependencies
         run: flutter pub get

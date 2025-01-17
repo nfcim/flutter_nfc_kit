@@ -3,16 +3,16 @@
 /// Library that inter-ops with JavaScript on WebUSB APIs.
 ///
 /// Note: you should **NEVER use this library directly**, but instead use the [FlutterNfcKit] class in your project.
-library webusb_interop;
+library;
 
 import 'dart:convert';
 import 'dart:js_util';
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:js_interop';
 
 import 'package:convert/convert.dart';
 import 'package:flutter/services.dart';
-import 'package:js/js.dart';
 import 'package:logging/logging.dart';
 
 final log = Logger('FlutterNFCKit:WebUSB');
@@ -21,27 +21,27 @@ final log = Logger('FlutterNFCKit:WebUSB');
 const int USB_CLASS_CODE_VENDOR_SPECIFIC = 0xFF;
 
 @JS('navigator.usb')
-class _USB {
-  external static dynamic requestDevice(_USBDeviceRequestOptions options);
-  // ignore: unused_field
-  external static Function ondisconnect;
+extension type _USB._(JSObject _) implements JSObject {
+  external static JSObject requestDevice(_USBDeviceRequestOptions options);
+  external static set ondisconnect(JSFunction value);
 }
 
 @JS()
 @anonymous
-class _USBDeviceRequestOptions {
-  external factory _USBDeviceRequestOptions({List<_USBDeviceFilter> filters});
+extension type _USBDeviceRequestOptions._(JSObject _) implements JSObject {
+  external factory _USBDeviceRequestOptions(
+      {JSArray<_USBDeviceFilter> filters});
 }
 
 @JS()
 @anonymous
-class _USBDeviceFilter {
+extension type _USBDeviceFilter._(JSObject _) implements JSObject {
   external factory _USBDeviceFilter({int classCode});
 }
 
 @JS()
 @anonymous
-class _USBControlTransferParameters {
+extension type _USBControlTransferParameters._(JSObject _) implements JSObject {
   external factory _USBControlTransferParameters(
       {String requestType,
       String recipient,
@@ -56,14 +56,10 @@ class _USBControlTransferParameters {
 class WebUSB {
   static dynamic _device;
   static String customProbeData = "";
+  static Function? onDisconnect;
 
   static bool _deviceAvailable() {
     return _device != null && getProperty(_device, 'opened');
-  }
-
-  static void _onDisconnect(event) {
-    _device = null;
-    log.info('device is disconnected from WebUSB API');
   }
 
   static const USB_PROBE_MAGIC = '_NFC_IM_';
@@ -72,9 +68,9 @@ class WebUSB {
   static Future<String> poll(int timeout, bool probeMagic) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
-      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(filters: [
-        _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)
-      ]));
+      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(
+          filters: [_USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)]
+              .toJS));
       dynamic device = await promiseToFuture(devicePromise);
       try {
         await promiseToFuture(callMethod(device, 'open', List.empty()))
@@ -82,7 +78,10 @@ class WebUSB {
                 promiseToFuture(callMethod(device, 'claimInterface', [1])))
             .timeout(Duration(milliseconds: timeout));
         _device = device;
-        _USB.ondisconnect = allowInterop(_onDisconnect);
+        _USB.ondisconnect = () {
+          _device = null;
+          onDisconnect?.call();
+        }.toJS;
         log.info("WebUSB device opened", _device);
       } on TimeoutException catch (_) {
         log.severe("Polling tag timeout");

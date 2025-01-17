@@ -4,15 +4,14 @@ import 'package:ndef/ndef.dart' as ndef;
 
 class NDEFUriRecordSetting extends StatefulWidget {
   final ndef.UriRecord record;
-  NDEFUriRecordSetting({Key? key, ndef.UriRecord? record})
-      : record = record ?? ndef.UriRecord(prefix: '', content: ''),
-        super(key: key);
+  NDEFUriRecordSetting({super.key, ndef.UriRecord? record})
+      : record = record ?? ndef.UriRecord(prefix: '', content: '');
   @override
-  _NDEFUriRecordSetting createState() => _NDEFUriRecordSetting();
+  State createState() => _NDEFUriRecordSetting();
 }
 
 class _NDEFUriRecordSetting extends State<NDEFUriRecordSetting> {
-  GlobalKey _formKey = new GlobalKey<FormState>();
+  final GlobalKey _formKey = GlobalKey<FormState>();
   late TextEditingController _contentController;
   String? _dropButtonValue;
 
@@ -20,7 +19,7 @@ class _NDEFUriRecordSetting extends State<NDEFUriRecordSetting> {
   initState() {
     super.initState();
 
-    _contentController = new TextEditingController.fromValue(
+    _contentController = TextEditingController.fromValue(
         TextEditingValue(text: widget.record.content!));
     _dropButtonValue = widget.record.prefix;
   }
@@ -49,7 +48,7 @@ class _NDEFUriRecordSetting extends State<NDEFUriRecordSetting> {
                               }).toList(),
                               onChanged: (value) {
                                 setState(() {
-                                  _dropButtonValue = value as String?;
+                                  _dropButtonValue = value;
                                 });
                               },
                             ),

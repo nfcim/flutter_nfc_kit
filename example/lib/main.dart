@@ -23,7 +23,7 @@ void main() {
 
 class MyApp extends StatefulWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  State createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
@@ -43,14 +43,21 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb)
+    if (!kIsWeb) {
       _platformVersion =
           '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
-    else
+    } else {
       _platformVersion = 'Web';
+    }
     initPlatformState();
-    _tabController = new TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _records = [];
+    FlutterNfcKit.tagStream.listen((tag) {
+      setState(() {
+        _tag = tag;
+        print(_tag);
+      });
+    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -86,7 +93,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
               ],
               controller: _tabController,
             )),
-        body: new TabBarView(controller: _tabController, children: <Widget>[
+        body: TabBarView(controller: _tabController, children: <Widget>[
           Scrollbar(
               child: SingleChildScrollView(
                   child: Center(
@@ -141,7 +148,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     }
 
                     // Pretend that we are working
-                    if (!kIsWeb) sleep(new Duration(seconds: 1));
+                    if (!kIsWeb) sleep(Duration(seconds: 1));
                     await FlutterNfcKit.finish(iosAlertMessage: "Finished!");
                   },
                   child: Text('Start polling'),
@@ -164,7 +171,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     children: <Widget>[
                       ElevatedButton(
                         onPressed: () async {
-                          if (_records!.length != 0) {
+                          if (_records!.isNotEmpty) {
                             try {
                               NFCTag tag = await FlutterNfcKit.poll();
                               setState(() {

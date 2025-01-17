@@ -17,7 +17,7 @@ jobs:
     - uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
     - uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
@@ -33,5 +33,24 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: example-apk-${{ matrix.variant }}
-        path: example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
+        path: |
+          example/build/app/outputs/flutter-apk/app-${{ matrix.variant }}.apk
+          example/build/reports/*
 
+  build-ios:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [debug, release]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        cache: true
+    - run: flutter pub get
+      working-directory: example/
+    - run: flutter build ios --${{ matrix.variant }} --verbose --no-codesign
+      working-directory: example/

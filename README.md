@@ -23,24 +23,24 @@ Note that due to API limitations, not all operations are supported on all platfo
 
 This library uses [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding.
 
-## Dependency issue of `js` package
-
-Since v3.5.0, `flutter_nfc_kit` depends on `js: ^0.7.1`. This might lead to a conflict with other packages that depend on `js: ^0.6.4`. If you do not use this plugin in a web environment, you can safely add the following to your `pubspec.yaml` to resolve the conflict:
-
-```yaml
-dependency_overrides:
-  js: "^0.6.4"
-```
-
 ## Setup
 
-Thank [nfc_manager](https://pub.dev/packages/nfc_manager) plugin for these instructions.
-
 ### Android
+
+We have the following minimum version requirements for Android plugin:
+
+* Java 17
+* Gradle 8.9
+* Android SDK 26 (you must set corresponding `jvmTarget` in you app's `build.gradle`)
+* Android Gradle Plugin 8.7
+
+To use this plugin on Android, you also need to:
 
 * Add [android.permission.NFC](https://developer.android.com/reference/android/Manifest.permission.html#NFC) to your `AndroidManifest.xml`.
 
 ### iOS
+
+This plugin now supports Swift package manager, and requires iOS 13+.
 
 * Add [Near Field Communication Tag Reader Session Formats Entitlements](https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_developer_nfc_readersession_formats) to your entitlements.
 * Add [NFCReaderUsageDescription](https://developer.apple.com/documentation/bundleresources/information_property_list/nfcreaderusagedescription) to your `Info.plist`.
@@ -63,3 +63,7 @@ Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for
 ### Error codes
 
 We use error codes with similar meaning as HTTP status code. Brief explanation and error cause in string (if available) will also be returned when an error occurs.
+
+### Operation Mode
+
+We provide two operation modes: polling (default) and event streaming. Both can give the same `NFCTag` object. Please see [example](example/example.md) for more details.
