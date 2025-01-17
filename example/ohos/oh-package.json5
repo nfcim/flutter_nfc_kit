@@ -14,7 +14,7 @@
   },
   "overrides": {
     "@ohos/flutter_ohos": "file:./har/flutter.har",
-    "flutter_nfc_kit": "file:./har/flutter_nfc_kit.har",
+    "flutter_nfc_kit": "../../ohos",
     "@ohos/flutter_module": "file:./entry"
   }
 }
