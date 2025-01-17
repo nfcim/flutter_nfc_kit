@@ -140,8 +140,10 @@ export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHan
         });
       } else if (call.method == "transceive") {
         let tx: string = call.argument("data");
+        hilog.info(0x0000, "FlutterNfcKitPlugin", "transceive: tx=%{public}s", JSON.stringify(tx));
         this.tag!.connect();
         this.tag!.transmit(fromHexString(tx)).then((rx) => {
+          hilog.info(0x0000, "FlutterNfcKitPlugin", "transceive: rx=%{public}s", JSON.stringify(rx));
           result.success(toHexString(rx));
         }).catch((err: BusinessError) => {
           hilog.info(0x0000, "FlutterNfcKitPlugin", "Failed to transceive: err=%{public}s", JSON.stringify(err));
@@ -150,6 +152,9 @@ export default class FlutterNfcKitPlugin implements FlutterPlugin, MethodCallHan
       } else if (call.method == "finish") {
         // turn off reader mode
         tag.off("readerMode", elementName, (err: BusinessError, tagInfo: tag.TagInfo) => {});
+        result.success("");
+      } else if (call.method == "setIosAlertMessage") {
+        // do nothing, just for compatibility
         result.success("");
       } else {
         result.notImplemented();
