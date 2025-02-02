@@ -248,7 +248,23 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                     tag.extendedWriteSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, dataBlock: data, completionHandler: handler)
                 }
             } else {
-                result(FlutterError(code: "405", message: "writeBlock not supported on this type of card", details: nil))
+                if case let .miFare(tag) = tag {
+                   let blockNumber = arguments["index"] as! UInt8
+                   let writeCommand = Data([0xA2, blockNumber]) + data  //0xA2 is the MIFARE Classic Write Command to write single block.
+                   tag.sendMiFareCommand(commandPacket: writeCommand) { (response, error) in
+                        if let error = error {
+                             result(FlutterError(code: "500", message: "Communication error", details: nil))
+                         }
+                        else
+                         {
+                            result(nil)
+                         }
+                   }
+                }
+                else
+                {
+                    result(FlutterError(code: "405", message: "writeBlock not supported on this type of card", details: nil))
+                }
             }
         } else if call.method == "readNDEF" {
             if tag != nil {
