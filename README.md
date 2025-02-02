@@ -12,7 +12,7 @@ This plugin's functionalities include:
   * ISO 18092 (NFC-F / FeliCa)
   * ISO 15963 (NFC-V)
 * R/W block / page / sector level data of tags complying with:
-  * MIFARE Classic / Ultralight (Android only)
+  * MIFARE Classic / Ultralight (Android only, MIFARE Classic Read block for iOS)
   * ISO 15693 (iOS only)
 * transceive raw commands with tags / cards complying with:
   * ISO 7816 Smart Cards (layer 4, in APDUs)
