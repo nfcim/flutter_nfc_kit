@@ -210,8 +210,8 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                     let blockNumber = arguments["index"] as! Int
                     tag.extendedReadSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, completionHandler: handler)
                 }
-            } else {
-               if case let .miFare(tag) = tag {
+            }
+            else if case let .miFare(tag) = tag {
                             let blockNumber = arguments["index"] as! UInt8
                             let commandPacket = Data([0x30, blockNumber]) //0x30 is the MIFARE Classic Read Command.
                              tag.sendMiFareCommand(commandPacket: commandPacket) { (data, error) in
@@ -221,11 +221,9 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                                      result(data)
                                  }
                              }
-                        }
-                else
-                {
-                  result(FlutterError(code: "405", message: "readBlock not supported on this type of card", details: nil))
-                }
+            }             
+            else {
+                result(FlutterError(code: "405", message: "readBlock not supported on this type of card", details: nil))
             }
         } else if call.method == "writeBlock" {
             let arguments = call.arguments as! [String : Any?]
@@ -247,8 +245,8 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                     let blockNumber = arguments["index"] as! Int
                     tag.extendedWriteSingleBlock(requestFlags: RequestFlag(rawValue: rawFlags), blockNumber: blockNumber, dataBlock: data, completionHandler: handler)
                 }
-            } else {
-                if case let .miFare(tag) = tag {
+            } 
+            else if case let .miFare(tag) = tag {
                    let blockNumber = arguments["index"] as! UInt8
                    let writeCommand = Data([0xA2, blockNumber]) + data  //0xA2 is the MIFARE Classic Write Command to write single block.
                    tag.sendMiFareCommand(commandPacket: writeCommand) { (response, error) in
@@ -260,11 +258,9 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                             result(nil)
                          }
                    }
-                }
-                else
-                {
+            }            
+            else {
                     result(FlutterError(code: "405", message: "writeBlock not supported on this type of card", details: nil))
-                }
             }
         } else if call.method == "readNDEF" {
             if tag != nil {
