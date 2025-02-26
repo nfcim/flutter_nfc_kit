@@ -177,9 +177,7 @@
   * allow authentication of sector 0 (#157)
   * fix data type check in `writeBlock` (#161)
 
-## 3.6.0-rc.6
-
-This is a release candidate for 3.6.0. Please test it and report any issues.
+## 3.6.0
 
 * Requires Dart 3.6+ and Flutter 3.24+
 * Remove annoying dependency on `js` library, replace with `dart:js_interop`
