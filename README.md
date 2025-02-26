@@ -23,6 +23,10 @@ Note that due to API limitations, not all operations are supported on all platfo
 
 This library uses [ndef](https://pub.dev/packages/ndef) for NDEF record encoding & decoding.
 
+## Contributing
+
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+
 ## Setup
 
 ### Android
@@ -48,7 +52,7 @@ This plugin now supports Swift package manager, and requires iOS 13+.
 * Open Runner.xcworkspace with Xcode and navigate to project settings then the tab _Signing & Capabilities._
 * Select the Runner in targets in left sidebar then press the "+ Capability" in the left upper corner and choose _Near Field Communication Tag Reading._
 
-## Web
+### Web
 
 The web version of this plugin **does not actually support NFC** in browsers, but uses a specific [WebUSB protocol](https://github.com/nfcim/flutter_nfc_kit/blob/master/WebUSB.md), so that Flutter programs can communicate with dual-interface (NFC / USB) devices in a platform-independent way.
 
