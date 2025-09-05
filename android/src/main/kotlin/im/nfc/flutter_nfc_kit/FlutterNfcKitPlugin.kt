@@ -89,7 +89,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     }
                 }
             }
-            if (!nfcHandler.post(handledFn)) {
+            val looperThread = nfcHandler.looper?.thread
+            if (looperThread == null || !looperThread.isAlive) {
+                val thread = HandlerThread("FlutterNfcKit").apply { start() }
+                nfcHandler = Handler(thread.looper)
+            }
+            val posted = nfcHandler.post(handledFn)
+            if (!posted) {
                 result.error("500", "Failed to post job to NFC Handler thread.", null)
             }
         }
