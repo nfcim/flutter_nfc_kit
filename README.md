@@ -10,7 +10,7 @@ This plugin's functionalities include:
 * read metadata and read & write NDEF records of tags / cards complying with:
   * ISO 14443 Type A & Type B (NFC-A / NFC-B / MIFARE Classic / MIFARE Plus / MIFARE Ultralight / MIFARE DESFire)
   * ISO 18092 (NFC-F / FeliCa)
-  * ISO 15963 (NFC-V)
+  * ISO 15693 (NFC-V)
 * R/W block / page / sector level data of tags complying with:
   * MIFARE Classic / Ultralight (Android only, MIFARE Classic Read & Write block for iOS)
   * ISO 15693 (iOS only)
