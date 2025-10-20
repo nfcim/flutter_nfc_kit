@@ -523,4 +523,138 @@ class FlutterNfcKit {
   static Future<Uint8List> readSector(int index) async {
     return await _channel.invokeMethod('readSector', {'index': index});
   }
+
+  /// Read a custom number of bytes from a MIFARE Classic tag (Android only).
+  ///
+  /// Requires a valid NFC session and a MIFARE Classic tag.
+  ///
+  /// Authentication is performed on each sector before reading.
+  /// Reading starts from [startSector] and [startBlockInSector], and continues
+  /// until [numBytes] are read.
+  ///
+  /// Note: Trailer blocks (last block of each sector) are skipped for safety,
+  /// as they contain key and access bits.
+  ///
+  /// Throws an [Exception] if the tag is not MIFARE Classic or if authentication fails.
+  ///
+  /// Returns a [List<int>] of the requested bytes (up to [numBytes]).
+  Future<List<int>> readDataFromTag({
+    required NFCTag tag,
+    int startSector = 1,
+    int startBlockInSector = 1,
+    int numBytes = 36,
+    String keyA = 'FFFFFFFFFFFF',
+    String? keyB,
+  }) async {
+    if (tag.type != NFCTagType.mifare_classic) {
+      throw Exception(
+          'Only MIFARE Classic tags are supported for this operation.');
+    }
+
+    final List<int> result = [];
+    final int neededBlocks = (numBytes / 16).ceil();
+    int blocksRead = 0;
+
+    for (int currentSector = startSector;
+        currentSector < tag.mifareInfo!.sectorCount!;
+        currentSector++) {
+      if (blocksRead >= neededBlocks) {
+        break;
+      }
+
+      final bool authOk = await FlutterNfcKit.authenticateSector(currentSector,
+          keyA: keyA, keyB: keyB);
+      if (!authOk) {
+        throw Exception('Authentication failed for $currentSector sector.');
+      }
+
+      int blockStart = (currentSector == startSector) ? startBlockInSector : 0;
+      int blocksInSector = (currentSector < 32) ? 4 : 16;
+
+      for (int blockOffset = blockStart;
+          blockOffset < blocksInSector - 1;
+          blockOffset++) {
+        if (blocksRead >= neededBlocks) break;
+
+        final int blockIndex = (currentSector < 32)
+            ? currentSector * 4 + blockOffset
+            : 32 * 4 + (currentSector - 32) * 16 + blockOffset;
+
+        final Uint8List block = await FlutterNfcKit.readBlock(blockIndex);
+        result.addAll(block);
+        blocksRead++;
+      }
+    }
+
+    return result.take(numBytes).toList();
+  }
+
+  /// Write a list of bytes to a MIFARE Classic tag (Android only).
+  ///
+  /// Requires a valid NFC session and a MIFARE Classic tag.
+  ///
+  /// Authentication is performed on each sector before writing.
+  /// Writing starts from [startSector] and [startBlockInSector], and continues
+  /// until all bytes in [data] are written.
+  ///
+  /// Note: Trailer blocks (last block of each sector) are skipped to prevent
+  /// overwriting sector keys and access conditions.
+  ///
+  /// Each block is 16 bytes. If a block is partially filled, it is padded with zeros.
+  ///
+  /// Throws an [Exception] if the tag is not MIFARE Classic or if authentication fails.
+  Future<void> writeDataToTag({
+    required NFCTag tag,
+    required List<int> data,
+    int startSector = 1,
+    int startBlockInSector = 1,
+    String keyA = 'FFFFFFFFFFFF',
+    String? keyB,
+  }) async {
+    if (tag.type != NFCTagType.mifare_classic) {
+      throw Exception(
+          'Only MIFARE Classic tags are supported for this operation.');
+    }
+
+    final int neededBlocks = (data.length / 16).ceil();
+    int blocksWritten = 0;
+
+    for (int currentSector = startSector;
+        currentSector < tag.mifareInfo!.sectorCount!;
+        currentSector++) {
+      if (blocksWritten >= neededBlocks) {
+        break;
+      }
+
+      final bool authOk = await FlutterNfcKit.authenticateSector(currentSector,
+          keyA: keyA, keyB: keyB);
+      if (!authOk) {
+        throw Exception('Authentication failed for $currentSector sector.');
+      }
+
+      int blockStart = (currentSector == startSector) ? startBlockInSector : 0;
+      int blocksInSector = (currentSector < 32) ? 4 : 16;
+
+      for (int blockOffset = blockStart;
+          blockOffset < blocksInSector - 1;
+          blockOffset++) {
+        if (blocksWritten >= neededBlocks) {
+          break;
+        }
+
+        final int blockIndex = (currentSector < 32)
+            ? currentSector * 4 + blockOffset
+            : 32 * 4 + (currentSector - 32) * 16 + blockOffset;
+
+        final List<int> blockData = List.filled(16, 0);
+        for (int i = 0; i < 16 && (blocksWritten * 16 + i) < data.length; i++) {
+          blockData[i] = data[blocksWritten * 16 + i];
+        }
+
+        await FlutterNfcKit.writeBlock(
+            blockIndex, Uint8List.fromList(blockData));
+        blocksWritten++;
+      }
+    }
+  }
 }
