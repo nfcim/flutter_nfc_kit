@@ -35,6 +35,8 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     var result: FlutterResult?
     var tag: NFCTag?
     var multipleTagMessage: String?
+    /// When non-nil, "finish" was called and we're waiting for the session to invalidate before resolving the Dart future.
+    var pendingFinishResult: FlutterResult?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_nfc_kit/method", binaryMessenger: registrar.messenger())
@@ -401,7 +403,9 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 let arguments = call.arguments as! [String: Any?]
                 let alertMessage = arguments["iosAlertMessage"] as? String
                 let errorMessage = arguments["iosErrorMessage"] as? String
-                
+                // Defer resolving the Dart future until the session is actually invalidated (didInvalidateWithError).
+                // So the native NFC sheet is dismissed before onSuccess/onError run in the app.
+                pendingFinishResult = result
                 if let errorMessage = errorMessage {
                     session.invalidate(errorMessage: errorMessage)
                 } else {
@@ -411,10 +415,11 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                     session.invalidate()
                 }
                 self.session = nil
+            } else {
+                result(nil)
             }
             
             tag = nil
-            result(nil)
         } else if call.method == "setIosAlertMessage" {
             if let session = session {
                 if let alertMessage = call.arguments as? String {
@@ -464,6 +469,15 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        // If we invalidated from "finish", resolve the Dart future now so the sheet is dismissed before onSuccess/onError run.
+        if let finishResult = pendingFinishResult {
+            pendingFinishResult = nil
+            session = nil
+            tag = nil
+            result = nil
+            finishResult(nil)
+            return
+        }
         guard result != nil else { return; }
         
         if let nfcError = error as? NFCReaderError {
