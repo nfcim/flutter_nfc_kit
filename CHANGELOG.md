@@ -208,3 +208,14 @@
 
 * New `androidReaderModeFlags` parameter for `poll()` method to customize Android Reader Mode behavior (#225)
 * Add option to specify `EXTRA_READER_PRESENCE_CHECK_DELAY` on Android (#228)
+
+## Unreleased
+
+* iOS: surface `SystemIsBusy` session error as `PlatformException` code `503`, and
+  `SessionTerminatedUnexpectedly` as code `502`
+* iOS: fix `UserCanceled` not surfacing (or surfacing as a generic `500`) when the
+  session is canceled after a tag was polled — session-invalidation errors are now
+  delivered to the in-flight operation
+  * the `409` cancel message is renamed `SessionCanceled` → `UserCanceled` (minor
+    behavior change for consumers matching on the message string)
+* Example app: add buttons to validate `UserCanceled` / `SystemIsBusy`

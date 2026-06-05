@@ -31,6 +31,9 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   NFCAvailability _availability = NFCAvailability.not_supported;
   NFCTag? _tag;
   String? _result, _writeResult, _mifareResult;
+  String? _sessionErrorResult;
+  bool _streaming = false;
+  int _streamCount = 0;
   late TabController _tabController;
   List<ndef.NDEFRecord>? _records;
 
@@ -78,6 +81,110 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
       // _platformVersion = platformVersion;
       _availability = availability;
     });
+  }
+
+  // A benign command used to keep the session busy. Exact bytes depend on the
+  // tag; unsupported-command errors are ignored while streaming, so any tag works.
+  String _dummyCommandFor(NFCTag tag) {
+    if (tag.type == NFCTagType.iso18092) return "060080080100";
+    return "00A4040000"; // ISO7816 SELECT (no AID)
+  }
+
+  // Validates iOS session-invalidation errors by keeping the session genuinely
+  // busy: after polling, it continuously transceives dummy data until you stop
+  // it (tap again) or a session error fires. Tap Cancel on the iOS sheet while
+  // streaming to see UserCanceled (409) surface mid-transceive. SystemIsBusy
+  // (503) may also surface here. Both are CoreNFC-only (iOS).
+  Future<void> _streamDummyData() async {
+    if (_streaming) {
+      setState(() => _streaming = false); // request stop
+      return;
+    }
+    setState(() {
+      _streaming = true;
+      _streamCount = 0;
+      _sessionErrorResult = 'Polling…';
+    });
+    try {
+      NFCTag tag = await FlutterNfcKit.poll(
+          iosAlertMessage: "Streaming — tap Cancel to test UserCanceled");
+      final dummy = _dummyCommandFor(tag);
+      while (_streaming) {
+        try {
+          await FlutterNfcKit.transceive(dummy);
+        } on PlatformException catch (e) {
+          // Only a transient tag-level comm error (500, e.g. the tag rejecting
+          // our dummy command) is ignored so streaming continues. Any other code
+          // means the session ended — canceled (409), busy (503), timed out
+          // (408), terminated unexpectedly (502), or no longer active (406) —
+          // so stop and report it instead of spinning.
+          if (e.code != '500') rethrow;
+        }
+        setState(() {
+          _streamCount++;
+          _sessionErrorResult = 'Streaming dummy data… ($_streamCount sent)';
+        });
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      await FlutterNfcKit.finish(iosAlertMessage: "Stopped");
+      setState(() =>
+          _sessionErrorResult = 'Stopped after $_streamCount commands.');
+    } on PlatformException catch (e) {
+      setState(() => _sessionErrorResult = 'code=${e.code} message=${e.message}');
+    } finally {
+      setState(() => _streaming = false);
+    }
+  }
+
+  // Drives the real SystemIsBusy (503) flow: stream dummy data until iOS kicks
+  // us off (502 SessionTerminatedUnexpectedly), then retry immediately — too
+  // soon, so iOS returns SystemIsBusy (503). It then backs off and retries to
+  // show the session recovers. iOS-only (CoreNFC).
+  Future<void> _testSystemIsBusy() async {
+    setState(() => _sessionErrorResult = 'Streaming until iOS kicks us off…');
+    try {
+      // 1. Hold the session busy until iOS terminates it.
+      NFCTag tag = await FlutterNfcKit.poll(
+          iosAlertMessage: "Hold still until kicked off…");
+      final dummy = _dummyCommandFor(tag);
+      var sent = 0;
+      while (true) {
+        try {
+          await FlutterNfcKit.transceive(dummy);
+          setState(() =>
+              _sessionErrorResult = 'Streaming… (${++sent} sent), waiting to be kicked off');
+        } on PlatformException catch (e) {
+          if (e.code == '500') continue; // transient tag error, keep streaming
+          // Session ended (expected: 502 kicked off) — break out to retry.
+          setState(() => _sessionErrorResult =
+              'Kicked off after $sent: code=${e.code} (${e.message}). Retrying instantly…');
+          break;
+        }
+      }
+
+      // 2. Retry immediately — too soon, so iOS should report SystemIsBusy.
+      try {
+        await FlutterNfcKit.poll(
+            timeout: const Duration(seconds: 5), iosAlertMessage: "Instant retry");
+        await FlutterNfcKit.finish();
+        setState(() => _sessionErrorResult =
+            'Instant retry unexpectedly succeeded (no SystemIsBusy this run).');
+        return;
+      } on PlatformException catch (e) {
+        setState(() => _sessionErrorResult =
+            'Instant retry → code=${e.code} message=${e.message}');
+        if (e.code != '503') return; // demo only continues if we actually got busy
+      }
+
+      // 3. Back off, then retry — the session should now recover.
+      await Future.delayed(const Duration(seconds: 3));
+      await FlutterNfcKit.poll(iosAlertMessage: "Retry after backoff");
+      await FlutterNfcKit.finish();
+      setState(() => _sessionErrorResult =
+          'Got 503 SystemIsBusy on instant retry; recovered after 3s backoff. ✓');
+    } on PlatformException catch (e) {
+      setState(() => _sessionErrorResult = 'code=${e.code} message=${e.message}');
+    }
   }
 
   @override
@@ -153,6 +260,32 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                   },
                   child: Text('Start polling'),
                 ),
+                const SizedBox(height: 10),
+                const Divider(),
+                const Text('Session error test (iOS)'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    ElevatedButton(
+                      onPressed: _streamDummyData,
+                      child:
+                          Text(_streaming ? 'Stop streaming' : 'Stream dummy data'),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: _streaming ? null : _testSystemIsBusy,
+                      child: const Text('Test SystemIsBusy'),
+                    ),
+                  ],
+                ),
+                Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(_sessionErrorResult == null
+                        ? 'Stream dummy data to keep the session busy, then tap Cancel '
+                            'on the iOS sheet to see UserCanceled. SystemIsBusy is '
+                            'OS-driven and may not reproduce every run.'
+                        : 'Session error: $_sessionErrorResult')),
+                const Divider(),
                 const SizedBox(height: 10),
                 Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),

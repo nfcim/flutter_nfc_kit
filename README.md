@@ -69,6 +69,17 @@ Refer to the [documentation](https://pub.dev/documentation/flutter_nfc_kit/) for
 
 We use error codes with similar meaning as HTTP status code. Brief explanation and error cause in string (if available) will also be returned when an error occurs.
 
+On iOS, session-invalidation errors are surfaced as a `PlatformException` whose `code` follows the same convention and whose `message` is the CoreNFC reason:
+
+| Code | Message | Cause (CoreNFC) |
+|------|---------|-----------------|
+| `408` | `SessionTimeOut` | `readerSessionInvalidationErrorSessionTimeout` |
+| `409` | `UserCanceled` | `readerSessionInvalidationErrorUserCanceled` (user tapped Cancel) |
+| `502` | `SessionTerminatedUnexpectedly` | `readerSessionInvalidationErrorSessionTerminatedUnexpectedly` |
+| `503` | `SystemIsBusy` | `readerSessionInvalidationErrorSystemIsBusy` |
+
+These are iOS-only (CoreNFC concepts); Android and Web do not produce them. They are delivered to whichever call is pending when the session is invalidated — including a `transceive`/`readNDEF`/`writeNDEF` in progress after a tag was polled.
+
 ### Operation Mode
 
 We provide two operation modes: polling (default) and event streaming. Both can give the same `NFCTag` object. Please see [example](example/example.md) for more details.
