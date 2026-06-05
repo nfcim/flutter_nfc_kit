@@ -41,6 +41,39 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
         let instance = FlutterNfcKitPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
+
+    /// Map a CoreNFC error to the plugin's HTTP-style FlutterError (single source of truth).
+    private func mapNFCError(_ error: Error) -> FlutterError {
+        guard let nfcError = error as? NFCReaderError else {
+            return FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription)
+        }
+        switch nfcError.errorCode {
+        case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
+            return FlutterError(code: "409", message: "UserCanceled", details: error.localizedDescription)
+        case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
+            return FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription)
+        case NFCReaderError.Code.readerSessionInvalidationErrorSystemIsBusy.rawValue:
+            return FlutterError(code: "503", message: "SystemIsBusy", details: error.localizedDescription)
+        case NFCReaderError.Code.readerSessionInvalidationErrorSessionTerminatedUnexpectedly.rawValue:
+            return FlutterError(code: "502", message: "SessionTerminatedUnexpectedly", details: error.localizedDescription)
+        default:
+            return FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription)
+        }
+    }
+
+    /// Track an operation's result so it completes exactly once — either by the
+    /// operation's own callback or by session invalidation. Returns a wrapped
+    /// FlutterResult; shadow the local `result` with it so the existing
+    /// `result(...)` calls in that branch route through it unchanged.
+    private func trackResult(_ result: @escaping FlutterResult) -> FlutterResult {
+        self.result = result
+        return { [weak self] response in
+            guard let self = self else { result(response); return }
+            guard self.result != nil else { return } // already delivered (e.g. by invalidation)
+            self.result = nil
+            result(response)
+        }
+    }
     
     // from FlutterPlugin
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -85,6 +118,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 session?.begin()
             }
         } else if call.method == "transceive" {
+            let result = trackResult(result)
             if tag != nil {
                 let req = (call.arguments as? [String: Any?])?["data"]
                 if req != nil, req is String || req is FlutterStandardTypedData {
@@ -192,6 +226,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
         } else if call.method == "readBlock" {
+            let result = trackResult(result)
             let arguments = call.arguments as! [String : Any?]
             if case let .iso15693(tag) = tag {
                 let rawFlags = (arguments["iso15693Flags"] as? UInt8) ?? 0
@@ -226,6 +261,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 result(FlutterError(code: "405", message: "readBlock not supported on this type of card", details: nil))
             }
         } else if call.method == "writeBlock" {
+            let result = trackResult(result)
             let arguments = call.arguments as! [String : Any?]
             let data = (arguments["data"] as! FlutterStandardTypedData).data
             if case let .iso15693(tag) = tag {
@@ -267,6 +303,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 result(FlutterError(code: "405", message: "writeBlock not supported on this type of card", details: nil))
             }
         } else if call.method == "readNDEF" {
+            let result = trackResult(result)
             if tag != nil {
                 var ndefTag: NFCNDEFTag?
                 switch tag {
@@ -331,6 +368,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
         } else if call.method == "writeNDEF" {
+            let result = trackResult(result)
             if tag != nil {
                 var ndefTag: NFCNDEFTag?
                 switch tag {
@@ -425,6 +463,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 result(FlutterError(code: "406", message: "Session not active", details: nil))
             }
         } else if call.method == "makeNdefReadOnly" {
+            let result = trackResult(result)
             if tag != nil {
                 var ndefTag: NFCNDEFTag?
                 switch tag {
@@ -464,24 +503,13 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        guard result != nil else { return; }
-        
-        if let nfcError = error as? NFCReaderError {
-            NSLog("Got NFCError when reading NFC: %@", nfcError.localizedDescription)
-            switch nfcError.errorCode {
-            case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
-                result?(FlutterError(code: "409", message: "SessionCanceled", details: error.localizedDescription))
-            case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
-                result?(FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription))
-            default:
-                result?(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
-            }
-        } else {
-            NSLog("Got unknown when reading NFC: %@", error.localizedDescription)
-            result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
+        NSLog("NFC session invalidated: %@", error.localizedDescription)
+        // Deliver the session error to the pending operation (poll or any in-flight
+        // tag operation tracked via trackResult), if it has not completed already.
+        if result != nil {
+            result?(mapNFCError(error))
+            result = nil
         }
-        
-        result = nil
         session = nil
         tag = nil
     }
