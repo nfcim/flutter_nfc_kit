@@ -463,7 +463,13 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
     
     // from NFCTagReaderSessionDelegate
-    public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
+    public func tagReaderSession(_ invalidatedSession: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        // `finish()` invalidates the session and clears `self.session` straight away, but
+        // iOS can deliver that session's invalidation after the next `poll()` has already
+        // started a new one. Only the current session may complete the pending result or
+        // reset state — otherwise the stale error reaches the new poll, and clearing
+        // `self.session` / `self.tag` orphans a session that is still on screen.
+        guard invalidatedSession === self.session else { return }
         guard result != nil else { return; }
         
         if let nfcError = error as? NFCReaderError {
