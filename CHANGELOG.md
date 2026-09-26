@@ -213,4 +213,4 @@
 
 * Migrate the Android plugin to built-in Kotlin, so apps on AGP 9 can build with `android.builtInKotlin=true`
   * The plugin no longer applies the Kotlin Gradle Plugin; Flutter applies it when an app still needs it
-  * Requires Flutter 3.44 or newer
+  * Requires Flutter 3.44 or newer; apps need Flutter 3.47 or newer to set `android.builtInKotlin=true`
