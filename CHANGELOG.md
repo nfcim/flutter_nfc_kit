@@ -208,3 +208,9 @@
 
 * New `androidReaderModeFlags` parameter for `poll()` method to customize Android Reader Mode behavior (#225)
 * Add option to specify `EXTRA_READER_PRESENCE_CHECK_DELAY` on Android (#228)
+
+## Unreleased
+
+* Migrate the Android plugin to built-in Kotlin, so apps on AGP 9 can build with `android.builtInKotlin=true`
+  * The plugin no longer applies the Kotlin Gradle Plugin; Flutter applies it when an app still needs it
+  * Requires Flutter 3.44 or newer; apps need Flutter 3.47 or newer to set `android.builtInKotlin=true`
