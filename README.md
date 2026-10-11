@@ -36,8 +36,9 @@ We have the following minimum version requirements for Android plugin:
 
 * Java 17
 * Gradle 9.2.1
-* Android SDK 24 (you must set corresponding `jvmTarget` in you app's `build.gradle`)
+* Android SDK 24 (you must set corresponding `jvmTarget` in your app's `build.gradle`)
 * Android Gradle Plugin 9.0.1
+* AGP 9 release builds using optimized resource shrinking must keep non-final resource IDs enabled with `android.nonFinalResIds=true`.
 
 To use this plugin on Android, you also need to:
 

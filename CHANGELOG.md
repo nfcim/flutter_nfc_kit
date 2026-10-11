@@ -209,15 +209,16 @@
 * New `androidReaderModeFlags` parameter for `poll()` method to customize Android Reader Mode behavior (#225)
 * Add option to specify `EXTRA_READER_PRESENCE_CHECK_DELAY` on Android (#228)
 
-## 3.6.3
+## 3.7.0
 
 * Requires Dart 3.11+ and Flutter 3.47+.
-* Fix stale iOS NFC session invalidation after starting a new session.
-* Dispatch iOS session invalidation handling on the main thread.
-* Migrate the Android plugin to Flutter's built-in Kotlin compatibility path for AGP 9.
-  * The plugin no longer applies the Kotlin Gradle Plugin; Flutter applies it when an app still needs it.
+* Fix stale iOS NFC session invalidation after starting a new session (#235, fixes #232).
+  * Ignore callbacks from an old session after a new `poll()` has started.
+  * Dispatch invalidation handling on the main thread.
+* Migrate the Android plugin to Flutter's built-in Kotlin compatibility path for AGP 9 (#236).
+  * The plugin no longer applies the Kotlin Gradle Plugin; Flutter applies it when an app still uses the legacy path.
   * Requires Flutter 3.44 or newer; apps need Flutter 3.47 or newer to set `android.builtInKotlin=true`.
-* Update Dart and Flutter package dependencies and release tooling.
-* Update the example and Android build tooling to AGP 9.0.1 and Kotlin 2.3.20.
+* Update Dart and Flutter package dependencies, generated serializers, and release tooling.
+* Update Android build tooling to AGP 9.0.1 and Kotlin 2.3.20; AGP 9 release builds using optimized resource shrinking require `android.nonFinalResIds=true`.
 
 ## Unreleased
