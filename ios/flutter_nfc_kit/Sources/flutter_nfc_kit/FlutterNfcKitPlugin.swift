@@ -463,27 +463,38 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     public func tagReaderSessionDidBecomeActive(_: NFCTagReaderSession) {}
     
     // from NFCTagReaderSessionDelegate
-    public func tagReaderSession(_: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        guard result != nil else { return; }
-        
-        if let nfcError = error as? NFCReaderError {
-            NSLog("Got NFCError when reading NFC: %@", nfcError.localizedDescription)
-            switch nfcError.errorCode {
-            case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
-                result?(FlutterError(code: "409", message: "SessionCanceled", details: error.localizedDescription))
-            case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
-                result?(FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription))
-            default:
-                result?(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
+    public func tagReaderSession(_ invalidatedSession: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        // Core NFC calls this on its own queue, but `poll()` and `finish()` change
+        // `session` / `result` on the main thread. Hop to main so the identity check and
+        // the state it guards happen in one step, ordered against those method calls.
+        DispatchQueue.main.async { [self] in
+            // `finish()` invalidates the session and clears `self.session` straight away,
+            // but iOS can deliver that session's invalidation after the next `poll()` has
+            // already started a new one. Only the current session may complete the pending
+            // result or reset state — otherwise the stale error reaches the new poll, and
+            // clearing `self.session` / `self.tag` orphans a session still on screen.
+            guard invalidatedSession === session else { return }
+            guard result != nil else { return }
+
+            if let nfcError = error as? NFCReaderError {
+                NSLog("Got NFCError when reading NFC: %@", nfcError.localizedDescription)
+                switch nfcError.errorCode {
+                case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
+                    result?(FlutterError(code: "409", message: "SessionCanceled", details: error.localizedDescription))
+                case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
+                    result?(FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription))
+                default:
+                    result?(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
+                }
+            } else {
+                NSLog("Got unknown when reading NFC: %@", error.localizedDescription)
+                result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
             }
-        } else {
-            NSLog("Got unknown when reading NFC: %@", error.localizedDescription)
-            result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
+
+            result = nil
+            session = nil
+            tag = nil
         }
-        
-        result = nil
-        session = nil
-        tag = nil
     }
     
     // from NFCTagReaderSessionDelegate

@@ -8,6 +8,7 @@ import android.nfc.NfcAdapter
 import android.nfc.NfcAdapter.*
 import android.nfc.Tag
 import android.nfc.tech.*
+import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -86,13 +87,13 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     Log.e(TAG, "$desc error", ex)
                     val excMessage = ex.localizedMessage
                     when (ex) {
-                        is IOException -> result?.error("500", "Communication error", excMessage)
-                        is SecurityException -> result?.error("503", "Tag already removed", excMessage)
-                        is FormatException -> result?.error("400", "NDEF format error", excMessage)
-                        is InvocationTargetException -> result?.error("500", "Communication error", excMessage)
-                        is IllegalArgumentException -> result?.error("400", "Command format error", excMessage)
-                        is NoSuchMethodException -> result?.error("405", "Transceive not supported for this type of card", excMessage)
-                        else -> result?.error("500", "Unhandled error", excMessage)
+                        is IOException -> result.error("500", "Communication error", excMessage)
+                        is SecurityException -> result.error("503", "Tag already removed", excMessage)
+                        is FormatException -> result.error("400", "NDEF format error", excMessage)
+                        is InvocationTargetException -> result.error("500", "Communication error", excMessage)
+                        is IllegalArgumentException -> result.error("400", "Command format error", excMessage)
+                        is NoSuchMethodException -> result.error("405", "Transceive not supported for this type of card", excMessage)
+                        else -> result.error("500", "Unhandled error", excMessage)
                     }
                 }
             }
@@ -141,7 +142,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                         tagTechnology = isoDep
                         // historicalBytes() may return null but is wrongly typed as ByteArray!
                         // https://developer.android.com/reference/kotlin/android/nfc/tech/IsoDep#gethistoricalbytes
-                        historicalBytes = (isoDep.historicalBytes as ByteArray?)?.toHexString() ?: ""
+                        historicalBytes = isoDep.historicalBytes?.toHexString() ?: ""
                     }
                     tag.techList.contains(MifareClassic::class.java.name) -> {
                         standard = "ISO 14443-3 (Type A)"
@@ -329,8 +330,10 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 val timeout = call.argument<Int>("timeout")!!
                 // technology and option bits are set in Dart code
                 val technologies = call.argument<Int>("technologies")!!
+                val readerModeFlags = call.argument<Int>("readerModeFlags")
+                val extraPresenceDelay = call.argument<Int>("extra_reader_presence_check_delay")
                 runOnNfcThread(result, "Poll") {
-                    pollTag(nfcAdapter, result, timeout, technologies)
+                    pollTag(nfcAdapter, result, timeout, technologies, readerModeFlags, extraPresenceDelay)
                 }
             }
 
@@ -583,8 +586,7 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromActivityForConfigChanges() {}
 
-    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, technologies: Int) {
-
+    private fun pollTag(nfcAdapter: NfcAdapter, result: Result, timeout: Int, technologies: Int, readerModeFlags: Int?, extraReaderPresenceCheckDelay: Int?) {
         pollingTimeoutTask = Timer().schedule(timeout.toLong()) {
             try {
                 if (activity.get() != null) {
@@ -604,7 +606,19 @@ class FlutterNfcKitPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             result.success(jsonResult)
         }
 
-        nfcAdapter.enableReaderMode(activity.get(), pollHandler, technologies, null)
+        // Build final flags: combine technology flags with optional reader mode flags
+        val finalFlags = if (readerModeFlags != null) {
+            technologies or readerModeFlags
+        } else {
+            technologies
+        }
+
+        val options = Bundle()
+        if (extraReaderPresenceCheckDelay != null) {
+            options.putInt(EXTRA_READER_PRESENCE_CHECK_DELAY, extraReaderPresenceCheckDelay)
+        }
+
+        nfcAdapter.enableReaderMode(activity.get(), pollHandler, finalFlags, options)
     }
 
     private class MethodResultWrapper(result: Result) : Result {

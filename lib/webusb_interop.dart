@@ -1,5 +1,4 @@
 @JS()
-
 /// Library that inter-ops with JavaScript on WebUSB APIs.
 ///
 /// Note: you should **NEVER use this library directly**, but instead use the [FlutterNfcKit] class in your project.
@@ -22,15 +21,17 @@ const int USB_CLASS_CODE_VENDOR_SPECIFIC = 0xFF;
 @JS('navigator.usb')
 extension type _USB._(JSObject _) implements JSObject {
   external static JSPromise<JSObject> requestDevice(
-      _USBDeviceRequestOptions options);
+    _USBDeviceRequestOptions options,
+  );
   external static set ondisconnect(JSFunction value);
 }
 
 @JS()
 @anonymous
 extension type _USBDeviceRequestOptions._(JSObject _) implements JSObject {
-  external factory _USBDeviceRequestOptions(
-      {JSArray<_USBDeviceFilter> filters});
+  external factory _USBDeviceRequestOptions({
+    JSArray<_USBDeviceFilter> filters,
+  });
 }
 
 @JS()
@@ -42,12 +43,13 @@ extension type _USBDeviceFilter._(JSObject _) implements JSObject {
 @JS()
 @anonymous
 extension type _USBControlTransferParameters._(JSObject _) implements JSObject {
-  external factory _USBControlTransferParameters(
-      {String requestType,
-      String recipient,
-      int request,
-      int value,
-      int index});
+  external factory _USBControlTransferParameters({
+    String requestType,
+    String recipient,
+    int request,
+    int value,
+    int index,
+  });
 }
 
 /// Wraps around WebUSB APIs from browsers to provide low-level interfaces such as [poll] for [FlutterNfcKitWeb].
@@ -74,16 +76,23 @@ class WebUSB {
   static Future<String> poll(int timeout, bool probeMagic) async {
     // request WebUSB device with custom classcode
     if (!_deviceAvailable()) {
-      var devicePromise = _USB.requestDevice(_USBDeviceRequestOptions(
-          filters: [_USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC)]
-              .toJS));
+      var devicePromise = _USB.requestDevice(
+        _USBDeviceRequestOptions(
+          filters: [
+            _USBDeviceFilter(classCode: USB_CLASS_CODE_VENDOR_SPECIFIC),
+          ].toJS,
+        ),
+      );
       var device = await devicePromise.toDart;
       try {
         var openPromise = device.callMethod('open'.toJS) as JSPromise;
         await openPromise.toDart
-            .then((_) =>
-                (device.callMethod('claimInterface'.toJS, 1.toJS) as JSPromise)
-                    .toDart)
+            .then(
+              (_) =>
+                  (device.callMethod('claimInterface'.toJS, 1.toJS)
+                          as JSPromise)
+                      .toDart,
+            )
             .timeout(Duration(milliseconds: timeout));
         _device = device;
         _USB.ondisconnect = () {
@@ -97,40 +106,53 @@ class WebUSB {
       } on Exception catch (e) {
         log.severe("Poll error", e);
         throw PlatformException(
-            code: "500", message: "WebUSB API error", details: e);
+          code: "500",
+          message: "WebUSB API error",
+          details: e,
+        );
       }
 
       if (probeMagic) {
         try {
           // PROBE request
-          var promise = device.callMethod(
-              'controlTransferIn'.toJS,
-              _USBControlTransferParameters(
-                  requestType: 'vendor',
-                  recipient: 'interface',
-                  request: 0xff,
-                  value: 0,
-                  index: 1),
-              1.toJS) as JSPromise<JSObject>;
+          var promise =
+              device.callMethod(
+                    'controlTransferIn'.toJS,
+                    _USBControlTransferParameters(
+                      requestType: 'vendor',
+                      recipient: 'interface',
+                      request: 0xff,
+                      value: 0,
+                      index: 1,
+                    ),
+                    1.toJS,
+                  )
+                  as JSPromise<JSObject>;
           var resp = await promise.toDart;
           if (resp.getProperty<JSString>('status'.toJS).toDart == 'stalled') {
             throw PlatformException(
-                code: "500", message: "Device error: transfer stalled");
+              code: "500",
+              message: "Device error: transfer stalled",
+            );
           }
           var result = _getDataBufferFromResponse(resp);
           if (result.length < USB_PROBE_MAGIC.length ||
               result.sublist(0, USB_PROBE_MAGIC.length) !=
                   Uint8List.fromList(USB_PROBE_MAGIC.codeUnits)) {
             throw PlatformException(
-                code: "500",
-                message:
-                    "Device error: invalid probe response: ${hex.encode(result)}, should begin with $USB_PROBE_MAGIC");
+              code: "500",
+              message:
+                  "Device error: invalid probe response: ${hex.encode(result)}, should begin with $USB_PROBE_MAGIC",
+            );
           }
           customProbeData = hex.encode(result.sublist(USB_PROBE_MAGIC.length));
         } on Exception catch (e) {
           log.severe("Probe error", e);
           throw PlatformException(
-              code: "500", message: "WebUSB API error", details: e);
+            code: "500",
+            message: "WebUSB API error",
+            details: e,
+          );
         }
       } else {
         customProbeData = "";
@@ -146,37 +168,47 @@ class WebUSB {
       'type': 'webusb',
       'id': id,
       'standard': 'nfc-im-webusb-protocol',
-      'customProbeData': customProbeData
+      'customProbeData': customProbeData,
     });
   }
 
   static Future<Uint8List> _doTransceive(Uint8List capdu) async {
     // send a command (CMD)
-    var promise = _device!.callMethod(
-        'controlTransferOut'.toJS,
-        _USBControlTransferParameters(
-            requestType: 'vendor',
-            recipient: 'interface',
-            request: 0,
-            value: 0,
-            index: 1),
-        capdu.toJS) as JSPromise<JSObject>;
+    var promise =
+        _device!.callMethod(
+              'controlTransferOut'.toJS,
+              _USBControlTransferParameters(
+                requestType: 'vendor',
+                recipient: 'interface',
+                request: 0,
+                value: 0,
+                index: 1,
+              ),
+              capdu.toJS,
+            )
+            as JSPromise<JSObject>;
     await promise.toDart;
     // wait for execution to finish (STAT)
     while (true) {
-      promise = _device!.callMethod(
-          'controlTransferIn'.toJS,
-          _USBControlTransferParameters(
-              requestType: 'vendor',
-              recipient: 'interface',
-              request: 2,
-              value: 0,
-              index: 1),
-          1.toJS) as JSPromise<JSObject>;
+      promise =
+          _device!.callMethod(
+                'controlTransferIn'.toJS,
+                _USBControlTransferParameters(
+                  requestType: 'vendor',
+                  recipient: 'interface',
+                  request: 2,
+                  value: 0,
+                  index: 1,
+                ),
+                1.toJS,
+              )
+              as JSPromise<JSObject>;
       var resp = await promise.toDart;
       if (resp.getProperty<JSString>('status'.toJS).toDart == 'stalled') {
         throw PlatformException(
-            code: "500", message: "Device error: transfer stalled");
+          code: "500",
+          message: "Device error: transfer stalled",
+        );
       }
       var code = _getDataBufferFromResponse(resp)[0];
       if (code == 0) {
@@ -185,26 +217,32 @@ class WebUSB {
         await Future.delayed(const Duration(microseconds: 100));
       } else {
         throw PlatformException(
-            code: "500", message: "Device error: unexpected RESP code $code");
+          code: "500",
+          message: "Device error: unexpected RESP code $code",
+        );
       }
     }
     // get the response (RESP)
-    promise = _device!.callMethod(
-        'controlTransferIn'.toJS,
-        _USBControlTransferParameters(
-            requestType: 'vendor',
-            recipient: 'interface',
-            request: 1,
-            value: 0,
-            index: 1),
-        1500.toJS) as JSPromise<JSObject>;
+    promise =
+        _device!.callMethod(
+              'controlTransferIn'.toJS,
+              _USBControlTransferParameters(
+                requestType: 'vendor',
+                recipient: 'interface',
+                request: 1,
+                value: 0,
+                index: 1,
+              ),
+              1500.toJS,
+            )
+            as JSPromise<JSObject>;
     var resp = await promise.toDart;
     var deviceStatus = resp.getProperty<JSString>('status'.toJS).toDart;
     if (deviceStatus != 'ok') {
       throw PlatformException(
-          code: "500",
-          message:
-              "Device error: status should be \"ok\", got \"$deviceStatus\"");
+        code: "500",
+        message: "Device error: status should be \"ok\", got \"$deviceStatus\"",
+      );
     }
     return _getDataBufferFromResponse(resp);
   }
@@ -214,7 +252,9 @@ class WebUSB {
     log.config('CAPDU: $capdu');
     if (!_deviceAvailable()) {
       throw PlatformException(
-          code: "406", message: "No tag polled or device already disconnected");
+        code: "406",
+        message: "No tag polled or device already disconnected",
+      );
     }
     try {
       var rawCAPDU = Uint8List.fromList(hex.decode(capdu));
@@ -231,7 +271,10 @@ class WebUSB {
     } on Exception catch (e) {
       log.severe("Transceive error", e);
       throw PlatformException(
-          code: "500", message: "WebUSB API error", details: e);
+        code: "500",
+        message: "WebUSB API error",
+        details: e,
+      );
     }
   }
 
@@ -245,7 +288,10 @@ class WebUSB {
         } on Exception catch (e) {
           log.severe("Finish error: ", e);
           throw PlatformException(
-              code: "500", message: "WebUSB API error", details: e);
+            code: "500",
+            message: "WebUSB API error",
+            details: e,
+          );
         }
         _device = null;
       }
