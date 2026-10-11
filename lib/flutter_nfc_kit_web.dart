@@ -47,9 +47,10 @@ class FlutterNfcKitWeb {
         var data = call.arguments["data"];
         if (!(data is Uint8List || data is String)) {
           throw PlatformException(
-              code: "400",
-              message:
-                  "Bad argument: data should be String or Uint8List, got $data");
+            code: "400",
+            message:
+                "Bad argument: data should be String or Uint8List, got $data",
+          );
         }
         // always pass hex string to [transceive]
         var encodedData = data;
@@ -70,9 +71,10 @@ class FlutterNfcKitWeb {
 
       default:
         throw PlatformException(
-            code: "501",
-            details:
-                "flutter_nfc_kit for web does not support \"${call.method}\"");
+          code: "501",
+          details:
+              "flutter_nfc_kit for web does not support \"${call.method}\"",
+        );
     }
   }
 }

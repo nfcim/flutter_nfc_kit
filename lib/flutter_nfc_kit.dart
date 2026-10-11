@@ -437,9 +437,7 @@ class FlutterNfcKit {
   static Future<List<ndef.NDEFRecord>> readNDEFRecords({bool? cached}) async {
     return (await readNDEFRawRecords(
       cached: cached,
-    ))
-        .map((r) => NDEFRecordConvert.fromRaw(r))
-        .toList();
+    )).map((r) => NDEFRecordConvert.fromRaw(r)).toList();
   }
 
   /// Read NDEF records (in raw data, Android & iOS only).
