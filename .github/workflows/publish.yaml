@@ -9,6 +9,7 @@ jobs:
   publish:
     name: 'Publish to pub.dev'
     permissions:
+      contents: read
       id-token: write
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +23,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       - name: Publish - dry run
-        run: flutter pub publish --dry-run
+        run: dart pub publish --dry-run
       - name: Publish to pub.dev
-        run: flutter pub publish -f
+        run: dart pub publish -f

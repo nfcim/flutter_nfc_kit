@@ -1,15 +1,23 @@
 name: Test
 
 on:
+  workflow_dispatch:
   push:
     branches: [master, develop]
   pull_request:
     branches: [master, develop]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.head_commit.message, 'ci skip') }}
+    if: ${{ !contains(github.event.head_commit.message || '', 'ci skip') }}
     strategy:
       matrix:
         channel: [stable, beta]
@@ -20,11 +28,12 @@ jobs:
         with:
           channel: ${{ matrix.channel }}
           cache: true
-      - run: dart pub get
+      - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed lib/
       - run: dart analyze
-    #   - run: dart test
-      - run: dart doc
+      - name: Install dartdoc
+        run: dart pub global activate dartdoc 9.0.11
+      - run: dart pub global run dartdoc --validate-links
       - name: Upload generated dartdoc
         uses: actions/upload-artifact@v5
         with:
