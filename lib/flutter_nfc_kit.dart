@@ -328,6 +328,10 @@ class FlutterNfcKit {
   ///
   /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
   /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
+  /// Set [extraReaderPresenceCheckDelay] to control the interval Android uses
+  /// when checking whether a discovered tag is still present. The value is
+  /// Android-only and is expressed as a [Duration]. When omitted, Android's
+  /// platform default is used. It is ignored on iOS and Web.
   ///
   /// The four boolean flags [readIso14443A], [readIso14443B], [readIso18092], [readIso15693] control the NFC technology that would be tried.
   /// On iOS, setting any of [readIso14443A] and [readIso14443B] will enable `iso14443` in `pollingOption`.
