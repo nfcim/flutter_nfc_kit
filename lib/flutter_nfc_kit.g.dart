@@ -7,12 +7,12 @@ part of 'flutter_nfc_kit.dart';
 // **************************************************************************
 
 MifareInfo _$MifareInfoFromJson(Map<String, dynamic> json) => MifareInfo(
-      json['type'] as String,
-      json['size'] as int,
-      json['blockSize'] as int,
-      json['blockCount'] as int,
-      json['sectorCount'] as int?,
-    );
+  json['type'] as String,
+  (json['size'] as num).toInt(),
+  (json['blockSize'] as num).toInt(),
+  (json['blockCount'] as num).toInt(),
+  (json['sectorCount'] as num?)?.toInt(),
+);
 
 Map<String, dynamic> _$MifareInfoToJson(MifareInfo instance) =>
     <String, dynamic>{
@@ -24,50 +24,50 @@ Map<String, dynamic> _$MifareInfoToJson(MifareInfo instance) =>
     };
 
 NFCTag _$NFCTagFromJson(Map<String, dynamic> json) => NFCTag(
-      $enumDecode(_$NFCTagTypeEnumMap, json['type']),
-      json['id'] as String,
-      json['standard'] as String,
-      json['atqa'] as String?,
-      json['sak'] as String?,
-      json['historicalBytes'] as String?,
-      json['protocolInfo'] as String?,
-      json['applicationData'] as String?,
-      json['hiLayerResponse'] as String?,
-      json['manufacturer'] as String?,
-      json['systemCode'] as String?,
-      json['dsfId'] as String?,
-      json['ndefAvailable'] as bool?,
-      json['ndefType'] as String?,
-      json['ndefCapacity'] as int?,
-      json['ndefWritable'] as bool?,
-      json['ndefCanMakeReadOnly'] as bool?,
-      json['webUSBCustomProbeData'] as String?,
-      json['mifareInfo'] == null
-          ? null
-          : MifareInfo.fromJson(json['mifareInfo'] as Map<String, dynamic>),
-    );
+  $enumDecode(_$NFCTagTypeEnumMap, json['type']),
+  json['id'] as String,
+  json['standard'] as String,
+  json['atqa'] as String?,
+  json['sak'] as String?,
+  json['historicalBytes'] as String?,
+  json['protocolInfo'] as String?,
+  json['applicationData'] as String?,
+  json['hiLayerResponse'] as String?,
+  json['manufacturer'] as String?,
+  json['systemCode'] as String?,
+  json['dsfId'] as String?,
+  json['ndefAvailable'] as bool?,
+  json['ndefType'] as String?,
+  (json['ndefCapacity'] as num?)?.toInt(),
+  json['ndefWritable'] as bool?,
+  json['ndefCanMakeReadOnly'] as bool?,
+  json['webUSBCustomProbeData'] as String?,
+  json['mifareInfo'] == null
+      ? null
+      : MifareInfo.fromJson(json['mifareInfo'] as Map<String, dynamic>),
+);
 
 Map<String, dynamic> _$NFCTagToJson(NFCTag instance) => <String, dynamic>{
-      'type': _$NFCTagTypeEnumMap[instance.type]!,
-      'standard': instance.standard,
-      'id': instance.id,
-      'atqa': instance.atqa,
-      'sak': instance.sak,
-      'historicalBytes': instance.historicalBytes,
-      'hiLayerResponse': instance.hiLayerResponse,
-      'protocolInfo': instance.protocolInfo,
-      'applicationData': instance.applicationData,
-      'manufacturer': instance.manufacturer,
-      'systemCode': instance.systemCode,
-      'dsfId': instance.dsfId,
-      'ndefAvailable': instance.ndefAvailable,
-      'ndefType': instance.ndefType,
-      'ndefCapacity': instance.ndefCapacity,
-      'ndefWritable': instance.ndefWritable,
-      'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
-      'webUSBCustomProbeData': instance.webUSBCustomProbeData,
-      'mifareInfo': instance.mifareInfo,
-    };
+  'type': _$NFCTagTypeEnumMap[instance.type]!,
+  'standard': instance.standard,
+  'id': instance.id,
+  'atqa': instance.atqa,
+  'sak': instance.sak,
+  'historicalBytes': instance.historicalBytes,
+  'hiLayerResponse': instance.hiLayerResponse,
+  'protocolInfo': instance.protocolInfo,
+  'applicationData': instance.applicationData,
+  'manufacturer': instance.manufacturer,
+  'systemCode': instance.systemCode,
+  'dsfId': instance.dsfId,
+  'ndefAvailable': instance.ndefAvailable,
+  'ndefType': instance.ndefType,
+  'ndefCapacity': instance.ndefCapacity,
+  'ndefWritable': instance.ndefWritable,
+  'ndefCanMakeReadOnly': instance.ndefCanMakeReadOnly,
+  'webUSBCustomProbeData': instance.webUSBCustomProbeData,
+  'mifareInfo': instance.mifareInfo,
+};
 
 const _$NFCTagTypeEnumMap = {
   NFCTagType.iso7816: 'iso7816',
