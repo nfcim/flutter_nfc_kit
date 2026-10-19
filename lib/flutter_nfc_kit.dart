@@ -325,13 +325,16 @@ class FlutterNfcKit {
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
-  /// Set [iosCheckNDEF] to false to skip automatic NDEF discovery after connecting.
-  /// It defaults to true and is ignored on Android and Web. When skipped, NDEF
-  /// metadata is left at its default values (false, zero or empty); this does not
-  /// mean the tag lacks NDEF support. Raw [transceive] commands remain available.
   ///
-  /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
-  /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
+  /// [checkNDEF] controls automatic NDEF discovery on Android and iOS (default
+  /// true). Set it to false for raw-command applications that do not need the
+  /// initial NDEF check. It is ignored on Web. Skipping the check leaves NDEF
+  /// metadata at its defaults (false, zero or empty), even for NDEF-capable tags.
+  /// Raw [transceive] commands remain available.
+  ///
+  /// On Android, [androidPlatformSound] controls whether to play sound when a tag
+  /// is polled. The deprecated [androidCheckNDEF] overrides [checkNDEF] on Android
+  /// only when explicitly provided; it has no effect on iOS.
   /// Set [extraReaderPresenceCheckDelay] to control the interval Android uses
   /// when checking whether a discovered tag is still present. The value is
   /// Android-only and is expressed as a [Duration]. When omitted, Android's
@@ -346,8 +349,8 @@ class FlutterNfcKit {
   /// If [probeWebUSBMagic] is set, the library will use the `PROBE` request to check whether the device supports our API (see [FlutterNfcKitWeb] for details).
   ///
   /// Note: On Android, sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
-  /// If [androidCheckNDEF] is disabled, Android NDEF-related methods are unavailable
-  /// in the current session. On iOS, [iosCheckNDEF] only skips the initial query;
+  /// Disabling NDEF discovery makes Android NDEF-related methods unavailable
+  /// in the current session. On iOS, [checkNDEF] only skips the initial query;
   /// NDEF methods still contact the tag, but capability metadata is not populated.
   ///
   /// **Android Reader Mode Flags** ([androidReaderModeFlags]):
@@ -375,9 +378,10 @@ class FlutterNfcKit {
   static Future<NFCTag> poll({
     Duration? timeout,
     bool androidPlatformSound = true,
-    bool androidCheckNDEF = true,
+    bool checkNDEF = true,
+    @Deprecated('Use checkNDEF instead. This override only affects Android.')
+    bool? androidCheckNDEF,
     int? androidReaderModeFlags,
-    bool iosCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
         "More than one tags are detected, please leave only one tag and try again.",
@@ -396,12 +400,12 @@ class FlutterNfcKit {
     if (readIso18092) technologies |= 0x4;
     if (readIso15693) technologies |= 0x8;
     // iOS can safely ignore these option bits
-    if (!androidCheckNDEF) technologies |= 0x80;
+    if (!(androidCheckNDEF ?? checkNDEF)) technologies |= 0x80;
     if (!androidPlatformSound) technologies |= 0x100;
     final String data = await _channel.invokeMethod('poll', {
       'timeout': timeout?.inMilliseconds ?? POLL_TIMEOUT,
       'iosAlertMessage': iosAlertMessage,
-      'iosCheckNDEF': iosCheckNDEF,
+      'checkNDEF': checkNDEF,
       'iosMultipleTagMessage': iosMultipleTagMessage,
       'technologies': technologies,
       'probeWebUSBMagic': probeWebUSBMagic,

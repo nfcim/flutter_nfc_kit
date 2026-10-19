@@ -44,37 +44,54 @@ void main() {
   test('poll preserves automatic NDEF discovery by default', () async {
     await FlutterNfcKit.poll();
     final args = calls.single.arguments as Map;
-    expect(args['iosCheckNDEF'], isTrue);
+    expect(args['checkNDEF'], isTrue);
     expect(args['technologies'], 0x0b);
   });
 
-  test('skipping iOS NDEF discovery does not alter Android flags', () async {
-    await FlutterNfcKit.poll(iosCheckNDEF: false);
-    final args = calls.single.arguments as Map;
-    expect(args['iosCheckNDEF'], isFalse);
-    expect(args['technologies'], 0x0b);
-  });
-
-  test('Android NDEF skip flag leaves iOS discovery enabled', () async {
+  test('legacy Android opt-out leaves iOS discovery enabled', () async {
     await FlutterNfcKit.poll(androidCheckNDEF: false);
     final args = calls.single.arguments as Map;
-    expect(args['iosCheckNDEF'], isTrue);
+    expect(args['checkNDEF'], isTrue);
     expect(args['technologies'], 0x8b);
   });
 
-  test('both platforms can skip discovery before raw commands', () async {
-    final tag = await FlutterNfcKit.poll(
-      androidCheckNDEF: false,
-      iosCheckNDEF: false,
-    );
-    final args = calls.single.arguments as Map;
-    expect(args['iosCheckNDEF'], isFalse);
-    expect(args['technologies'], 0x8b);
-    expect(tag.ndefAvailable, isFalse);
-    expect(tag.ndefWritable, isFalse);
-    expect(tag.ndefCapacity, 0);
-    expect(await FlutterNfcKit.transceive('00A4040000'), '9000');
-    await FlutterNfcKit.finish();
-    expect(calls.map((call) => call.method), ['poll', 'transceive', 'finish']);
-  });
+  test(
+    'legacy Android opt-in overrides shared opt-out on Android only',
+    () async {
+      await FlutterNfcKit.poll(checkNDEF: false, androidCheckNDEF: true);
+      final args = calls.single.arguments as Map;
+      expect(args['checkNDEF'], isFalse);
+      expect(args['technologies'], 0x0b);
+    },
+  );
+
+  test(
+    'legacy Android opt-out overrides shared opt-in on Android only',
+    () async {
+      await FlutterNfcKit.poll(checkNDEF: true, androidCheckNDEF: false);
+      final args = calls.single.arguments as Map;
+      expect(args['checkNDEF'], isTrue);
+      expect(args['technologies'], 0x8b);
+    },
+  );
+
+  test(
+    'shared opt-out skips discovery on both platforms before raw commands',
+    () async {
+      final tag = await FlutterNfcKit.poll(checkNDEF: false);
+      final args = calls.single.arguments as Map;
+      expect(args['checkNDEF'], isFalse);
+      expect(args['technologies'], 0x8b);
+      expect(tag.ndefAvailable, isFalse);
+      expect(tag.ndefWritable, isFalse);
+      expect(tag.ndefCapacity, 0);
+      expect(await FlutterNfcKit.transceive('00A4040000'), '9000');
+      await FlutterNfcKit.finish();
+      expect(calls.map((call) => call.method), [
+        'poll',
+        'transceive',
+        'finish',
+      ]);
+    },
+  );
 }

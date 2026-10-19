@@ -64,7 +64,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
             } else {
                 let arguments = call.arguments as! [String: Any?]
                 let technologies = arguments["technologies"] as! Int
-                checkNDEF = arguments["iosCheckNDEF"] as? Bool ?? true
+                checkNDEF = arguments["checkNDEF"] as? Bool ?? true
                 // TODO: derive pollingOption from technology flags
                 var pollingOption: NFCTagReaderSession.PollingOption = []
                 if (technologies & 0x3) != 0 {

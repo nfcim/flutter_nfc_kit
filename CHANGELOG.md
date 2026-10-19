@@ -223,5 +223,5 @@
 
 ## Unreleased
 
-* Add `iosCheckNDEF` to optionally skip automatic NDEF discovery after connection (enabled by default), alongside Android's existing `androidCheckNDEF` option.
+* Add cross-platform `checkNDEF` to control automatic NDEF discovery on Android and iOS (enabled by default). Deprecate `androidCheckNDEF`, retaining it as an explicit Android-only override for compatibility.
 * Release iOS reader state after invalidation even when `poll()` has already returned, clean up failed connections, and ignore stale discovery/setup callbacks.
