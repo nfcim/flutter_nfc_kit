@@ -74,6 +74,31 @@ We use error codes with similar meaning as HTTP status code. Brief explanation a
 
 We provide two operation modes: polling (default) and event streaming. Both can give the same `NFCTag` object. Please see the [example](https://github.com/nfcim/flutter_nfc_kit/blob/master/example/example.md) for more details.
 
+### Skipping automatic NDEF discovery (Android and iOS)
+
+Applications that communicate with a card through raw commands can skip the
+initial NDEF check on both platforms:
+
+```dart
+final tag = await FlutterNfcKit.poll(
+  androidCheckNDEF: false,
+  iosCheckNDEF: false,
+);
+```
+
+Both options default to `true`; each is ignored on the other platforms. On
+Android, `androidCheckNDEF: false` sets `FLAG_READER_SKIP_NDEF_CHECK`, so the
+platform's NDEF methods are unavailable for that session. On iOS,
+`iosCheckNDEF: false` skips `queryNDEFStatus` after connecting: NDEF metadata stays
+at its default values (`false`, zero or empty), even for an NDEF-capable tag.
+The iOS NDEF methods still contact the tag when explicitly invoked. Raw
+`transceive` commands remain available on both platforms. FeliCa PMm metadata
+is still collected on iOS.
+
+This avoids an extra exchange before the first application command. The time
+saved depends on the device and tag; it does not change the polling technology
+selection or guarantee a higher discovery success rate. Web ignores both options.
+
 ### Performance Optimization (Android)
 
 For Android applications, you can optimize NFC tag detection performance using the `androidReaderModeFlags` parameter:

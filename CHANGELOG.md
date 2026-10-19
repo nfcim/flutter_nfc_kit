@@ -222,3 +222,6 @@
 * Update Android build tooling to AGP 9.0.1 and Kotlin 2.3.20; AGP 9 release builds using optimized resource shrinking require `android.nonFinalResIds=true`.
 
 ## Unreleased
+
+* Add `iosCheckNDEF` to optionally skip automatic NDEF discovery after connection (enabled by default), alongside Android's existing `androidCheckNDEF` option.
+* Release iOS reader state after invalidation even when `poll()` has already returned, clean up failed connections, and ignore stale discovery/setup callbacks.

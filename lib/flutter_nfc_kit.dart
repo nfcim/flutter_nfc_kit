@@ -325,6 +325,10 @@ class FlutterNfcKit {
   ///
   /// On iOS, set [iosAlertMessage] to display a message when the session starts (to guide users to scan a tag),
   /// and set [iosMultipleTagMessage] to display a message when multiple tags are found.
+  /// Set [iosCheckNDEF] to false to skip automatic NDEF discovery after connecting.
+  /// It defaults to true and is ignored on Android and Web. When skipped, NDEF
+  /// metadata is left at its default values (false, zero or empty); this does not
+  /// mean the tag lacks NDEF support. Raw [transceive] commands remain available.
   ///
   /// On Android, set [androidPlatformSound] to control whether to play sound when a tag is polled,
   /// and set [androidCheckNDEF] to control whether check NDEF records on the tag.
@@ -341,8 +345,10 @@ class FlutterNfcKit {
   /// On Web, all parameters are ignored except [timeout] and [probeWebUSBMagic].
   /// If [probeWebUSBMagic] is set, the library will use the `PROBE` request to check whether the device supports our API (see [FlutterNfcKitWeb] for details).
   ///
-  /// Note: Sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
-  /// If disabled, you will not be able to use any NDEF-related methods in the current session.
+  /// Note: On Android, sometimes NDEF check [leads to error](https://github.com/nfcim/flutter_nfc_kit/issues/11), and disabling it might help.
+  /// If [androidCheckNDEF] is disabled, Android NDEF-related methods are unavailable
+  /// in the current session. On iOS, [iosCheckNDEF] only skips the initial query;
+  /// NDEF methods still contact the tag, but capability metadata is not populated.
   ///
   /// **Android Reader Mode Flags** ([androidReaderModeFlags]):
   ///
@@ -371,6 +377,7 @@ class FlutterNfcKit {
     bool androidPlatformSound = true,
     bool androidCheckNDEF = true,
     int? androidReaderModeFlags,
+    bool iosCheckNDEF = true,
     String iosAlertMessage = "Hold your iPhone near the card",
     String iosMultipleTagMessage =
         "More than one tags are detected, please leave only one tag and try again.",
@@ -394,6 +401,7 @@ class FlutterNfcKit {
     final String data = await _channel.invokeMethod('poll', {
       'timeout': timeout?.inMilliseconds ?? POLL_TIMEOUT,
       'iosAlertMessage': iosAlertMessage,
+      'iosCheckNDEF': iosCheckNDEF,
       'iosMultipleTagMessage': iosMultipleTagMessage,
       'technologies': technologies,
       'probeWebUSBMagic': probeWebUSBMagic,
