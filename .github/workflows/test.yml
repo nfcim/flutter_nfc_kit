@@ -29,6 +29,7 @@ jobs:
           channel: ${{ matrix.channel }}
           cache: true
       - run: flutter pub get
+      - run: flutter test
       - run: dart format --output=none --set-exit-if-changed lib/
       - run: dart analyze
       - name: Install dartdoc

@@ -35,6 +35,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     var result: FlutterResult?
     var tag: NFCTag?
     var multipleTagMessage: String?
+    private var checkNDEF = true
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_nfc_kit/method", binaryMessenger: registrar.messenger())
@@ -63,6 +64,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
             } else {
                 let arguments = call.arguments as! [String: Any?]
                 let technologies = arguments["technologies"] as! Int
+                checkNDEF = arguments["checkNDEF"] as? Bool ?? true
                 // TODO: derive pollingOption from technology flags
                 var pollingOption: NFCTagReaderSession.PollingOption = []
                 if (technologies & 0x3) != 0 {
@@ -74,7 +76,7 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 if (technologies & 0x8) != 0 {
                     pollingOption.insert(.iso15693)
                 }
-                session = NFCTagReaderSession(pollingOption: pollingOption, delegate: self)
+                session = NFCTagReaderSession(pollingOption: pollingOption, delegate: self, queue: DispatchQueue.main)
                 if let alertMessage = arguments["iosAlertMessage"] as? String {
                     session?.alertMessage = alertMessage
                 }
@@ -82,7 +84,12 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                     self.multipleTagMessage = multipleTagMessage
                 }
                 self.result = result
-                session?.begin()
+                guard let session = session else {
+                    self.result = nil
+                    result(FlutterError(code: "405", message: "Unable to create NFC session", details: nil))
+                    return
+                }
+                session.begin()
             }
         } else if call.method == "transceive" {
             if tag != nil {
@@ -394,8 +401,9 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
                 result(FlutterError(code: "406", message: "No tag polled", details: nil))
             }
         } else if call.method == "finish" {
-            self.result?(FlutterError(code: "406", message: "Session not active", details: nil))
+            let pending = self.result
             self.result = nil
+            pending?(FlutterError(code: "406", message: "Session not active", details: nil))
             
             if let session = session {
                 let arguments = call.arguments as! [String: Any?]
@@ -464,9 +472,8 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
     
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_ invalidatedSession: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        // Core NFC calls this on its own queue, but `poll()` and `finish()` change
-        // `session` / `result` on the main thread. Hop to main so the identity check and
-        // the state it guards happen in one step, ordered against those method calls.
+        // Keep the identity check and reader-state cleanup together on main,
+        // ordered against `poll()` and `finish()` method calls.
         DispatchQueue.main.async { [self] in
             // `finish()` invalidates the session and clears `self.session` straight away,
             // but iOS can deliver that session's invalidation after the next `poll()` has
@@ -474,38 +481,42 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
             // result or reset state — otherwise the stale error reaches the new poll, and
             // clearing `self.session` / `self.tag` orphans a session still on screen.
             guard invalidatedSession === session else { return }
-            guard result != nil else { return }
+            let pending = result
+            result = nil
+            session = nil
+            tag = nil
+            // A successful poll has already consumed its result. The reader can
+            // still time out or be canceled, and must be released in that case.
+            guard let pending = pending else { return }
 
             if let nfcError = error as? NFCReaderError {
                 NSLog("Got NFCError when reading NFC: %@", nfcError.localizedDescription)
                 switch nfcError.errorCode {
                 case NFCReaderError.Code.readerSessionInvalidationErrorUserCanceled.rawValue:
-                    result?(FlutterError(code: "409", message: "SessionCanceled", details: error.localizedDescription))
+                    pending(FlutterError(code: "409", message: "SessionCanceled", details: error.localizedDescription))
                 case NFCReaderError.Code.readerSessionInvalidationErrorSessionTimeout.rawValue:
-                    result?(FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription))
+                    pending(FlutterError(code: "408", message: "SessionTimeOut", details: error.localizedDescription))
                 default:
-                    result?(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
+                    pending(FlutterError(code: "500", message: "Generic NFC Error", details: error.localizedDescription))
                 }
             } else {
                 NSLog("Got unknown when reading NFC: %@", error.localizedDescription)
-                result?(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
+                pending(FlutterError(code: "500", message: "Invalidate session with error", details: error.localizedDescription))
             }
-
-            result = nil
-            session = nil
-            tag = nil
         }
     }
     
     // from NFCTagReaderSessionDelegate
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+        guard self.session === session, self.result != nil, !tags.isEmpty else { return }
         if tags.count > 1 {
             // Restart polling in 500ms
             let retryInterval = DispatchTimeInterval.milliseconds(500)
             if multipleTagMessage != nil {
                 session.alertMessage = multipleTagMessage!
             }
-            DispatchQueue.global().asyncAfter(deadline: .now() + retryInterval) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + retryInterval) {
+                guard self.session === session, self.result != nil else { return }
                 session.restartPolling()
             }
             return
@@ -570,68 +581,90 @@ public class FlutterNfcKitPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDe
         }
         
         session.connect(to: firstTag) { (error: Error?) in
-            if let error = error {
-                self.result?(FlutterError(code: "500", message: "Error connecting to card", details: error.localizedDescription))
-                self.result = nil
-                return
-            }
-            self.tag = firstTag
-            
-            var ndefTag: NFCNDEFTag?
-            switch self.tag {
-            case let .iso7816(tag):
-                ndefTag = tag
-            case let .miFare(tag):
-                ndefTag = tag
-            case let .feliCa(tag):
-                ndefTag = tag
-            case let .iso15693(tag):
-                ndefTag = tag
-            default:
-                ndefTag = nil
-            }
-            
-            if ndefTag != nil {
-                ndefTag!.queryNDEFStatus() { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
-                    if error == nil {
-                        if status != NFCNDEFStatus.notSupported {
-                            result["ndefAvailable"] = true
-                        }
-                        if status == NFCNDEFStatus.readWrite {
-                            result["ndefWritable"] = true
-                            result["ndefCanMakeReadOnly"] = true
-                        }
-                        result["ndefCapacity"] = capacity
-                    }
-                    // ignore error, just return with ndef disabled
-                    switch self.tag {
-                    case let .feliCa(tag):
-                        tag.polling(systemCode: tag.currentSystemCode, requestCode: .noRequest, timeSlot: .max16) { (pmm: Data, _: Data, error: Error?) in
-                            if let error = error {
-                                self.result?(FlutterError(code: "500", message: "Communication error on connect", details: error.localizedDescription))
-                                self.result = nil
-                            } else {
-                                result["manufacturer"] = pmm.hexEncodedString()
+            DispatchQueue.main.async {
+                guard self.session === session, self.result != nil else { return }
+                if let error = error {
+                    self.failPoll(session, error: FlutterError(code: "500", message: "Error connecting to card", details: error.localizedDescription))
+                    return
+                }
+                self.tag = firstTag
 
-                                let jsonData = try! JSONSerialization.data(withJSONObject: result)
-                                let jsonString = String(data: jsonData, encoding: .utf8)
-                                self.result?(jsonString)
-                                self.result = nil
+                var ndefTag: NFCNDEFTag?
+                switch firstTag {
+                case let .iso7816(tag):
+                    ndefTag = tag
+                case let .miFare(tag):
+                    ndefTag = tag
+                case let .feliCa(tag):
+                    ndefTag = tag
+                case let .iso15693(tag):
+                    ndefTag = tag
+                default:
+                    ndefTag = nil
+                }
+
+                guard self.checkNDEF, let ndefTag = ndefTag else {
+                    self.completePoll(session, metadata: result)
+                    return
+                }
+                ndefTag.queryNDEFStatus() { (status: NFCNDEFStatus, capacity: Int, error: Error?) in
+                    DispatchQueue.main.async {
+                        guard self.session === session, self.result != nil else { return }
+                        if error == nil {
+                            if status != NFCNDEFStatus.notSupported {
+                                result["ndefAvailable"] = true
                             }
+                            if status == NFCNDEFStatus.readWrite {
+                                result["ndefWritable"] = true
+                                result["ndefCanMakeReadOnly"] = true
+                            }
+                            result["ndefCapacity"] = capacity
                         }
-                    default:
-                        let jsonData = try! JSONSerialization.data(withJSONObject: result)
-                        let jsonString = String(data: jsonData, encoding: .utf8)
-                        self.result?(jsonString)
-                        self.result = nil
+                        // Ignore NDEF errors and return with NDEF metadata disabled.
+                        self.completePoll(session, metadata: result)
                     }
                 }
-            } else {
-                let jsonData = try! JSONSerialization.data(withJSONObject: result)
-                let jsonString = String(data: jsonData, encoding: .utf8)
-                self.result?(jsonString)
-                self.result = nil
             }
         }
+    }
+
+    // Called on main, including completion handlers that update reader state.
+    private func completePoll(_ session: NFCTagReaderSession, metadata: [String: Any]) {
+        guard self.session === session, self.result != nil else { return }
+        if case let .feliCa(tag) = self.tag {
+            // PMm is tag metadata, not NDEF metadata. Preserve it even when the
+            // caller skips queryNDEFStatus.
+            tag.polling(systemCode: tag.currentSystemCode, requestCode: .noRequest, timeSlot: .max16) { (pmm: Data, _: Data, error: Error?) in
+                DispatchQueue.main.async {
+                    guard self.session === session, self.result != nil else { return }
+                    if let error = error {
+                        self.failPoll(session, error: FlutterError(code: "500", message: "Communication error on connect", details: error.localizedDescription))
+                    } else {
+                        var metadata = metadata
+                        metadata["manufacturer"] = pmm.hexEncodedString()
+                        self.returnPoll(metadata)
+                    }
+                }
+            }
+        } else {
+            returnPoll(metadata)
+        }
+    }
+
+    private func returnPoll(_ metadata: [String: Any]) {
+        let pending = result
+        result = nil
+        let jsonData = try! JSONSerialization.data(withJSONObject: metadata)
+        pending?(String(data: jsonData, encoding: .utf8))
+    }
+
+    private func failPoll(_ session: NFCTagReaderSession, error: FlutterError) {
+        guard self.session === session else { return }
+        let pending = result
+        result = nil
+        self.session = nil
+        tag = nil
+        session.invalidate()
+        pending?(error)
     }
 }
